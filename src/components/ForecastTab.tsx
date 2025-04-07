@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Area,
@@ -219,7 +220,7 @@ export const ForecastTab = () => {
                       stroke={metricInfo?.color || "#4284f5"}
                       strokeWidth={2}
                       strokeDasharray="5 5"
-                      strokeOpacity={0.7}
+                      strokeOpacity={0.5}
                       dot={{ r: 3 }}
                       connectNulls
                       isAnimationActive
