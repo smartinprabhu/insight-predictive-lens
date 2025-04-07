@@ -50,7 +50,7 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
+    <div className="container mx-auto p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <DashboardHeader
         lastUpdated="07/04/2025"
         forecastPeriod={forecastPeriod}
@@ -66,7 +66,7 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
         onAggregationTypeChange={setAggregationType}
       />
       
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
         <TabNavigation
           tabs={tabs}
           activeTab={activeTab}
