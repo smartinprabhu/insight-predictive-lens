@@ -22,6 +22,16 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 
 // Sample data - in a real app, this would come from an API
 const generateForecastData = (days = 60) => {
@@ -29,8 +39,8 @@ const generateForecastData = (days = 60) => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days / 2); // Half actual, half forecast
 
-  const forecastStartDate = new Date();
-  forecastStartDate.setDate(forecastStartDate.getDate() + 1);
+  // Use fixed date April 6, 2025 for forecast cutoff
+  const forecastStartDate = new Date('2025-04-06');
 
   for (let i = 0; i < days; i++) {
     const currentDate = new Date(startDate);
@@ -41,9 +51,9 @@ const generateForecastData = (days = 60) => {
     const baseValue = 120 + Math.sin(i / 5) * 30;
     const value = Math.round(baseValue + Math.random() * 20);
     
-    // For forecasted values, add some uncertainty
-    const upperBound = isActual ? null : Math.round(value * (1 + 0.1 + Math.random() * 0.1));
-    const lowerBound = isActual ? null : Math.round(value * (1 - 0.1 - Math.random() * 0.1));
+    // Only add upperBound and lowerBound for forecasted dates
+    const upperBound = !isActual ? Math.round(value * (1 + 0.1 + Math.random() * 0.1)) : null;
+    const lowerBound = !isActual ? Math.round(value * (1 - 0.1 - Math.random() * 0.1)) : null;
     
     data.push({
       date: currentDate.toISOString().split('T')[0],
@@ -67,12 +77,18 @@ export const ForecastTab = () => {
     { id: "ibExceptions", name: "IB Exceptions", color: "#f56565" },
   ];
   
-  const [selectedMetric, setSelectedMetric] = useState(metrics[0].id);
+  const [selectedMetrics, setSelectedMetrics] = useState([metrics[0].id]);
   const [showConfidenceBounds, setShowConfidenceBounds] = useState(true);
   
   const forecastData = generateForecastData(60);
   
-  const selectedMetricInfo = metrics.find(m => m.id === selectedMetric);
+  const handleMetricToggle = (metricId: string) => {
+    setSelectedMetrics(current => 
+      current.includes(metricId)
+        ? current.length > 1 ? current.filter(id => id !== metricId) : current // Prevent deselecting all
+        : [...current, metricId]
+    );
+  };
   
   return (
     <Card>
@@ -81,23 +97,29 @@ export const ForecastTab = () => {
           <h3 className="text-xl font-semibold">Forecast</h3>
           
           <div className="flex items-center gap-4">
-            <div className="w-[200px]">
-              <Select
-                value={selectedMetric}
-                onValueChange={setSelectedMetric}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select metric" />
-                </SelectTrigger>
-                <SelectContent>
-                  {metrics.map((metric) => (
-                    <SelectItem key={metric.id} value={metric.id}>
-                      {metric.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-[200px] justify-between">
+                  {selectedMetrics.length === 1 
+                    ? metrics.find(m => m.id === selectedMetrics[0])?.name 
+                    : `${selectedMetrics.length} metrics selected`}
+                  <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[200px]">
+                <DropdownMenuLabel>Select Metrics</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {metrics.map((metric) => (
+                  <DropdownMenuCheckboxItem
+                    key={metric.id}
+                    checked={selectedMetrics.includes(metric.id)}
+                    onCheckedChange={() => handleMetricToggle(metric.id)}
+                  >
+                    {metric.name}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <div className="flex items-center space-x-2">
               <Checkbox 
@@ -148,54 +170,64 @@ export const ForecastTab = () => {
                 label={{ position: 'insideTop', value: 'Forecast Period', fill: '#666', fontSize: 12 }}
               />
               
-              {/* Confidence bounds */}
-              {showConfidenceBounds && (
-                <Area
-                  dataKey="upperBound"
-                  stroke="none"
-                  fill={selectedMetricInfo?.color || "#4284f5"}
-                  fillOpacity={0.2}
-                  isAnimationActive={false}
-                  legendType="none"
-                />
-              )}
-              
-              {showConfidenceBounds && (
-                <Area
-                  dataKey="lowerBound"
-                  stroke="none"
-                  fill={selectedMetricInfo?.color || "#4284f5"}
-                  fillOpacity={0.2}
-                  isAnimationActive={false}
-                  legendType="none"
-                />
-              )}
-              
-              {/* Actual line */}
-              <Line
-                type="monotone"
-                dataKey="value"
-                name={`${selectedMetricInfo?.name || "Value"} (Actual)`}
-                stroke={selectedMetricInfo?.color || "#4284f5"}
-                strokeWidth={2}
-                dot={{ r: 3, fill: selectedMetricInfo?.color || "#4284f5" }}
-                activeDot={{ r: 5 }}
-                connectNulls
-                isAnimationActive
-              />
-              
-              {/* Forecasted line (dashed) */}
-              <Line
-                type="monotone"
-                dataKey={(data) => data.isActual ? null : data.value}
-                name={`${selectedMetricInfo?.name || "Value"} (Forecast)`}
-                stroke={selectedMetricInfo?.color || "#4284f5"}
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={{ r: 3 }}
-                connectNulls
-                isAnimationActive
-              />
+              {/* Render each selected metric */}
+              {selectedMetrics.map((metricId) => {
+                const metricInfo = metrics.find(m => m.id === metricId);
+                
+                return (
+                  <React.Fragment key={metricId}>
+                    {/* Confidence bounds for forecast only */}
+                    {showConfidenceBounds && (
+                      <Area
+                        dataKey={(data) => data.isActual ? null : data.upperBound}
+                        stroke="none"
+                        fill={metricInfo?.color || "#4284f5"}
+                        fillOpacity={0.2}
+                        isAnimationActive={false}
+                        legendType="none"
+                      />
+                    )}
+                    
+                    {showConfidenceBounds && (
+                      <Area
+                        dataKey={(data) => data.isActual ? null : data.lowerBound}
+                        stroke="none"
+                        fill={metricInfo?.color || "#4284f5"}
+                        fillOpacity={0.2}
+                        isAnimationActive={false}
+                        legendType="none"
+                      />
+                    )}
+                    
+                    {/* Actual line - only show for dates before forecast period */}
+                    <Line
+                      type="monotone"
+                      dataKey={(data) => data.isActual ? data.value : null}
+                      name={`${metricInfo?.name || "Value"} (Actual)`}
+                      stroke={metricInfo?.color || "#4284f5"}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: metricInfo?.color || "#4284f5" }}
+                      activeDot={{ r: 5 }}
+                      connectNulls
+                      isAnimationActive
+                    />
+                    
+                    {/* Forecasted line (dashed) - only show for forecast period */}
+                    <Line
+                      type="monotone"
+                      dataKey={(data) => !data.isActual ? data.value : null}
+                      name={`${metricInfo?.name || "Value"} (Forecast)`}
+                      stroke={metricInfo?.color || "#4284f5"}
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      strokeOpacity={0.7}
+                      dot={{ r: 3 }}
+                      connectNulls
+                      isAnimationActive
+                    />
+                  </React.Fragment>
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         </div>
