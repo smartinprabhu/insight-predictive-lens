@@ -2,7 +2,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { MoveRightIcon, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -86,15 +92,15 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
                   value={modelType}
                   onValueChange={setModelType}
                 >
-                  <Select.Trigger className="w-full">
-                    <Select.Value placeholder="Select model type" />
-                  </Select.Trigger>
-                  <Select.Content>
-                    <Select.Item value="Prophet">Prophet</Select.Item>
-                    <Select.Item value="ARIMA">ARIMA</Select.Item>
-                    <Select.Item value="LSTM">LSTM</Select.Item>
-                    <Select.Item value="XGBoost">XGBoost</Select.Item>
-                  </Select.Content>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select model type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Prophet">Prophet</SelectItem>
+                    <SelectItem value="ARIMA">ARIMA</SelectItem>
+                    <SelectItem value="LSTM">LSTM</SelectItem>
+                    <SelectItem value="XGBoost">XGBoost</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
 

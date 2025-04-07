@@ -11,7 +11,13 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from "@/components/ui/select";
 
 // Sample data - in a real app, this would come from an API
 const generateValidationData = (days = 30) => {
@@ -87,16 +93,16 @@ export const ModelValidationTab = () => {
               value={selectedCategory}
               onValueChange={setSelectedCategory}
             >
-              <Select.Trigger>
-                <Select.Value placeholder="Select category" />
-              </Select.Trigger>
-              <Select.Content>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
                 {categories.map((category) => (
-                  <Select.Item key={category.id} value={category.id}>
+                  <SelectItem key={category.id} value={category.id}>
                     {category.name}
-                  </Select.Item>
+                  </SelectItem>
                 ))}
-              </Select.Content>
+              </SelectContent>
             </Select>
           </div>
         </div>

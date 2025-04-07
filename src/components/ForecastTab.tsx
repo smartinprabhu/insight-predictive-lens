@@ -14,7 +14,13 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // Sample data - in a real app, this would come from an API
@@ -80,16 +86,16 @@ export const ForecastTab = () => {
                 value={selectedMetric}
                 onValueChange={setSelectedMetric}
               >
-                <Select.Trigger>
-                  <Select.Value placeholder="Select metric" />
-                </Select.Trigger>
-                <Select.Content>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select metric" />
+                </SelectTrigger>
+                <SelectContent>
                   {metrics.map((metric) => (
-                    <Select.Item key={metric.id} value={metric.id}>
+                    <SelectItem key={metric.id} value={metric.id}>
                       {metric.name}
-                    </Select.Item>
+                    </SelectItem>
                   ))}
-                </Select.Content>
+                </SelectContent>
               </Select>
             </div>
             

@@ -1,6 +1,5 @@
 
 import {
-  HeatMapGrid,
   BarChart,
   Bar,
   CartesianGrid,

@@ -1,5 +1,11 @@
 
-import { Select } from "@/components/ui/select";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
 interface ModelConfigurationProps {
@@ -31,15 +37,15 @@ export const ModelConfiguration = ({
             value={modelType}
             onValueChange={onModelTypeChange}
           >
-            <Select.Trigger className="w-full">
-              <Select.Value placeholder="Select model type" />
-            </Select.Trigger>
-            <Select.Content>
-              <Select.Item value="Prophet">Prophet</Select.Item>
-              <Select.Item value="ARIMA">ARIMA</Select.Item>
-              <Select.Item value="LSTM">LSTM</Select.Item>
-              <Select.Item value="XGBoost">XGBoost</Select.Item>
-            </Select.Content>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select model type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Prophet">Prophet</SelectItem>
+              <SelectItem value="ARIMA">ARIMA</SelectItem>
+              <SelectItem value="LSTM">LSTM</SelectItem>
+              <SelectItem value="XGBoost">XGBoost</SelectItem>
+            </SelectContent>
           </Select>
         </div>
 
@@ -64,14 +70,14 @@ export const ModelConfiguration = ({
             value={aggregationType}
             onValueChange={onAggregationTypeChange}
           >
-            <Select.Trigger className="w-full">
-              <Select.Value placeholder="Select aggregation type" />
-            </Select.Trigger>
-            <Select.Content>
-              <Select.Item value="Daily">Daily</Select.Item>
-              <Select.Item value="Weekly">Weekly</Select.Item>
-              <Select.Item value="Monthly">Monthly</Select.Item>
-            </Select.Content>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select aggregation type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Daily">Daily</SelectItem>
+              <SelectItem value="Weekly">Weekly</SelectItem>
+              <SelectItem value="Monthly">Monthly</SelectItem>
+            </SelectContent>
           </Select>
         </div>
       </div>
