@@ -41,6 +41,7 @@ import {
 
 interface ForecastTabProps {
   forecastPeriod: number;
+  aggregationType: string;
 }
 
 // Sample data generation function with unique data for each metric
@@ -95,7 +96,83 @@ const generateForecastData = (actualDays = 30, forecastDays = 30, metricId = "ib
   return data;
 };
 
-export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
+// Aggregate forecast data by week or month
+const aggregateForecastData = (data, aggregationType) => {
+  if (aggregationType === "Daily") {
+    return data;
+  }
+  
+  const aggregatedData = [];
+  const groupedData = {};
+  
+  data.forEach(item => {
+    const date = new Date(item.date);
+    let key;
+    
+    if (aggregationType === "Weekly") {
+      // Get the week number and year
+      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+      const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+      key = `${date.getFullYear()}-W${weekNum}`;
+    } else if (aggregationType === "Monthly") {
+      key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    }
+    
+    if (!groupedData[key]) {
+      groupedData[key] = {
+        count: 0,
+        isActualCount: 0,
+        value: 0,
+        upperBoundSum: 0,
+        lowerBoundSum: 0,
+        firstDate: date,
+      };
+    }
+    
+    groupedData[key].count += 1;
+    if (item.isActual) {
+      groupedData[key].isActualCount += 1;
+    }
+    groupedData[key].value += item.value;
+    if (item.upperBound !== null) {
+      groupedData[key].upperBoundSum += item.upperBound;
+    }
+    if (item.lowerBound !== null) {
+      groupedData[key].lowerBoundSum += item.lowerBound;
+    }
+  });
+  
+  Object.entries(groupedData).forEach(([key, value]) => {
+    const { count, isActualCount, firstDate, upperBoundSum, lowerBoundSum } = value;
+    
+    let dateFormatted;
+    if (aggregationType === "Weekly") {
+      dateFormatted = `Week ${key.split('-W')[1]}, ${key.split('-')[0]}`;
+    } else {
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const month = parseInt(key.split('-')[1]) - 1;
+      dateFormatted = `${monthNames[month]} ${key.split('-')[0]}`;
+    }
+    
+    // Calculate whether this aggregated period is actual or forecast
+    // If more than half the days are actual, consider it actual
+    const isActual = isActualCount > count / 2;
+    
+    aggregatedData.push({
+      date: key,
+      dateFormatted,
+      value: Math.round(value.value / count),
+      upperBound: upperBoundSum > 0 ? Math.round(upperBoundSum / (count - isActualCount || 1)) : null,
+      lowerBound: lowerBoundSum > 0 ? Math.round(lowerBoundSum / (count - isActualCount || 1)) : null,
+      isActual,
+    });
+  });
+  
+  return aggregatedData.sort((a, b) => a.date.localeCompare(b.date));
+};
+
+export const ForecastTab = ({ forecastPeriod = 30, aggregationType = "Daily" }: ForecastTabProps) => {
   const metrics = [
     { id: "ibUnits", name: "IB Units", color: "#4284f5" },
     { id: "inventory", name: "Inventory", color: "#36b37e" },
@@ -113,7 +190,8 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
   // Generate unique data for each selected metric with the correct forecast period
   const getMetricData = () => {
     // Create a data structure for all dates - to ensure alignment between metrics
-    const allDates = generateForecastData(actualDays, forecastPeriod, metrics[0].id).map(item => ({
+    const rawData = generateForecastData(actualDays, forecastPeriod, metrics[0].id);
+    const allDates = aggregateForecastData(rawData, aggregationType).map(item => ({
       date: item.date,
       dateFormatted: item.dateFormatted,
       isActual: item.isActual,
@@ -125,7 +203,10 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
       
       // Add data for each selected metric
       selectedMetrics.forEach(metricId => {
-        const metricData = generateForecastData(actualDays, forecastPeriod, metricId);
+        const metricData = aggregateForecastData(
+          generateForecastData(actualDays, forecastPeriod, metricId),
+          aggregationType
+        );
         const matchingDateData = metricData.find(d => d.date === dateItem.date);
         
         if (matchingDateData) {
@@ -150,13 +231,17 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
   };
 
   // Use useMemo to avoid recalculating the forecast data on every render
-  const forecastData = useMemo(() => getMetricData(), [selectedMetrics, forecastPeriod]);
+  const forecastData = useMemo(() => getMetricData(), [selectedMetrics, forecastPeriod, aggregationType]);
   
   const exportToCSV = () => {
     // Create CSV content
-    const csvHeader = ["Date", "IsActual", ...selectedMetrics.flatMap(m => 
-      [`${m} Value`, `${m} Upper Bound`, `${m} Lower Bound`]
-    )].join(",");
+    const headerRows = ["Date", "IsActual"];
+    selectedMetrics.forEach(metricId => {
+      const metricName = metrics.find(m => m.id === metricId)?.name || metricId;
+      headerRows.push(`${metricName} Value`, `${metricName} Upper Bound`, `${metricName} Lower Bound`);
+    });
+    
+    const csvHeader = headerRows.join(",");
     
     const csvRows = forecastData.map(item => {
       const row = [item.date, item.isActual];
@@ -179,7 +264,7 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `forecast_data_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `forecast_data_${aggregationType.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     
     // Trigger download
@@ -188,7 +273,7 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
     
     toast({
       title: "Export successful",
-      description: "Forecast data has been exported to CSV",
+      description: `Forecast data (${aggregationType}) has been exported to CSV`,
     });
   };
   
@@ -202,7 +287,7 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
           <div>
             <h3 className="text-xl font-semibold">Forecast</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              {actualDays}-day history + {forecastPeriod}-day forecast
+              {actualDays}-day history + {forecastPeriod}-day forecast ({aggregationType})
             </p>
           </div>
           
@@ -250,10 +335,25 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
         
         <div className="w-full h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart
+            <AreaChart
               data={forecastData}
               margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
             >
+              <defs>
+                {metrics.map((metric) => (
+                  <React.Fragment key={`gradient-${metric.id}`}>
+                    <linearGradient id={`color${metric.id}Actual`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={metric.color} stopOpacity={0.8} />
+                      <stop offset="95%" stopColor={metric.color} stopOpacity={0.1} />
+                    </linearGradient>
+                    <linearGradient id={`color${metric.id}Forecast`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={metric.color} stopOpacity={0.5} />
+                      <stop offset="95%" stopColor={metric.color} stopOpacity={0.05} />
+                    </linearGradient>
+                  </React.Fragment>
+                ))}
+              </defs>
+              
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="dateFormatted" 
@@ -272,20 +372,41 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
                       <div className="bg-background border border-border p-2 rounded shadow-md">
                         <p className="font-medium">{label}</p>
                         <div className="mt-2">
-                          {payload.map((entry, index) => {
-                            if (!entry.dataKey.toString().includes("Value")) return null;
-                            
-                            const metricId = entry.dataKey.toString().replace('Value', '');
+                          {selectedMetrics.map((metricId) => {
                             const metricInfo = metrics.find(m => m.id === metricId);
+                            const metricData = payload.find(p => p.dataKey === `${metricId}Value`);
                             const isActualData = forecastData.find(d => d.dateFormatted === label)?.isActual;
-
+                            
+                            if (!metricData) return null;
+                            
                             return (
-                              <p key={`tooltip-${index}`} className="flex justify-between">
-                                <span style={{ color: entry.color }}>{metricInfo?.name}:</span> 
-                                <span className="font-mono ml-2">{entry.value} {!isActualData && ' (Forecast)'}</span>
+                              <p key={metricId} className="flex justify-between">
+                                <span style={{ color: metricInfo?.color }}>{metricInfo?.name}:</span> 
+                                <span className="font-mono ml-2">{metricData.value} {!isActualData && ' (Forecast)'}</span>
                               </p>
                             );
                           })}
+                          
+                          {!forecastData.find(d => d.dateFormatted === label)?.isActual && showConfidenceBounds && (
+                            <div className="mt-2 border-t border-border pt-2 text-xs">
+                              <p className="text-muted-foreground">Confidence bounds:</p>
+                              {selectedMetrics.map((metricId) => {
+                                const metricInfo = metrics.find(m => m.id === metricId);
+                                const item = forecastData.find(d => d.dateFormatted === label);
+                                
+                                if (!item) return null;
+                                
+                                return (
+                                  <p key={`bound-${metricId}`} className="flex justify-between">
+                                    <span style={{ color: metricInfo?.color }}>{metricInfo?.name}:</span>
+                                    <span className="font-mono ml-2">
+                                      {item[`${metricId}Lower`]} - {item[`${metricId}Upper`]}
+                                    </span>
+                                  </p>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -305,65 +426,66 @@ export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
                 />
               )}
               
-              {/* Render each selected metric with unique data */}
+              {/* Render each selected metric */}
               {selectedMetrics.map((metricId) => {
                 const metricInfo = metrics.find(m => m.id === metricId);
                 
                 return (
                   <React.Fragment key={metricId}>
+                    {/* Actual data area */}
+                    <Area
+                      type="monotone"
+                      dataKey={(data) => data.isActual ? data[`${metricId}Value`] : null}
+                      name={`${metricInfo?.name} (Actual)`}
+                      stroke={metricInfo?.color}
+                      strokeWidth={2}
+                      fill={`url(#color${metricId}Actual)`}
+                      fillOpacity={0.8}
+                      dot={{ r: 3, strokeWidth: 1 }}
+                      activeDot={{ r: 5 }}
+                      connectNulls
+                    />
+                    
+                    {/* Forecast data area */}
+                    <Area
+                      type="monotone"
+                      dataKey={(data) => !data.isActual ? data[`${metricId}Value`] : null}
+                      name={`${metricInfo?.name} (Forecast)`}
+                      stroke={metricInfo?.color}
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      fill={`url(#color${metricId}Forecast)`}
+                      fillOpacity={0.6}
+                      dot={{ r: 3, strokeWidth: 1 }}
+                      connectNulls
+                    />
+                    
                     {/* Confidence bounds for forecast only */}
                     {showConfidenceBounds && (
                       <Area
-                        dataKey={(data) => data.isActual ? null : data[`${metricId}Upper`]}
+                        type="monotone"
+                        dataKey={(data) => !data.isActual ? data[`${metricId}Upper`] : null}
                         stroke="none"
-                        fill={metricInfo?.color || "#4284f5"}
-                        fillOpacity={0.2}
-                        isAnimationActive={false}
+                        fill={metricInfo?.color}
+                        fillOpacity={0.1}
                         legendType="none"
                       />
                     )}
                     
                     {showConfidenceBounds && (
                       <Area
-                        dataKey={(data) => data.isActual ? null : data[`${metricId}Lower`]}
+                        type="monotone"
+                        dataKey={(data) => !data.isActual ? data[`${metricId}Lower`] : null}
                         stroke="none"
-                        fill={metricInfo?.color || "#4284f5"}
-                        fillOpacity={0.2}
-                        isAnimationActive={false}
+                        fill={metricInfo?.color}
+                        fillOpacity={0}
                         legendType="none"
                       />
                     )}
-                    
-                    {/* Actual line - only show for dates before forecast period */}
-                    <Line
-                      type="monotone"
-                      dataKey={(data) => data.isActual ? data[`${metricId}Value`] : null}
-                      name={`${metricInfo?.name || "Value"} (Actual)`}
-                      stroke={metricInfo?.color || "#4284f5"}
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: metricInfo?.color || "#4284f5" }}
-                      activeDot={{ r: 5 }}
-                      connectNulls
-                      isAnimationActive
-                    />
-                    
-                    {/* Forecasted line (dashed) - only show for forecast period */}
-                    <Line
-                      type="monotone"
-                      dataKey={(data) => !data.isActual ? data[`${metricId}Value`] : null}
-                      name={`${metricInfo?.name || "Value"} (Forecast)`}
-                      stroke={metricInfo?.color || "#4284f5"}
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      strokeOpacity={0.5}
-                      dot={{ r: 3 }}
-                      connectNulls
-                      isAnimationActive
-                    />
                   </React.Fragment>
                 );
               })}
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

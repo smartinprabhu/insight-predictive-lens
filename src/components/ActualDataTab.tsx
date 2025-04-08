@@ -11,7 +11,10 @@ import {
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 // Sample data - in a real app, this would come from an API
 const generateDailyData = (days = 30) => {
@@ -43,8 +46,79 @@ const generateDailyData = (days = 30) => {
   return data;
 };
 
-export const ActualDataTab = () => {
-  const actualData = generateDailyData(30);
+// Aggregate data by week or month
+const aggregateData = (data, aggregationType) => {
+  if (aggregationType === "Daily") {
+    return data;
+  }
+  
+  const aggregatedData = [];
+  const groupedData = {};
+  
+  data.forEach(item => {
+    const date = new Date(item.date);
+    let key;
+    
+    if (aggregationType === "Weekly") {
+      // Get the week number and year
+      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+      const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+      key = `${date.getFullYear()}-W${weekNum}`;
+    } else if (aggregationType === "Monthly") {
+      key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    }
+    
+    if (!groupedData[key]) {
+      groupedData[key] = {
+        count: 0,
+        ibUnits: 0,
+        inventory: 0,
+        customerReturns: 0,
+        wsfChina: 0,
+        ibExceptions: 0,
+        firstDate: date,
+      };
+    }
+    
+    groupedData[key].count += 1;
+    groupedData[key].ibUnits += item.ibUnits;
+    groupedData[key].inventory += item.inventory;
+    groupedData[key].customerReturns += item.customerReturns;
+    groupedData[key].wsfChina += item.wsfChina;
+    groupedData[key].ibExceptions += item.ibExceptions;
+  });
+  
+  Object.entries(groupedData).forEach(([key, value]) => {
+    const { count, firstDate, ...metrics } = value;
+    
+    let dateFormatted;
+    if (aggregationType === "Weekly") {
+      dateFormatted = `Week ${key.split('-W')[1]}, ${key.split('-')[0]}`;
+    } else {
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const month = parseInt(key.split('-')[1]) - 1;
+      dateFormatted = `${monthNames[month]} ${key.split('-')[0]}`;
+    }
+    
+    aggregatedData.push({
+      date: key,
+      dateFormatted,
+      ibUnits: Math.round(metrics.ibUnits / count),
+      inventory: Math.round(metrics.inventory / count),
+      customerReturns: Math.round(metrics.customerReturns / count),
+      wsfChina: Math.round(metrics.wsfChina / count),
+      ibExceptions: Math.round(metrics.ibExceptions / count),
+    });
+  });
+  
+  return aggregatedData.sort((a, b) => a.date.localeCompare(b.date));
+};
+
+export const ActualDataTab = ({ aggregationType = "Daily" }) => {
+  const rawData = generateDailyData(30);
+  const actualData = aggregateData(rawData, aggregationType);
+  
   const [selectedMetrics, setSelectedMetrics] = useState({
     ibUnits: true,
     inventory: true,
@@ -52,6 +126,8 @@ export const ActualDataTab = () => {
     wsfChina: true,
     ibExceptions: true,
   });
+  
+  const { toast } = useToast();
 
   const handleMetricToggle = (metric: keyof typeof selectedMetrics) => {
     setSelectedMetrics((prev) => ({
@@ -59,11 +135,70 @@ export const ActualDataTab = () => {
       [metric]: !prev[metric],
     }));
   };
+  
+  const exportToCSV = () => {
+    // Create CSV content
+    const headerRow = ["Date"];
+    const visibleMetrics = [];
+    
+    if (selectedMetrics.ibUnits) {
+      headerRow.push("IB Units");
+      visibleMetrics.push("ibUnits");
+    }
+    if (selectedMetrics.inventory) {
+      headerRow.push("Inventory");
+      visibleMetrics.push("inventory");
+    }
+    if (selectedMetrics.customerReturns) {
+      headerRow.push("Customer Returns");
+      visibleMetrics.push("customerReturns");
+    }
+    if (selectedMetrics.wsfChina) {
+      headerRow.push("WSF China");
+      visibleMetrics.push("wsfChina");
+    }
+    if (selectedMetrics.ibExceptions) {
+      headerRow.push("IB Exceptions");
+      visibleMetrics.push("ibExceptions");
+    }
+    
+    const csvHeader = headerRow.join(",");
+    
+    const csvRows = actualData.map(item => {
+      const row = [item.date];
+      visibleMetrics.forEach(metric => row.push(item[metric]));
+      return row.join(",");
+    });
+    
+    const csvContent = [csvHeader, ...csvRows].join("\n");
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `actual_data_${aggregationType.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    
+    // Trigger download
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Export successful",
+      description: `Actual data (${aggregationType}) has been exported to CSV`,
+    });
+  };
 
   return (
     <Card>
       <CardContent className="pt-6">
-        <h3 className="text-xl font-semibold mb-4">Actual Data</h3>
+        <div className="flex flex-row justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Actual Data</h3>
+          <Button variant="outline" size="icon" onClick={exportToCSV}>
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
         
         <div className="flex flex-wrap gap-4 mb-4">
           <div className="flex items-center space-x-2">

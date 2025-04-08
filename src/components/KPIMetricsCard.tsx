@@ -14,11 +14,11 @@ export const KPIMetricsCard = ({ title, value, subtitle, changeValue, changeText
   const isPositive = changeValue >= 0;
   
   return (
-    <Card className="p-6">
+    <Card className="p-6 dark:bg-gray-800 dark:border-gray-700">
       <div className="space-y-1.5">
         <h3 className="font-medium text-muted-foreground">{title}</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold">{value}</span>
+          <span className="text-4xl font-bold dark:text-white">{value}</span>
         </div>
         <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>

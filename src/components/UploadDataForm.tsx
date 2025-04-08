@@ -10,9 +10,10 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { MoveRightIcon, Upload } from "lucide-react";
+import { AlertCircle, MoveRightIcon, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "./ThemeToggle";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface UploadDataFormProps {
   onSubmit: () => void;
@@ -22,11 +23,24 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [modelType, setModelType] = useState("Prophet");
   const [forecastPeriod, setForecastPeriod] = useState(30);
+  const [aggregationType, setAggregationType] = useState("Daily");
+  const [fileError, setFileError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
+    
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      
+      // Check if the file is Book3.xlsx
+      if (selectedFile.name !== "Book3.xlsx") {
+        setFileError("Only Book3.xlsx file is allowed for this demo.");
+        setFile(null);
+        return;
+      }
+      
+      setFile(selectedFile);
     }
   };
 
@@ -87,17 +101,28 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Excel File
+                Excel File (Only Book3.xlsx is accepted for demo)
               </label>
               <Input
                 type="file"
-                accept=".xlsx,.xls,.csv"
+                accept=".xlsx"
                 onChange={handleFileChange}
                 className="cursor-pointer dark:bg-gray-700 dark:border-gray-600"
               />
+              
+              {fileError && (
+                <Alert variant="destructive" className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{fileError}</AlertDescription>
+                </Alert>
+              )}
+              
+              <p className="text-xs text-muted-foreground mt-2">
+                Note: For demonstration purposes, only Book3.xlsx is accepted. Use sample data otherwise.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Model Type
@@ -127,9 +152,28 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
                   value={forecastPeriod}
                   onChange={(e) => setForecastPeriod(Number(e.target.value))}
                   min={1}
-                  max={365}
+                  max={500}
                   className="dark:bg-gray-700 dark:border-gray-600"
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Aggregation Type
+                </label>
+                <Select
+                  value={aggregationType}
+                  onValueChange={setAggregationType}
+                >
+                  <SelectTrigger className="w-full dark:bg-gray-700 dark:border-gray-600">
+                    <SelectValue placeholder="Select aggregation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Daily">Daily</SelectItem>
+                    <SelectItem value="Weekly">Weekly</SelectItem>
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -146,6 +190,7 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
               <Button 
                 type="submit" 
                 className="bg-blue-600 hover:bg-blue-700"
+                disabled={file ? false : false} // We allow form submission with sample data
               >
                 Generate Dashboard
                 <MoveRightIcon className="ml-2 h-4 w-4" />

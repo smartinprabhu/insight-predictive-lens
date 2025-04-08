@@ -38,15 +38,15 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "actualData":
-        return <ActualDataTab />;
+        return <ActualDataTab aggregationType={aggregationType} />;
       case "forecast":
-        return <ForecastTab forecastPeriod={forecastPeriod} />;
+        return <ForecastTab forecastPeriod={forecastPeriod} aggregationType={aggregationType} />;
       case "modelValidation":
-        return <ModelValidationTab />;
+        return <ModelValidationTab aggregationType={aggregationType} />;
       case "insights":
         return <InsightsTab />;
       default:
-        return <ActualDataTab />;
+        return <ActualDataTab aggregationType={aggregationType} />;
     }
   };
 

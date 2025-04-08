@@ -1,17 +1,15 @@
 
 import React, { useState } from "react";
 import {
+  ComposedChart,
   Line,
-  LineChart,
+  Area,
   CartesianGrid,
   Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-  Area,
-  AreaChart,
-  ComposedChart
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -24,14 +22,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent
-} from "@/components/ui/chart";
 
 // Sample data - in a real app, this would come from an API
-const generateValidationData = (days = 30) => {
+const generateValidationData = (days = 30, aggregationType = "Daily") => {
   const data = [];
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -51,7 +44,10 @@ const generateValidationData = (days = 30) => {
     
     data.push({
       date: currentDate.toISOString().split('T')[0],
-      dateFormatted: `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`,
+      dateFormatted: 
+        aggregationType === "Daily" 
+          ? `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`
+          : `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`,
       actual: actualValue,
       predicted: predictedValue,
       lowerBound: confidenceLower,
@@ -59,7 +55,74 @@ const generateValidationData = (days = 30) => {
     });
   }
 
+  // Aggregate data if not daily
+  if (aggregationType !== "Daily") {
+    return aggregateValidationData(data, aggregationType);
+  }
+
   return data;
+};
+
+// Aggregate validation data
+const aggregateValidationData = (data, aggregationType) => {
+  const groupedData = {};
+  
+  data.forEach(item => {
+    const date = new Date(item.date);
+    let key;
+    
+    if (aggregationType === "Weekly") {
+      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+      const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+      key = `${date.getFullYear()}-W${weekNum}`;
+    } else if (aggregationType === "Monthly") {
+      key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    }
+    
+    if (!groupedData[key]) {
+      groupedData[key] = {
+        count: 0,
+        actual: 0,
+        predicted: 0,
+        lowerBoundSum: 0,
+        upperBoundSum: 0,
+        firstDate: date,
+      };
+    }
+    
+    groupedData[key].count += 1;
+    groupedData[key].actual += item.actual;
+    groupedData[key].predicted += item.predicted;
+    groupedData[key].lowerBoundSum += item.lowerBound;
+    groupedData[key].upperBoundSum += item.upperBound;
+  });
+  
+  const aggregatedData = [];
+  
+  Object.entries(groupedData).forEach(([key, value]) => {
+    const { count, firstDate } = value;
+    
+    let dateFormatted;
+    if (aggregationType === "Weekly") {
+      dateFormatted = `Week ${key.split('-W')[1]}, ${key.split('-')[0]}`;
+    } else {
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const month = parseInt(key.split('-')[1]) - 1;
+      dateFormatted = `${monthNames[month]} ${key.split('-')[0]}`;
+    }
+    
+    aggregatedData.push({
+      date: key,
+      dateFormatted,
+      actual: Math.round(value.actual / count),
+      predicted: Math.round(value.predicted / count),
+      lowerBound: Math.round(value.lowerBoundSum / count),
+      upperBound: Math.round(value.upperBoundSum / count),
+    });
+  });
+  
+  return aggregatedData.sort((a, b) => a.date.localeCompare(b.date));
 };
 
 // Generate metrics for each category
@@ -88,9 +151,9 @@ const generateMetricsForCategories = () => {
 
 const { categories, metrics } = generateMetricsForCategories();
 
-export const ModelValidationTab = () => {
+export const ModelValidationTab = ({ aggregationType = "Daily" }) => {
   const [selectedCategory, setSelectedCategory] = useState(categories[0].id);
-  const validationData = generateValidationData(30);
+  const validationData = generateValidationData(30, aggregationType);
   const { toast } = useToast();
   
   const selectedCategoryInfo = categories.find(c => c.id === selectedCategory);
@@ -112,7 +175,7 @@ export const ModelValidationTab = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `${selectedCategoryInfo?.name}-validation-data.csv`);
+    link.setAttribute('download', `${selectedCategoryInfo?.name}-validation-data-${aggregationType.toLowerCase()}.csv`);
     document.body.appendChild(link);
     
     // Trigger download
@@ -162,90 +225,100 @@ export const ModelValidationTab = () => {
         </div>
         
         <div className="w-full h-[400px]">
-          <ComposedChart
-            data={validationData}
-            margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis 
-              dataKey="dateFormatted" 
-              tick={{ fontSize: 12 }} 
-              tickLine={false}
-            />
-            <YAxis 
-              tick={{ fontSize: 12 }} 
-              tickLine={false}
-              axisLine={false}
-            />
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="bg-background border border-border p-2 rounded shadow-md">
-                      <p className="font-medium">{label}</p>
-                      <div className="mt-2">
-                        {payload
-                          .filter((entry) => entry.dataKey !== "lowerBound" && entry.dataKey !== "upperBound")
-                          .map((entry, index) => (
-                            <p key={`tooltip-${index}`} className="flex justify-between">
-                              <span style={{ color: entry.color }}>{entry.name}:</span>
-                              <span className="font-mono ml-2">{entry.value}</span>
-                            </p>
-                          ))}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Confidence: {payload.find((p) => p.dataKey === "lowerBound")?.value} - {payload.find((p) => p.dataKey === "upperBound")?.value}
-                        </p>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={validationData}
+              margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient id="confidenceGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={selectedCategoryInfo?.color || "#4284f5"} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={selectedCategoryInfo?.color || "#4284f5"} stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+            
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="dateFormatted" 
+                tick={{ fontSize: 12 }} 
+                tickLine={false}
+              />
+              <YAxis 
+                tick={{ fontSize: 12 }} 
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-background border border-border p-2 rounded shadow-md">
+                        <p className="font-medium">{label}</p>
+                        <div className="mt-2">
+                          {payload
+                            .filter((entry) => entry.dataKey !== "lowerBound" && entry.dataKey !== "upperBound")
+                            .map((entry, index) => (
+                              <p key={`tooltip-${index}`} className="flex justify-between">
+                                <span style={{ color: entry.color }}>{entry.name}:</span>
+                                <span className="font-mono ml-2">{entry.value}</span>
+                              </p>
+                            ))}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Confidence: {payload.find((p) => p.dataKey === "lowerBound")?.value} - {payload.find((p) => p.dataKey === "upperBound")?.value}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Legend />
-            
-            {/* Confidence Bounds as shaded area */}
-            <Area
-              type="monotone"
-              dataKey="upperBound"
-              stroke="transparent"
-              fill={selectedCategoryInfo?.color || "#4284f5"}
-              fillOpacity={0.2}
-              name="Confidence Interval"
-            />
-            <Area
-              type="monotone"
-              dataKey="lowerBound"
-              stroke="transparent"
-              fill={selectedCategoryInfo?.color || "#4284f5"}
-              fillOpacity={0}
-              name="Confidence Interval"
-              style={{ visibility: "hidden" }}
-              legendType="none"
-            />
-            
-            {/* Actual line */}
-            <Line
-              type="monotone"
-              dataKey="actual"
-              name="Actual Values"
-              stroke={selectedCategoryInfo?.color || "#4284f5"}
-              strokeWidth={2}
-              dot={{ r: 3, fill: selectedCategoryInfo?.color || "#4284f5" }}
-              activeDot={{ r: 5 }}
-            />
-            
-            {/* Predicted line */}
-            <Line
-              type="monotone"
-              dataKey="predicted"
-              name="Predicted Values"
-              stroke={selectedCategoryInfo?.color || "#4284f5"}
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={{ r: 3 }}
-            />
-          </ComposedChart>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Legend />
+              
+              {/* Confidence Bounds as shaded area */}
+              <Area
+                type="monotone"
+                dataKey="upperBound"
+                stroke="none"
+                fill="url(#confidenceGradient)"
+                fillOpacity={1}
+                name="Confidence Interval"
+                legendType="none"
+              />
+              
+              <Area
+                type="monotone"
+                dataKey="lowerBound"
+                stroke="none"
+                fill={selectedCategoryInfo?.color || "#4284f5"}
+                fillOpacity={0}
+                name="Lower Bound"
+                legendType="none"
+              />
+              
+              {/* Actual line */}
+              <Line
+                type="monotone"
+                dataKey="actual"
+                name="Actual Values"
+                stroke={selectedCategoryInfo?.color || "#4284f5"}
+                strokeWidth={2}
+                dot={{ r: 3, fill: selectedCategoryInfo?.color || "#4284f5" }}
+                activeDot={{ r: 5 }}
+              />
+              
+              {/* Predicted line */}
+              <Line
+                type="monotone"
+                dataKey="predicted"
+                name="Predicted Values"
+                stroke={selectedCategoryInfo?.color || "#4284f5"}
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ r: 3 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
