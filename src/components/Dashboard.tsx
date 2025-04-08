@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Settings } from "lucide-react";
 import { DashboardHeader } from "./DashboardHeader";
 import { ModelConfiguration } from "./ModelConfiguration";
 import { TabNavigation } from "./TabNavigation";
@@ -9,6 +10,12 @@ import { ModelValidationTab } from "./ModelValidationTab";
 import { InsightsTab } from "./InsightsTab";
 import { useToast } from "@/hooks/use-toast";
 import { KPIMetricsCard } from "./KPIMetricsCard";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 interface DashboardProps {
   onReset: () => void;
@@ -73,7 +80,7 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
       
       {/* KPI Metrics with common time period */}
       <div className="mb-2 flex justify-between items-center px-1">
-        <h2 className="text-lg font-medium text-foreground">Key Performance Indicators</h2>
+        <h2 className="text-lg font-medium text-foreground">Business Performance Metrics</h2>
         <div className="text-sm text-muted-foreground bg-background/80 dark:bg-gray-800/80 px-3 py-1 rounded-md shadow-sm border border-border/30">
           <span>{kpiTimePeriod}</span>
         </div>
@@ -87,18 +94,32 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
             subtitle={kpi.subtitle}
             changeValue={kpi.changeValue}
             changeText={kpi.changeText}
+            timePeriod={kpiTimePeriod}
           />
         ))}
       </div>
       
-      <ModelConfiguration
-        modelType={modelType}
-        forecastPeriod={forecastPeriod}
-        aggregationType={aggregationType}
-        onModelTypeChange={setModelType}
-        onForecastPeriodChange={setForecastPeriod}
-        onAggregationTypeChange={setAggregationType}
-      />
+      {/* Model Configuration now in a Popover */}
+      <div className="flex justify-end mb-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              <span>Model Settings</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-96 p-0">
+            <ModelConfiguration
+              modelType={modelType}
+              forecastPeriod={forecastPeriod}
+              aggregationType={aggregationType}
+              onModelTypeChange={setModelType}
+              onForecastPeriodChange={setForecastPeriod}
+              onAggregationTypeChange={setAggregationType}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
       
       <div className="bg-white/95 backdrop-blur-sm dark:bg-gray-800/90 rounded-lg shadow-lg border border-border/20 dark:border-gray-700/50">
         <TabNavigation

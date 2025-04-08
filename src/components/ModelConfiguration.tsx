@@ -26,11 +26,11 @@ export const ModelConfiguration = ({
   onAggregationTypeChange,
 }: ModelConfigurationProps) => {
   return (
-    <div className="w-full bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
-      <h2 className="text-xl font-semibold mb-4">Model Configuration</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="w-full bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+      <h2 className="text-lg font-semibold mb-4">Model Configuration</h2>
+      <div className="grid grid-cols-1 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Model Type
           </label>
           <Select
@@ -50,7 +50,7 @@ export const ModelConfiguration = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Forecast Period (days)
           </label>
           <Input
@@ -59,11 +59,12 @@ export const ModelConfiguration = ({
             onChange={(e) => onForecastPeriodChange(parseInt(e.target.value))}
             min={1}
             max={365}
+            className="dark:bg-gray-700 dark:border-gray-600"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Aggregation Type
           </label>
           <Select

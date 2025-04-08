@@ -8,7 +8,7 @@ interface KPIMetricProps {
   subtitle: string;
   changeValue: number;
   changeText: string;
-  timePeriod?: string; // Time period is now passed from parent
+  timePeriod?: string; // Time period is passed from parent
 }
 
 export const KPIMetricsCard = ({ 

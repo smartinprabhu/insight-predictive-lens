@@ -9,7 +9,8 @@ import {
   Tooltip, 
   Legend, 
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  Area
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +27,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 interface ModelValidationTabProps {
   aggregationType: string;
@@ -60,6 +66,11 @@ const generateValidationData = (metricId = "ibUnits", days = 30) => {
     // Predicted is close to actual but with some error
     const errorPercent = Math.random() * 0.2 - 0.1; // -10% to +10% error
     const predictedValue = Math.round(actualValue * (1 + errorPercent));
+    
+    // Generate confidence bounds (95% confidence interval)
+    const confidenceFactor = Math.max(5, config.errorFactor / 2);
+    const lowerBound = Math.round(predictedValue - (predictedValue * 0.05) - confidenceFactor);
+    const upperBound = Math.round(predictedValue + (predictedValue * 0.05) + confidenceFactor);
 
     data.push({
       date: currentDate.toISOString().split('T')[0],
@@ -67,7 +78,9 @@ const generateValidationData = (metricId = "ibUnits", days = 30) => {
       actual: actualValue,
       predicted: predictedValue,
       error: actualValue - predictedValue,
-      errorPercent: Math.round((actualValue - predictedValue) / actualValue * 100)
+      errorPercent: Math.round((actualValue - predictedValue) / actualValue * 100),
+      lowerBound,
+      upperBound
     });
   }
 
@@ -103,6 +116,8 @@ const aggregateValidationData = (data, aggregationType) => {
         predictedSum: 0,
         errorSum: 0,
         errorPercentSum: 0,
+        lowerBoundSum: 0,
+        upperBoundSum: 0,
         firstDate: date
       };
     }
@@ -113,11 +128,14 @@ const aggregateValidationData = (data, aggregationType) => {
     group.predictedSum += item.predicted;
     group.errorSum += item.error;
     group.errorPercentSum += item.errorPercent;
+    group.lowerBoundSum += item.lowerBound;
+    group.upperBoundSum += item.upperBound;
   });
 
+  // Convert grouped data to array and calculate averages
   Object.entries(groupedData).forEach(([key, value]) => {
-    const entry = value as any; // Type assertion for TypeScript
-    const { count, actualSum, predictedSum, errorSum, errorPercentSum, firstDate } = entry;
+    const group = value as any;
+    const { count, actualSum, predictedSum, errorSum, errorPercentSum, lowerBoundSum, upperBoundSum, firstDate } = group;
 
     let dateFormatted;
     if (aggregationType === "Weekly") {
@@ -134,7 +152,9 @@ const aggregateValidationData = (data, aggregationType) => {
       actual: Math.round(actualSum / count),
       predicted: Math.round(predictedSum / count),
       error: Math.round(errorSum / count),
-      errorPercent: Math.round(errorPercentSum / count)
+      errorPercent: Math.round(errorPercentSum / count),
+      lowerBound: Math.round(lowerBoundSum / count),
+      upperBound: Math.round(upperBoundSum / count)
     });
   });
 
@@ -194,11 +214,11 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
 
   const exportToCSV = () => {
     // Create CSV content
-    const headers = ["Date", "Actual", "Predicted", "Error", "Error Percent"];
+    const headers = ["Date", "Actual", "Predicted", "Lower Bound", "Upper Bound", "Error", "Error Percent"];
     const csvContent = [
       headers.join(","),
       ...validationData.map(row => 
-        [row.date, row.actual, row.predicted, row.error, row.errorPercent].join(",")
+        [row.date, row.actual, row.predicted, row.lowerBound, row.upperBound, row.error, row.errorPercent].join(",")
       )
     ].join("\n");
 
@@ -269,9 +289,9 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
         </div>
 
         <div className="grid gap-6 lg:grid-cols-4">
-          <Card className="lg:col-span-3 shadow-md">
+          <Card className="lg:col-span-3 shadow-md dark:border-gray-700">
             <CardContent className="p-6">
-              <div className="h-[400px] bg-gradient-to-b from-card/40 to-background/10 p-4 rounded-lg border border-border/10">
+              <div className="h-[400px] bg-gradient-to-b from-card/40 to-background/10 dark:from-gray-800/40 dark:to-gray-900/40 p-4 rounded-lg border border-border/10 dark:border-gray-700/30">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={validationData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -282,12 +302,14 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
                         if (active && payload && payload.length) {
                           const actual = payload[0]?.value;
                           const predicted = payload[1]?.value;
+                          const lowerBound = payload[2]?.value;
+                          const upperBound = payload[3]?.value;
                           const error = Math.abs(actual - predicted);
                           const errorPercent = Math.round((error / actual) * 100);
 
                           return (
-                            <div className="bg-popover border border-border rounded-lg p-3 shadow-xl">
-                              <div className="font-medium pb-2 border-b border-border/50 mb-2">{label}</div>
+                            <div className="bg-popover border border-border rounded-lg p-3 shadow-xl dark:bg-gray-800 dark:border-gray-700">
+                              <div className="font-medium pb-2 border-b border-border/50 dark:border-gray-700/80 mb-2">{label}</div>
                               <div className="space-y-1.5">
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-2">
@@ -303,7 +325,13 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
                                   </div>
                                   <span className="text-sm font-mono">{predicted}</span>
                                 </div>
-                                <div className="flex justify-between items-center pt-1 border-t border-border/30 text-muted-foreground">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs">Confidence Bounds</span>
+                                  </div>
+                                  <span className="text-xs font-mono">{lowerBound} - {upperBound}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-1 border-t border-border/30 dark:border-gray-700/50 text-muted-foreground">
                                   <span className="text-xs">Absolute Error</span>
                                   <span className="text-xs font-mono">{error} ({errorPercent}%)</span>
                                 </div>
@@ -315,6 +343,22 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
                       }}
                     />
                     <Legend />
+                    <Area 
+                      type="monotone" 
+                      dataKey="lowerBound"
+                      stackId="1"
+                      stroke="none"
+                      fill={`${selectedMetricInfo?.color}20`}
+                      name="Lower Bound" 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="upperBound"
+                      stackId="1"
+                      stroke="none"
+                      fill={`${selectedMetricInfo?.color}20`}
+                      name="Upper Bound"
+                    />
                     <Line 
                       type="monotone" 
                       dataKey="actual" 
@@ -345,7 +389,7 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
             </CardContent>
           </Card>
 
-          <Card className="shadow-md">
+          <Card className="shadow-md dark:border-gray-700">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
                 Error Metrics
@@ -367,43 +411,64 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">MAPE</TableCell>
-                    <TableCell className="text-right">{errorMetrics.mape}%</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">RMSE</TableCell>
-                    <TableCell className="text-right">{errorMetrics.rmse}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">MAE</TableCell>
-                    <TableCell className="text-right">{errorMetrics.mae}</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <div className="space-y-3 mb-4">
+                <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
+                  <div className="flex justify-between">
+                    <div className="font-medium">MAPE</div>
+                    <div className={`font-mono ${parseFloat(errorMetrics.mape) < 10 ? 'text-green-500' : 'text-amber-500'}`}>
+                      {errorMetrics.mape}%
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Mean Absolute Percentage Error
+                  </div>
+                  <div className="w-full bg-gray-200 h-1 mt-2 rounded-full dark:bg-gray-700">
+                    <div className={`h-1 rounded-full ${parseFloat(errorMetrics.mape) < 10 ? 'bg-green-500' : 'bg-amber-500'}`} 
+                        style={{ width: `${Math.min(parseFloat(errorMetrics.mape) * 2, 100)}%` }}></div>
+                  </div>
+                </div>
 
-              <Collapsible className="mt-4">
+                <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
+                  <div className="flex justify-between">
+                    <div className="font-medium">RMSE</div>
+                    <div className="font-mono">{errorMetrics.rmse}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Root Mean Square Error
+                  </div>
+                </div>
+
+                <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
+                  <div className="flex justify-between">
+                    <div className="font-medium">MAE</div>
+                    <div className="font-mono">{errorMetrics.mae}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Mean Absolute Error
+                  </div>
+                </div>
+              </div>
+
+              <Collapsible>
                 <CollapsibleTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full text-xs justify-center">
                     {showMetricsInfo ? "Hide" : "Show"} metrics explanations
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2 space-y-2">
-                  <div className="text-xs p-2 bg-muted rounded-md">
+                  <div className="text-xs p-2 bg-muted rounded-md dark:bg-gray-700/30">
                     <p className="font-medium mb-1">MAPE (Mean Absolute Percentage Error)</p>
-                    <p className="text-muted-foreground">Measures prediction accuracy as percentage. Lower is better.</p>
+                    <p className="text-muted-foreground">Average percentage difference between predicted and actual values. Values under 10% indicate good accuracy.</p>
                   </div>
                   
-                  <div className="text-xs p-2 bg-muted rounded-md">
+                  <div className="text-xs p-2 bg-muted rounded-md dark:bg-gray-700/30">
                     <p className="font-medium mb-1">RMSE (Root Mean Square Error)</p>
-                    <p className="text-muted-foreground">Measures prediction error magnitude, penalizing large errors.</p>
+                    <p className="text-muted-foreground">Measures error magnitude, giving higher weight to large errors. Lower values indicate better predictions.</p>
                   </div>
                   
-                  <div className="text-xs p-2 bg-muted rounded-md">
+                  <div className="text-xs p-2 bg-muted rounded-md dark:bg-gray-700/30">
                     <p className="font-medium mb-1">MAE (Mean Absolute Error)</p>
-                    <p className="text-muted-foreground">Average absolute difference between predicted and actual values.</p>
+                    <p className="text-muted-foreground">Average absolute difference between predictions and actuals. Easier to interpret than RMSE, in the same units as the data.</p>
                   </div>
                 </CollapsibleContent>
               </Collapsible>
