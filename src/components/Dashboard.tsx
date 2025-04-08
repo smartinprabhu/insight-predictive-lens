@@ -50,12 +50,16 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
     }
   };
 
+  // Current date for KPI reporting
+  const currentDate = new Date();
+  const kpiTimePeriod = `${currentDate.toLocaleString('default', { month: 'long' })} ${currentDate.getFullYear()}`;
+
   const kpiData = [
-    { title: "IB Units", value: 648, subtitle: "Total cases for IB units", changeValue: 12.5, changeText: "from previous period" },
-    { title: "Inventory", value: 532, subtitle: "Total cases for Inventory", changeValue: 4.2, changeText: "from previous period" },
-    { title: "Customer Returns", value: 285, subtitle: "Total cases for Customer returns", changeValue: 7.8, changeText: "from previous period" },
-    { title: "WSF China", value: 423, subtitle: "Total cases for WSF China", changeValue: 3.1, changeText: "from previous period" },
-    { title: "IB Exceptions", value: 156, subtitle: "Total cases for IB Exceptions", changeValue: -2.5, changeText: "from previous period" },
+    { title: "IB Units", value: 648, subtitle: "Total cases for IB units", changeValue: 12.5, changeText: "from previous period", timePeriod: kpiTimePeriod },
+    { title: "Inventory", value: 532, subtitle: "Total cases for Inventory", changeValue: 4.2, changeText: "from previous period", timePeriod: kpiTimePeriod },
+    { title: "Customer Returns", value: 285, subtitle: "Total cases for Customer returns", changeValue: 7.8, changeText: "from previous period", timePeriod: kpiTimePeriod },
+    { title: "WSF China", value: 423, subtitle: "Total cases for WSF China", changeValue: 3.1, changeText: "from previous period", timePeriod: kpiTimePeriod },
+    { title: "IB Exceptions", value: 156, subtitle: "Total cases for IB Exceptions", changeValue: -2.5, changeText: "from previous period", timePeriod: kpiTimePeriod },
   ];
 
   return (
@@ -76,6 +80,7 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
             subtitle={kpi.subtitle}
             changeValue={kpi.changeValue}
             changeText={kpi.changeText}
+            timePeriod={kpi.timePeriod}
           />
         ))}
       </div>

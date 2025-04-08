@@ -24,17 +24,28 @@ import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Sample data - in a real app, this would come from an API
-const generateValidationData = (days = 30, aggregationType = "Daily") => {
+const generateValidationData = (days = 30, aggregationType = "Daily", metricId = "ibUnits") => {
   const data = [];
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
+
+  // Different base values and multipliers for each metric
+  const metricConfig: Record<string, { base: number, multiplier: number, randFactor: number }> = {
+    ibUnits: { base: 120, multiplier: 30, randFactor: 20 },
+    inventory: { base: 250, multiplier: 45, randFactor: 25 },
+    customerReturns: { base: 80, multiplier: 15, randFactor: 10 },
+    wsfChina: { base: 180, multiplier: 40, randFactor: 30 },
+    ibExceptions: { base: 60, multiplier: 10, randFactor: 5 },
+  };
+
+  const config = metricConfig[metricId] || metricConfig.ibUnits;
 
   for (let i = 0; i < days; i++) {
     const currentDate = new Date(startDate);
     currentDate.setDate(startDate.getDate() + i);
     
-    const baseValue = 140 + Math.sin(i / 5) * 40;
-    const actualValue = Math.round(baseValue + Math.random() * 15);
+    const baseValue = config.base + Math.sin(i / 5) * config.multiplier;
+    const actualValue = Math.round(baseValue + Math.random() * config.randFactor);
     const predictedValue = Math.round(actualValue + (Math.random() * 20 - 10));
     
     // Add confidence bounds with more clear separation
@@ -64,20 +75,29 @@ const generateValidationData = (days = 30, aggregationType = "Daily") => {
 };
 
 // Aggregate validation data
-const aggregateValidationData = (data, aggregationType) => {
-  const groupedData = {};
+const aggregateValidationData = (data: any[], aggregationType: string) => {
+  const groupedData: Record<string, { 
+    count: number;
+    actual: number;
+    predicted: number;
+    lowerBoundSum: number;
+    upperBoundSum: number;
+    firstDate: Date;
+  }> = {};
   
   data.forEach(item => {
     const date = new Date(item.date);
-    let key;
+    let key: string;
     
     if (aggregationType === "Weekly") {
       const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+      const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
       const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
       key = `${date.getFullYear()}-W${weekNum}`;
     } else if (aggregationType === "Monthly") {
       key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    } else {
+      key = item.date; // Default to daily
     }
     
     if (!groupedData[key]) {
@@ -135,7 +155,7 @@ const generateMetricsForCategories = () => {
     { id: "ibExceptions", name: "IB Exceptions", color: "#f56565" },
   ];
   
-  const result = {};
+  const result: Record<string, { mae: string, rmse: string, mape: string, r2: string }> = {};
   
   categories.forEach(category => {
     result[category.id] = {
@@ -153,8 +173,10 @@ const { categories, metrics } = generateMetricsForCategories();
 
 export const ModelValidationTab = ({ aggregationType = "Daily" }) => {
   const [selectedCategory, setSelectedCategory] = useState(categories[0].id);
-  const validationData = generateValidationData(30, aggregationType);
   const { toast } = useToast();
+  
+  // Generate data specifically for the selected category
+  const validationData = generateValidationData(30, aggregationType, selectedCategory);
   
   const selectedCategoryInfo = categories.find(c => c.id === selectedCategory);
   const selectedMetrics = metrics[selectedCategory];
@@ -194,7 +216,7 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }) => {
         <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
           <div>
             <h3 className="text-xl font-semibold">Model Validation</h3>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Actual vs Predicted values with confidence bounds
             </p>
           </div>
@@ -264,7 +286,10 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }) => {
                               </p>
                             ))}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Confidence: {payload.find((p) => p.dataKey === "lowerBound")?.value} - {payload.find((p) => p.dataKey === "upperBound")?.value}
+                            <span>Confidence bounds: </span>
+                            <span className="font-mono">
+                              {payload.find((p) => p.dataKey === "lowerBound")?.value} - {payload.find((p) => p.dataKey === "upperBound")?.value}
+                            </span>
                           </p>
                         </div>
                       </div>

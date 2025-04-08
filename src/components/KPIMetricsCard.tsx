@@ -8,9 +8,17 @@ interface KPIMetricProps {
   subtitle: string;
   changeValue: number;
   changeText: string;
+  timePeriod?: string; // New prop for time period
 }
 
-export const KPIMetricsCard = ({ title, value, subtitle, changeValue, changeText }: KPIMetricProps) => {
+export const KPIMetricsCard = ({ 
+  title, 
+  value, 
+  subtitle, 
+  changeValue, 
+  changeText,
+  timePeriod = "April 2025" // Default time period
+}: KPIMetricProps) => {
   const isPositive = changeValue >= 0;
   
   return (
@@ -22,15 +30,18 @@ export const KPIMetricsCard = ({ title, value, subtitle, changeValue, changeText
         </div>
         <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>
-      <div className="mt-4 flex items-center gap-1">
-        {isPositive ? (
-          <TrendingUp className="h-4 w-4 text-green-500" />
-        ) : (
-          <TrendingDown className="h-4 w-4 text-red-500" />
-        )}
-        <span className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-          {isPositive ? '+' : ''}{changeValue}% {changeText}
-        </span>
+      <div className="mt-4 flex flex-col space-y-1">
+        <div className="flex items-center gap-1">
+          {isPositive ? (
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          ) : (
+            <TrendingDown className="h-4 w-4 text-red-500" />
+          )}
+          <span className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+            {isPositive ? '+' : ''}{changeValue}% {changeText}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">{timePeriod}</p>
       </div>
     </Card>
   );
