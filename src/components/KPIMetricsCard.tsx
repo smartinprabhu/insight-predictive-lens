@@ -8,7 +8,7 @@ interface KPIMetricProps {
   subtitle: string;
   changeValue: number;
   changeText: string;
-  timePeriod?: string; // New prop for time period
+  timePeriod?: string; // Time period is now passed from parent
 }
 
 export const KPIMetricsCard = ({ 
@@ -17,12 +17,12 @@ export const KPIMetricsCard = ({
   subtitle, 
   changeValue, 
   changeText,
-  timePeriod = "April 2025" // Default time period
+  timePeriod = "Current Period" // Default if not provided
 }: KPIMetricProps) => {
   const isPositive = changeValue >= 0;
   
   return (
-    <Card className="p-6 dark:bg-gray-800 dark:border-gray-700">
+    <Card className="p-6 shadow-md border border-border/40 hover:border-border/80 transition-all duration-200 dark:bg-gray-800/90 dark:border-gray-700">
       <div className="space-y-1.5">
         <h3 className="font-medium text-muted-foreground">{title}</h3>
         <div className="flex items-baseline gap-2">

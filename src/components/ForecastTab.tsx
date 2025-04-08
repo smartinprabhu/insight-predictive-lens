@@ -5,8 +5,6 @@ import {
   AreaChart,
   CartesianGrid,
   Legend,
-  Line,
-  LineChart,
   ResponsiveContainer,
   ReferenceArea,
   Tooltip,
@@ -31,13 +29,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Download } from "lucide-react";
+import { ChevronDown, Download, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent
 } from "@/components/ui/chart";
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ForecastTabProps {
   forecastPeriod: number;
@@ -96,7 +100,7 @@ const generateForecastData = (actualDays = 30, forecastDays = 30, metricId = "ib
   return data;
 };
 
-// Aggregate forecast data by week or month
+// Fixed aggregation function for forecast data
 const aggregateForecastData = (data, aggregationType) => {
   if (aggregationType === "Daily") {
     return data;
@@ -112,7 +116,7 @@ const aggregateForecastData = (data, aggregationType) => {
     if (aggregationType === "Weekly") {
       // Get the week number and year
       const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+      const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
       const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
       key = `${date.getFullYear()}-W${weekNum}`;
     } else if (aggregationType === "Monthly") {
@@ -144,7 +148,8 @@ const aggregateForecastData = (data, aggregationType) => {
   });
   
   Object.entries(groupedData).forEach(([key, value]) => {
-    const { count, isActualCount, firstDate, upperBoundSum, lowerBoundSum } = value;
+    const entry = value as any; // Type assertion to avoid TS errors
+    const { count, isActualCount, firstDate, upperBoundSum, lowerBoundSum } = entry;
     
     let dateFormatted;
     if (aggregationType === "Weekly") {
@@ -162,7 +167,7 @@ const aggregateForecastData = (data, aggregationType) => {
     aggregatedData.push({
       date: key,
       dateFormatted,
-      value: Math.round(value.value / count),
+      value: Math.round(entry.value / count),
       upperBound: upperBoundSum > 0 ? Math.round(upperBoundSum / (count - isActualCount || 1)) : null,
       lowerBound: lowerBoundSum > 0 ? Math.round(lowerBoundSum / (count - isActualCount || 1)) : null,
       isActual,
@@ -281,214 +286,248 @@ export const ForecastTab = ({ forecastPeriod = 30, aggregationType = "Daily" }: 
   const forecastStartDateObj = forecastData.find(d => !d.isActual);
   
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
-          <div>
-            <h3 className="text-xl font-semibold">Forecast</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {actualDays}-day history + {forecastPeriod}-day forecast ({aggregationType})
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-[200px] justify-between">
-                  {selectedMetrics.length === 1 
-                    ? metrics.find(m => m.id === selectedMetrics[0])?.name 
-                    : `${selectedMetrics.length} metrics selected`}
-                  <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[200px]">
-                <DropdownMenuLabel>Select Metrics</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {metrics.map((metric) => (
-                  <DropdownMenuCheckboxItem
-                    key={metric.id}
-                    checked={selectedMetrics.includes(metric.id)}
-                    onCheckedChange={() => handleMetricToggle(metric.id)}
-                  >
-                    {metric.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="confidenceBounds" 
-                checked={showConfidenceBounds} 
-                onCheckedChange={() => setShowConfidenceBounds(!showConfidenceBounds)} 
-              />
-              <label htmlFor="confidenceBounds" className="text-sm font-medium">
-                Show confidence bounds
-              </label>
+    <TooltipProvider>
+      <Card className="shadow-md">
+        <CardContent className="pt-6">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-semibold">Forecast</h3>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <HelpCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="w-80 p-4">
+                    <p className="font-medium mb-1">About this chart</p>
+                    <p className="text-sm text-muted-foreground">
+                      This chart shows actual historical data (solid lines) and forecasted future trends (dashed lines) 
+                      with confidence bounds. The forecast is based on historical patterns and calculated using 
+                      time-series forecasting models.
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {actualDays}-day history + {forecastPeriod}-day forecast ({aggregationType})
+              </p>
             </div>
             
-            <Button variant="outline" size="icon" onClick={exportToCSV}>
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="w-full h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={forecastData}
-              margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
-            >
-              <defs>
-                {metrics.map((metric) => (
-                  <React.Fragment key={`gradient-${metric.id}`}>
-                    <linearGradient id={`color${metric.id}Actual`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={metric.color} stopOpacity={0.8} />
-                      <stop offset="95%" stopColor={metric.color} stopOpacity={0.1} />
-                    </linearGradient>
-                    <linearGradient id={`color${metric.id}Forecast`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={metric.color} stopOpacity={0.5} />
-                      <stop offset="95%" stopColor={metric.color} stopOpacity={0.05} />
-                    </linearGradient>
-                  </React.Fragment>
-                ))}
-              </defs>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-[200px] justify-between">
+                    {selectedMetrics.length === 1 
+                      ? metrics.find(m => m.id === selectedMetrics[0])?.name 
+                      : `${selectedMetrics.length} metrics selected`}
+                    <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[200px]">
+                  <DropdownMenuLabel>Select Metrics</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {metrics.map((metric) => (
+                    <DropdownMenuCheckboxItem
+                      key={metric.id}
+                      checked={selectedMetrics.includes(metric.id)}
+                      onCheckedChange={() => handleMetricToggle(metric.id)}
+                    >
+                      {metric.name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="dateFormatted" 
-                tick={{ fontSize: 12 }} 
-                tickLine={false}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }} 
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip 
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-background border border-border p-2 rounded shadow-md">
-                        <p className="font-medium">{label}</p>
-                        <div className="mt-2">
-                          {selectedMetrics.map((metricId) => {
-                            const metricInfo = metrics.find(m => m.id === metricId);
-                            const metricData = payload.find(p => p.dataKey === `${metricId}Value`);
-                            const isActualData = forecastData.find(d => d.dateFormatted === label)?.isActual;
-                            
-                            if (!metricData) return null;
-                            
-                            return (
-                              <p key={metricId} className="flex justify-between">
-                                <span style={{ color: metricInfo?.color }}>{metricInfo?.name}:</span> 
-                                <span className="font-mono ml-2">{metricData.value} {!isActualData && ' (Forecast)'}</span>
-                              </p>
-                            );
-                          })}
-                          
-                          {!forecastData.find(d => d.dateFormatted === label)?.isActual && showConfidenceBounds && (
-                            <div className="mt-2 border-t border-border pt-2 text-xs">
-                              <p className="text-muted-foreground">Confidence bounds:</p>
-                              {selectedMetrics.map((metricId) => {
-                                const metricInfo = metrics.find(m => m.id === metricId);
-                                const item = forecastData.find(d => d.dateFormatted === label);
-                                
-                                if (!item) return null;
-                                
-                                return (
-                                  <p key={`bound-${metricId}`} className="flex justify-between">
-                                    <span style={{ color: metricInfo?.color }}>{metricInfo?.name}:</span>
-                                    <span className="font-mono ml-2">
-                                      {item[`${metricId}Lower`]} - {item[`${metricId}Upper`]}
-                                    </span>
-                                  </p>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Legend />
-              
-              {/* Reference area to highlight forecasted period */}
-              {forecastStartDateObj && (
-                <ReferenceArea
-                  x1={forecastStartDateObj.dateFormatted}
-                  x2={forecastData[forecastData.length - 1].dateFormatted}
-                  fillOpacity={0.1}
-                  label={{ position: 'insideTop', value: 'Forecast Period', fill: '#666', fontSize: 12 }}
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="confidenceBounds" 
+                  checked={showConfidenceBounds} 
+                  onCheckedChange={() => setShowConfidenceBounds(!showConfidenceBounds)} 
                 />
-              )}
+                <label htmlFor="confidenceBounds" className="text-sm font-medium">
+                  Show confidence bounds
+                </label>
+              </div>
               
-              {/* Render each selected metric */}
-              {selectedMetrics.map((metricId) => {
-                const metricInfo = metrics.find(m => m.id === metricId);
+              <Button variant="outline" size="icon" onClick={exportToCSV} className="text-muted-foreground hover:text-foreground">
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="w-full h-[400px] bg-gradient-to-b from-card/40 to-background/10 p-4 rounded-lg border border-border/10">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={forecastData}
+                margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+              >
+                <defs>
+                  {metrics.map((metric) => (
+                    <React.Fragment key={`gradient-${metric.id}`}>
+                      <linearGradient id={`color${metric.id}Actual`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={metric.color} stopOpacity={0.8} />
+                        <stop offset="95%" stopColor={metric.color} stopOpacity={0.1} />
+                      </linearGradient>
+                      <linearGradient id={`color${metric.id}Forecast`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={metric.color} stopOpacity={0.5} />
+                        <stop offset="95%" stopColor={metric.color} stopOpacity={0.05} />
+                      </linearGradient>
+                    </React.Fragment>
+                  ))}
+                </defs>
                 
-                return (
-                  <React.Fragment key={metricId}>
-                    {/* Actual data area */}
-                    <Area
-                      type="monotone"
-                      dataKey={(data) => data.isActual ? data[`${metricId}Value`] : null}
-                      name={`${metricInfo?.name} (Actual)`}
-                      stroke={metricInfo?.color}
-                      strokeWidth={2}
-                      fill={`url(#color${metricId}Actual)`}
-                      fillOpacity={0.8}
-                      dot={{ r: 3, strokeWidth: 1 }}
-                      activeDot={{ r: 5 }}
-                      connectNulls
-                    />
-                    
-                    {/* Forecast data area */}
-                    <Area
-                      type="monotone"
-                      dataKey={(data) => !data.isActual ? data[`${metricId}Value`] : null}
-                      name={`${metricInfo?.name} (Forecast)`}
-                      stroke={metricInfo?.color}
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      fill={`url(#color${metricId}Forecast)`}
-                      fillOpacity={0.6}
-                      dot={{ r: 3, strokeWidth: 1 }}
-                      connectNulls
-                    />
-                    
-                    {/* Confidence bounds for forecast only */}
-                    {showConfidenceBounds && (
+                <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-30" />
+                <XAxis 
+                  dataKey="dateFormatted" 
+                  tick={{ fontSize: 12 }} 
+                  tickLine={false}
+                  stroke="currentColor"
+                  className="text-muted-foreground text-opacity-70"
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }} 
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="currentColor"
+                  className="text-muted-foreground text-opacity-70"
+                />
+                <Tooltip 
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const dataPoint = forecastData.find(d => d.dateFormatted === label);
+                      const isActualData = dataPoint?.isActual;
+                      
+                      return (
+                        <div className="bg-popover border border-border rounded-lg p-3 shadow-xl">
+                          <div className="font-medium pb-2 border-b border-border/50 mb-2">
+                            <span>{label}</span>
+                            <span className="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
+                              {isActualData ? 'Actual' : 'Forecast'}
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            {selectedMetrics.map((metricId) => {
+                              const metricInfo = metrics.find(m => m.id === metricId);
+                              const value = dataPoint?.[`${metricId}Value`];
+                              
+                              if (value === undefined) return null;
+                              
+                              return (
+                                <div key={metricId} className="flex flex-col">
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-3 h-3" style={{ backgroundColor: metricInfo?.color }}></div>
+                                      <span className="text-sm font-medium">{metricInfo?.name}</span>
+                                    </div>
+                                    <span className="text-sm font-mono font-medium">{value}</span>
+                                  </div>
+                                  
+                                  {!isActualData && showConfidenceBounds && (
+                                    <div className="text-xs text-muted-foreground pl-5 flex justify-between">
+                                      <span>Confidence bounds:</span>
+                                      <span className="font-mono">
+                                        {dataPoint?.[`${metricId}Lower`]} - {dataPoint?.[`${metricId}Upper`]}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend 
+                  formatter={(value) => {
+                    const parts = value.split(' (');
+                    return <span className="text-sm">{parts[0]}</span>;
+                  }} 
+                />
+                
+                {/* Reference area to highlight forecasted period */}
+                {forecastStartDateObj && (
+                  <ReferenceArea
+                    x1={forecastStartDateObj.dateFormatted}
+                    x2={forecastData[forecastData.length - 1].dateFormatted}
+                    fillOpacity={0.05}
+                    className="fill-primary/5 dark:fill-primary/10"
+                    label={{ 
+                      position: 'insideTop', 
+                      value: 'Forecast Period', 
+                      className: 'fill-muted-foreground text-xs'
+                    }}
+                  />
+                )}
+                
+                {/* Render each selected metric */}
+                {selectedMetrics.map((metricId) => {
+                  const metricInfo = metrics.find(m => m.id === metricId);
+                  
+                  return (
+                    <React.Fragment key={metricId}>
+                      {/* Actual data area */}
                       <Area
                         type="monotone"
-                        dataKey={(data) => !data.isActual ? data[`${metricId}Upper`] : null}
-                        stroke="none"
-                        fill={metricInfo?.color}
-                        fillOpacity={0.1}
-                        legendType="none"
+                        dataKey={(data) => data.isActual ? data[`${metricId}Value`] : null}
+                        name={`${metricInfo?.name} (Actual)`}
+                        stroke={metricInfo?.color}
+                        strokeWidth={2}
+                        fill={`url(#color${metricId}Actual)`}
+                        fillOpacity={0.8}
+                        dot={{ r: 3, strokeWidth: 1 }}
+                        activeDot={{ r: 5 }}
+                        connectNulls
                       />
-                    )}
-                    
-                    {showConfidenceBounds && (
+                      
+                      {/* Forecast data area */}
                       <Area
                         type="monotone"
-                        dataKey={(data) => !data.isActual ? data[`${metricId}Lower`] : null}
-                        stroke="none"
-                        fill={metricInfo?.color}
-                        fillOpacity={0}
-                        legendType="none"
+                        dataKey={(data) => !data.isActual ? data[`${metricId}Value`] : null}
+                        name={`${metricInfo?.name} (Forecast)`}
+                        stroke={metricInfo?.color}
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        fill={`url(#color${metricId}Forecast)`}
+                        fillOpacity={0.6}
+                        dot={{ r: 3, strokeWidth: 1 }}
+                        connectNulls
                       />
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+                      
+                      {/* Confidence bounds for forecast only */}
+                      {showConfidenceBounds && (
+                        <Area
+                          type="monotone"
+                          dataKey={(data) => !data.isActual ? data[`${metricId}Upper`] : null}
+                          stroke="none"
+                          fill={metricInfo?.color}
+                          fillOpacity={0.1}
+                          legendType="none"
+                        />
+                      )}
+                      
+                      {showConfidenceBounds && (
+                        <Area
+                          type="monotone"
+                          dataKey={(data) => !data.isActual ? data[`${metricId}Lower`] : null}
+                          stroke="none"
+                          fill={metricInfo?.color}
+                          fillOpacity={0}
+                          legendType="none"
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 };

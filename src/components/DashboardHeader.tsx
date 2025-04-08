@@ -1,38 +1,42 @@
 
+import { RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface DashboardHeaderProps {
+  title?: string;
   lastUpdated: string;
   forecastPeriod: number;
   onRefresh: () => void;
 }
 
 export const DashboardHeader = ({
+  title = "Predictive Analytics Dashboard",
   lastUpdated,
   forecastPeriod,
-  onRefresh,
+  onRefresh
 }: DashboardHeaderProps) => {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-      <div className="mb-4 sm:mb-0">
-        <h1 className="text-2xl font-bold mb-1">Supply Chain Analytics</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Last updated: {lastUpdated} • {forecastPeriod} day forecast
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-border/30 dark:border-gray-700/50">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent dark:from-white dark:to-gray-300">
+          {title}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Last updated: {lastUpdated} • {forecastPeriod}-day forecast
         </p>
       </div>
-
       <div className="flex items-center gap-2">
-        <ThemeToggle />
         <Button
           variant="outline"
           size="sm"
           onClick={onRefresh}
+          className="flex items-center gap-1"
         >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh Data
+          <RefreshCcw className="h-4 w-4" />
+          <span>Refresh</span>
         </Button>
+        <ThemeToggle />
       </div>
     </div>
   );

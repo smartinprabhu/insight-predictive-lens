@@ -55,22 +55,29 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
   const kpiTimePeriod = `${currentDate.toLocaleString('default', { month: 'long' })} ${currentDate.getFullYear()}`;
 
   const kpiData = [
-    { title: "IB Units", value: 648, subtitle: "Total cases for IB units", changeValue: 12.5, changeText: "from previous period", timePeriod: kpiTimePeriod },
-    { title: "Inventory", value: 532, subtitle: "Total cases for Inventory", changeValue: 4.2, changeText: "from previous period", timePeriod: kpiTimePeriod },
-    { title: "Customer Returns", value: 285, subtitle: "Total cases for Customer returns", changeValue: 7.8, changeText: "from previous period", timePeriod: kpiTimePeriod },
-    { title: "WSF China", value: 423, subtitle: "Total cases for WSF China", changeValue: 3.1, changeText: "from previous period", timePeriod: kpiTimePeriod },
-    { title: "IB Exceptions", value: 156, subtitle: "Total cases for IB Exceptions", changeValue: -2.5, changeText: "from previous period", timePeriod: kpiTimePeriod },
+    { title: "IB Units", value: 648, subtitle: "Total cases for IB units", changeValue: 12.5, changeText: "from previous period" },
+    { title: "Inventory", value: 532, subtitle: "Total cases for Inventory", changeValue: 4.2, changeText: "from previous period" },
+    { title: "Customer Returns", value: 285, subtitle: "Total cases for Customer returns", changeValue: 7.8, changeText: "from previous period" },
+    { title: "WSF China", value: 423, subtitle: "Total cases for WSF China", changeValue: 3.1, changeText: "from previous period" },
+    { title: "IB Exceptions", value: 156, subtitle: "Total cases for IB Exceptions", changeValue: -2.5, changeText: "from previous period" },
   ];
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="container mx-auto p-4 md:p-6 space-y-6 bg-gradient-to-b from-background to-background/95 dark:from-gray-900 dark:to-gray-950 min-h-screen">
       <DashboardHeader
+        title="Predictive Analytics Dashboard"
         lastUpdated="07/04/2025"
         forecastPeriod={forecastPeriod}
         onRefresh={handleRefresh}
       />
       
-      {/* KPI Metrics */}
+      {/* KPI Metrics with common time period */}
+      <div className="mb-2 flex justify-between items-center px-1">
+        <h2 className="text-lg font-medium text-foreground">Key Performance Indicators</h2>
+        <div className="text-sm text-muted-foreground bg-background/80 dark:bg-gray-800/80 px-3 py-1 rounded-md shadow-sm border border-border/30">
+          <span>{kpiTimePeriod}</span>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {kpiData.map((kpi, index) => (
           <KPIMetricsCard
@@ -80,7 +87,6 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
             subtitle={kpi.subtitle}
             changeValue={kpi.changeValue}
             changeText={kpi.changeText}
-            timePeriod={kpi.timePeriod}
           />
         ))}
       </div>
@@ -94,7 +100,7 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
         onAggregationTypeChange={setAggregationType}
       />
       
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+      <div className="bg-white/95 backdrop-blur-sm dark:bg-gray-800/90 rounded-lg shadow-lg border border-border/20 dark:border-gray-700/50">
         <TabNavigation
           tabs={tabs}
           activeTab={activeTab}

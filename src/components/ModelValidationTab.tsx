@@ -1,94 +1,92 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
-  ComposedChart,
-  Line,
-  Area,
-  CartesianGrid,
-  Legend,
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
   ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  ReferenceLine
 } from "recharts";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, HelpCircle, Info } from "lucide-react";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-// Sample data - in a real app, this would come from an API
-const generateValidationData = (days = 30, aggregationType = "Daily", metricId = "ibUnits") => {
+interface ModelValidationTabProps {
+  aggregationType: string;
+}
+
+// Generate sample validation data
+const generateValidationData = (metricId = "ibUnits", days = 30) => {
   const data = [];
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
+  const date = new Date();
+  date.setDate(date.getDate() - days);
 
-  // Different base values and multipliers for each metric
-  const metricConfig: Record<string, { base: number, multiplier: number, randFactor: number }> = {
-    ibUnits: { base: 120, multiplier: 30, randFactor: 20 },
-    inventory: { base: 250, multiplier: 45, randFactor: 25 },
-    customerReturns: { base: 80, multiplier: 15, randFactor: 10 },
-    wsfChina: { base: 180, multiplier: 40, randFactor: 30 },
-    ibExceptions: { base: 60, multiplier: 10, randFactor: 5 },
+  // Different base values and error patterns for each metric
+  const metricConfig = {
+    ibUnits: { base: 120, errorFactor: 10, trend: 0.2 },
+    inventory: { base: 250, errorFactor: 15, trend: -0.1 },
+    customerReturns: { base: 80, errorFactor: 5, trend: 0.1 },
+    wsfChina: { base: 180, errorFactor: 12, trend: 0.3 },
+    ibExceptions: { base: 60, errorFactor: 8, trend: -0.2 },
   };
 
-  const config = metricConfig[metricId] || metricConfig.ibUnits;
+  const config = metricConfig[metricId as keyof typeof metricConfig] || metricConfig.ibUnits;
 
   for (let i = 0; i < days; i++) {
-    const currentDate = new Date(startDate);
-    currentDate.setDate(startDate.getDate() + i);
+    const currentDate = new Date(date);
+    currentDate.setDate(date.getDate() + i);
+
+    // Generate realistic looking actual vs predicted values
+    const dayFactor = i / days * config.trend;
+    const baseTrend = config.base + (config.base * dayFactor);
+    const actualValue = Math.round(baseTrend + (Math.random() * config.errorFactor * 2));
     
-    const baseValue = config.base + Math.sin(i / 5) * config.multiplier;
-    const actualValue = Math.round(baseValue + Math.random() * config.randFactor);
-    const predictedValue = Math.round(actualValue + (Math.random() * 20 - 10));
-    
-    // Add confidence bounds with more clear separation
-    const confidenceFactor = 0.15 + Math.random() * 0.1; // 15-25% variance
-    const confidenceLower = Math.round(predictedValue * (1 - confidenceFactor));
-    const confidenceUpper = Math.round(predictedValue * (1 + confidenceFactor));
-    
+    // Predicted is close to actual but with some error
+    const errorPercent = Math.random() * 0.2 - 0.1; // -10% to +10% error
+    const predictedValue = Math.round(actualValue * (1 + errorPercent));
+
     data.push({
       date: currentDate.toISOString().split('T')[0],
-      dateFormatted: 
-        aggregationType === "Daily" 
-          ? `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`
-          : `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`,
+      dateFormatted: `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`,
       actual: actualValue,
       predicted: predictedValue,
-      lowerBound: confidenceLower,
-      upperBound: confidenceUpper,
+      error: actualValue - predictedValue,
+      errorPercent: Math.round((actualValue - predictedValue) / actualValue * 100)
     });
-  }
-
-  // Aggregate data if not daily
-  if (aggregationType !== "Daily") {
-    return aggregateValidationData(data, aggregationType);
   }
 
   return data;
 };
 
-// Aggregate validation data
-const aggregateValidationData = (data: any[], aggregationType: string) => {
-  const groupedData: Record<string, { 
-    count: number;
-    actual: number;
-    predicted: number;
-    lowerBoundSum: number;
-    upperBoundSum: number;
-    firstDate: Date;
-  }> = {};
-  
+// Aggregate validation data by week or month
+const aggregateValidationData = (data, aggregationType) => {
+  if (aggregationType === "Daily") {
+    return data;
+  }
+
+  const aggregatedData = [];
+  const groupedData = {};
+
   data.forEach(item => {
     const date = new Date(item.date);
-    let key: string;
-    
+    let key;
+
     if (aggregationType === "Weekly") {
       const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
       const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
@@ -96,33 +94,31 @@ const aggregateValidationData = (data: any[], aggregationType: string) => {
       key = `${date.getFullYear()}-W${weekNum}`;
     } else if (aggregationType === "Monthly") {
       key = `${date.getFullYear()}-${date.getMonth() + 1}`;
-    } else {
-      key = item.date; // Default to daily
     }
-    
+
     if (!groupedData[key]) {
       groupedData[key] = {
         count: 0,
-        actual: 0,
-        predicted: 0,
-        lowerBoundSum: 0,
-        upperBoundSum: 0,
-        firstDate: date,
+        actualSum: 0,
+        predictedSum: 0,
+        errorSum: 0,
+        errorPercentSum: 0,
+        firstDate: date
       };
     }
-    
-    groupedData[key].count += 1;
-    groupedData[key].actual += item.actual;
-    groupedData[key].predicted += item.predicted;
-    groupedData[key].lowerBoundSum += item.lowerBound;
-    groupedData[key].upperBoundSum += item.upperBound;
+
+    const group = groupedData[key];
+    group.count += 1;
+    group.actualSum += item.actual;
+    group.predictedSum += item.predicted;
+    group.errorSum += item.error;
+    group.errorPercentSum += item.errorPercent;
   });
-  
-  const aggregatedData = [];
-  
+
   Object.entries(groupedData).forEach(([key, value]) => {
-    const { count, firstDate } = value;
-    
+    const entry = value as any; // Type assertion for TypeScript
+    const { count, actualSum, predictedSum, errorSum, errorPercentSum, firstDate } = entry;
+
     let dateFormatted;
     if (aggregationType === "Weekly") {
       dateFormatted = `Week ${key.split('-W')[1]}, ${key.split('-')[0]}`;
@@ -131,243 +127,290 @@ const aggregateValidationData = (data: any[], aggregationType: string) => {
       const month = parseInt(key.split('-')[1]) - 1;
       dateFormatted = `${monthNames[month]} ${key.split('-')[0]}`;
     }
-    
+
     aggregatedData.push({
       date: key,
       dateFormatted,
-      actual: Math.round(value.actual / count),
-      predicted: Math.round(value.predicted / count),
-      lowerBound: Math.round(value.lowerBoundSum / count),
-      upperBound: Math.round(value.upperBoundSum / count),
+      actual: Math.round(actualSum / count),
+      predicted: Math.round(predictedSum / count),
+      error: Math.round(errorSum / count),
+      errorPercent: Math.round(errorPercentSum / count)
     });
   });
-  
+
   return aggregatedData.sort((a, b) => a.date.localeCompare(b.date));
 };
 
-// Generate metrics for each category
-const generateMetricsForCategories = () => {
-  const categories = [
+// Calculate model error metrics
+const calculateErrorMetrics = (data) => {
+  let mape = 0;
+  let rmse = 0;
+  let mae = 0;
+  
+  // Sum up errors
+  data.forEach(item => {
+    mape += Math.abs(item.error / item.actual);
+    rmse += Math.pow(item.error, 2);
+    mae += Math.abs(item.error);
+  });
+  
+  // Calculate averages
+  mape = (mape / data.length) * 100;
+  rmse = Math.sqrt(rmse / data.length);
+  mae = mae / data.length;
+  
+  return {
+    mape: mape.toFixed(2),
+    rmse: rmse.toFixed(2),
+    mae: mae.toFixed(2)
+  };
+};
+
+export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidationTabProps) => {
+  const [selectedMetric, setSelectedMetric] = useState("ibUnits");
+  const [showMetricsInfo, setShowMetricsInfo] = useState(false);
+  const { toast } = useToast();
+
+  const metrics = [
     { id: "ibUnits", name: "IB Units", color: "#4284f5" },
     { id: "inventory", name: "Inventory", color: "#36b37e" },
     { id: "customerReturns", name: "Customer Returns", color: "#ff9e2c" },
     { id: "wsfChina", name: "WSF China", color: "#9061F9" },
     { id: "ibExceptions", name: "IB Exceptions", color: "#f56565" },
   ];
-  
-  const result: Record<string, { mae: string, rmse: string, mape: string, r2: string }> = {};
-  
-  categories.forEach(category => {
-    result[category.id] = {
-      mae: (Math.random() * 15 + 5).toFixed(1),
-      rmse: (Math.random() * 20 + 10).toFixed(1),
-      mape: (Math.random() * 10 + 3).toFixed(1),
-      r2: (Math.random() * 0.2 + 0.8).toFixed(2),
-    };
-  });
-  
-  return { categories, metrics: result };
-};
 
-const { categories, metrics } = generateMetricsForCategories();
+  // Generate validation data for selected metric
+  const validationData = useMemo(() => {
+    const rawData = generateValidationData(selectedMetric, 30);
+    return aggregateValidationData(rawData, aggregationType);
+  }, [selectedMetric, aggregationType]);
 
-export const ModelValidationTab = ({ aggregationType = "Daily" }) => {
-  const [selectedCategory, setSelectedCategory] = useState(categories[0].id);
-  const { toast } = useToast();
-  
-  // Generate data specifically for the selected category
-  const validationData = generateValidationData(30, aggregationType, selectedCategory);
-  
-  const selectedCategoryInfo = categories.find(c => c.id === selectedCategory);
-  const selectedMetrics = metrics[selectedCategory];
-  
+  // Calculate error metrics
+  const errorMetrics = calculateErrorMetrics(validationData);
+
+  const handleMetricChange = (value) => {
+    setSelectedMetric(value);
+  };
+
   const exportToCSV = () => {
     // Create CSV content
+    const headers = ["Date", "Actual", "Predicted", "Error", "Error Percent"];
     const csvContent = [
-      // Header row
-      ["Date", "Actual", "Predicted", "Lower Bound", "Upper Bound"].join(","),
-      // Data rows
-      ...validationData.map(item => 
-        [item.date, item.actual, item.predicted, item.lowerBound, item.upperBound].join(",")
+      headers.join(","),
+      ...validationData.map(row => 
+        [row.date, row.actual, row.predicted, row.error, row.errorPercent].join(",")
       )
     ].join("\n");
 
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${selectedCategoryInfo?.name}-validation-data-${aggregationType.toLowerCase()}.csv`);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `validation_${selectedMetric}_${aggregationType.toLowerCase()}.csv`);
     document.body.appendChild(link);
-    
-    // Trigger download
     link.click();
     document.body.removeChild(link);
-    
+
     toast({
       title: "Export successful",
-      description: `${selectedCategoryInfo?.name} validation data has been exported.`,
+      description: `Validation data for ${metrics.find(m => m.id === selectedMetric)?.name} has been exported to CSV`,
     });
   };
-  
+
+  const selectedMetricInfo = metrics.find(m => m.id === selectedMetric);
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
+    <TooltipProvider>
+      <div className="grid gap-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
-            <h3 className="text-xl font-semibold">Model Validation</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Actual vs Predicted values with confidence bounds
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-xl font-semibold">Model Validation</h3>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <HelpCircle className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="w-80 p-4">
+                  <p className="font-medium mb-1">About model validation</p>
+                  <p className="text-sm text-muted-foreground">
+                    This page shows how accurately our forecasting model predicts actual values. 
+                    Lower error metrics indicate better model performance. The chart compares 
+                    actual historical values with what our model would have predicted for those dates.
+                  </p>
+                </TooltipContent>
+              </UITooltip>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Model performance and error analysis ({aggregationType})
             </p>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="w-[200px]">
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
+
+          <div className="flex items-center gap-2">
+            <Select value={selectedMetric} onValueChange={handleMetricChange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select metric" />
+              </SelectTrigger>
+              <SelectContent>
+                {metrics.map(metric => (
+                  <SelectItem key={metric.id} value={metric.id}>
+                    {metric.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Button variant="outline" size="icon" onClick={exportToCSV}>
               <Download className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        
-        <div className="w-full h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={validationData}
-              margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="confidenceGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={selectedCategoryInfo?.color || "#4284f5"} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={selectedCategoryInfo?.color || "#4284f5"} stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-            
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="dateFormatted" 
-                tick={{ fontSize: 12 }} 
-                tickLine={false}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }} 
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-background border border-border p-2 rounded shadow-md">
-                        <p className="font-medium">{label}</p>
-                        <div className="mt-2">
-                          {payload
-                            .filter((entry) => entry.dataKey !== "lowerBound" && entry.dataKey !== "upperBound")
-                            .map((entry, index) => (
-                              <p key={`tooltip-${index}`} className="flex justify-between">
-                                <span style={{ color: entry.color }}>{entry.name}:</span>
-                                <span className="font-mono ml-2">{entry.value}</span>
-                              </p>
-                            ))}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <span>Confidence bounds: </span>
-                            <span className="font-mono">
-                              {payload.find((p) => p.dataKey === "lowerBound")?.value} - {payload.find((p) => p.dataKey === "upperBound")?.value}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Legend />
-              
-              {/* Confidence Bounds as shaded area */}
-              <Area
-                type="monotone"
-                dataKey="upperBound"
-                stroke="none"
-                fill="url(#confidenceGradient)"
-                fillOpacity={1}
-                name="Confidence Interval"
-                legendType="none"
-              />
-              
-              <Area
-                type="monotone"
-                dataKey="lowerBound"
-                stroke="none"
-                fill={selectedCategoryInfo?.color || "#4284f5"}
-                fillOpacity={0}
-                name="Lower Bound"
-                legendType="none"
-              />
-              
-              {/* Actual line */}
-              <Line
-                type="monotone"
-                dataKey="actual"
-                name="Actual Values"
-                stroke={selectedCategoryInfo?.color || "#4284f5"}
-                strokeWidth={2}
-                dot={{ r: 3, fill: selectedCategoryInfo?.color || "#4284f5" }}
-                activeDot={{ r: 5 }}
-              />
-              
-              {/* Predicted line */}
-              <Line
-                type="monotone"
-                dataKey="predicted"
-                name="Predicted Values"
-                stroke={selectedCategoryInfo?.color || "#4284f5"}
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={{ r: 3 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+
+        <div className="grid gap-6 lg:grid-cols-4">
+          <Card className="lg:col-span-3 shadow-md">
+            <CardContent className="p-6">
+              <div className="h-[400px] bg-gradient-to-b from-card/40 to-background/10 p-4 rounded-lg border border-border/10">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={validationData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="dateFormatted" stroke="currentColor" className="text-muted-foreground text-opacity-70" />
+                    <YAxis stroke="currentColor" className="text-muted-foreground text-opacity-70" />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          const actual = payload[0]?.value;
+                          const predicted = payload[1]?.value;
+                          const error = Math.abs(actual - predicted);
+                          const errorPercent = Math.round((error / actual) * 100);
+
+                          return (
+                            <div className="bg-popover border border-border rounded-lg p-3 shadow-xl">
+                              <div className="font-medium pb-2 border-b border-border/50 mb-2">{label}</div>
+                              <div className="space-y-1.5">
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3" style={{ backgroundColor: selectedMetricInfo?.color }}></div>
+                                    <span className="text-sm">Actual</span>
+                                  </div>
+                                  <span className="text-sm font-mono">{actual}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 border-2" style={{ borderColor: selectedMetricInfo?.color }}></div>
+                                    <span className="text-sm">Predicted</span>
+                                  </div>
+                                  <span className="text-sm font-mono">{predicted}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-1 border-t border-border/30 text-muted-foreground">
+                                  <span className="text-xs">Absolute Error</span>
+                                  <span className="text-xs font-mono">{error} ({errorPercent}%)</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="actual" 
+                      name="Actual" 
+                      stroke={selectedMetricInfo?.color} 
+                      dot={{ r: 4 }} 
+                      activeDot={{ r: 6 }}
+                      strokeWidth={2}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="predicted" 
+                      name="Predicted" 
+                      stroke={selectedMetricInfo?.color} 
+                      strokeDasharray="5 5"
+                      strokeWidth={2}
+                      dot={{ stroke: selectedMetricInfo?.color, strokeWidth: 2, r: 4, fill: "white" }}
+                    />
+                    <ReferenceLine 
+                      y={validationData.reduce((sum, item) => sum + item.actual, 0) / validationData.length} 
+                      stroke="#666" 
+                      strokeDasharray="3 3"
+                      label={{ value: 'Average', position: 'right', fill: '#666' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-md">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between">
+                Error Metrics
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="w-80 p-4">
+                    <p className="text-sm text-muted-foreground">
+                      These metrics help evaluate forecasting accuracy. Lower values indicate better performance.
+                    </p>
+                  </TooltipContent>
+                </UITooltip>
+              </CardTitle>
+              <CardDescription>
+                For {metrics.find(m => m.id === selectedMetric)?.name}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">MAPE</TableCell>
+                    <TableCell className="text-right">{errorMetrics.mape}%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">RMSE</TableCell>
+                    <TableCell className="text-right">{errorMetrics.rmse}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">MAE</TableCell>
+                    <TableCell className="text-right">{errorMetrics.mae}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+
+              <Collapsible className="mt-4">
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full text-xs justify-center">
+                    {showMetricsInfo ? "Hide" : "Show"} metrics explanations
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  <div className="text-xs p-2 bg-muted rounded-md">
+                    <p className="font-medium mb-1">MAPE (Mean Absolute Percentage Error)</p>
+                    <p className="text-muted-foreground">Measures prediction accuracy as percentage. Lower is better.</p>
+                  </div>
+                  
+                  <div className="text-xs p-2 bg-muted rounded-md">
+                    <p className="font-medium mb-1">RMSE (Root Mean Square Error)</p>
+                    <p className="text-muted-foreground">Measures prediction error magnitude, penalizing large errors.</p>
+                  </div>
+                  
+                  <div className="text-xs p-2 bg-muted rounded-md">
+                    <p className="font-medium mb-1">MAE (Mean Absolute Error)</p>
+                    <p className="text-muted-foreground">Average absolute difference between predicted and actual values.</p>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </CardContent>
+          </Card>
         </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
-            <p className="text-sm text-gray-500 dark:text-gray-400">MAE</p>
-            <p className="text-xl font-semibold">{selectedMetrics.mae} units</p>
-          </div>
-          
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
-            <p className="text-sm text-gray-500 dark:text-gray-400">RMSE</p>
-            <p className="text-xl font-semibold">{selectedMetrics.rmse} units</p>
-          </div>
-          
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
-            <p className="text-sm text-gray-500 dark:text-gray-400">MAPE</p>
-            <p className="text-xl font-semibold">{selectedMetrics.mape}%</p>
-          </div>
-          
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
-            <p className="text-sm text-gray-500 dark:text-gray-400">R²</p>
-            <p className="text-xl font-semibold">{selectedMetrics.r2}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </TooltipProvider>
   );
 };
