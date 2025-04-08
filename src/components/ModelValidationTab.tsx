@@ -10,6 +10,8 @@ import {
   XAxis,
   YAxis,
   Area,
+  AreaChart,
+  ComposedChart
 } from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -42,9 +44,10 @@ const generateValidationData = (days = 30) => {
     const actualValue = Math.round(baseValue + Math.random() * 15);
     const predictedValue = Math.round(actualValue + (Math.random() * 20 - 10));
     
-    // Add confidence bounds
-    const confidenceLower = Math.round(predictedValue - Math.random() * 15 - 5);
-    const confidenceUpper = Math.round(predictedValue + Math.random() * 15 + 5);
+    // Add confidence bounds with more clear separation
+    const confidenceFactor = 0.15 + Math.random() * 0.1; // 15-25% variance
+    const confidenceLower = Math.round(predictedValue * (1 - confidenceFactor));
+    const confidenceUpper = Math.round(predictedValue * (1 + confidenceFactor));
     
     data.push({
       date: currentDate.toISOString().split('T')[0],
@@ -122,21 +125,6 @@ export const ModelValidationTab = () => {
     });
   };
   
-  const chartConfig = {
-    actual: {
-      label: `Actual ${selectedCategoryInfo?.name}`,
-      theme: { light: selectedCategoryInfo?.color || "#4284f5", dark: selectedCategoryInfo?.color || "#4284f5" }
-    },
-    predicted: {
-      label: `Predicted ${selectedCategoryInfo?.name}`,
-      theme: { light: selectedCategoryInfo?.color || "#4284f5", dark: selectedCategoryInfo?.color || "#4284f5" }
-    },
-    confidence: {
-      label: "Confidence Interval",
-      theme: { light: "#0000001a", dark: "#ffffff1a" }
-    }
-  };
-  
   return (
     <Card>
       <CardContent className="pt-6">
@@ -174,87 +162,90 @@ export const ModelValidationTab = () => {
         </div>
         
         <div className="w-full h-[400px]">
-          <ChartContainer config={chartConfig}>
-            <LineChart
-              data={validationData}
-              margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="dateFormatted" 
-                tick={{ fontSize: 12 }} 
-                tickLine={false}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }} 
-                tickLine={false}
-                axisLine={false}
-              />
-              <ChartTooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <ChartTooltipContent
-                        className="bg-background border border-border shadow-lg"
-                        payload={payload}
-                        formatter={(value, name, props) => {
-                          if (name === "confidence") return null;
-                          return (
-                            <div className="flex items-center justify-between gap-2">
-                              <span>{name}</span>
-                              <span className="font-mono font-medium">{value}</span>
-                            </div>
-                          );
-                        }}
-                      />
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Legend />
-              
-              {/* Confidence Bounds */}
-              <Area
-                type="monotone"
-                dataKey="upperBound"
-                stroke="transparent"
-                fillOpacity={0.2}
-                name="confidence"
-                stackId="1"
-              />
-              <Area
-                type="monotone"
-                dataKey="lowerBound"
-                stroke="transparent"
-                fillOpacity={0}
-                name="confidence"
-                stackId="1"
-              />
-              
-              {/* Actual line */}
-              <Line
-                type="monotone"
-                dataKey="actual"
-                name="actual"
-                stroke={selectedCategoryInfo?.color || "#4284f5"}
-                strokeWidth={2}
-                dot={{ r: 3, fill: selectedCategoryInfo?.color || "#4284f5" }}
-                activeDot={{ r: 5 }}
-              />
-              
-              {/* Predicted line */}
-              <Line
-                type="monotone"
-                dataKey="predicted"
-                name="predicted"
-                stroke={selectedCategoryInfo?.color || "#4284f5"}
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={{ r: 3 }}
-              />
-            </LineChart>
-          </ChartContainer>
+          <ComposedChart
+            data={validationData}
+            margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis 
+              dataKey="dateFormatted" 
+              tick={{ fontSize: 12 }} 
+              tickLine={false}
+            />
+            <YAxis 
+              tick={{ fontSize: 12 }} 
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <div className="bg-background border border-border p-2 rounded shadow-md">
+                      <p className="font-medium">{label}</p>
+                      <div className="mt-2">
+                        {payload
+                          .filter((entry) => entry.dataKey !== "lowerBound" && entry.dataKey !== "upperBound")
+                          .map((entry, index) => (
+                            <p key={`tooltip-${index}`} className="flex justify-between">
+                              <span style={{ color: entry.color }}>{entry.name}:</span>
+                              <span className="font-mono ml-2">{entry.value}</span>
+                            </p>
+                          ))}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Confidence: {payload.find((p) => p.dataKey === "lowerBound")?.value} - {payload.find((p) => p.dataKey === "upperBound")?.value}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Legend />
+            
+            {/* Confidence Bounds as shaded area */}
+            <Area
+              type="monotone"
+              dataKey="upperBound"
+              stroke="transparent"
+              fill={selectedCategoryInfo?.color || "#4284f5"}
+              fillOpacity={0.2}
+              name="Confidence Interval"
+            />
+            <Area
+              type="monotone"
+              dataKey="lowerBound"
+              stroke="transparent"
+              fill={selectedCategoryInfo?.color || "#4284f5"}
+              fillOpacity={0}
+              name="Confidence Interval"
+              style={{ visibility: "hidden" }}
+              legendType="none"
+            />
+            
+            {/* Actual line */}
+            <Line
+              type="monotone"
+              dataKey="actual"
+              name="Actual Values"
+              stroke={selectedCategoryInfo?.color || "#4284f5"}
+              strokeWidth={2}
+              dot={{ r: 3, fill: selectedCategoryInfo?.color || "#4284f5" }}
+              activeDot={{ r: 5 }}
+            />
+            
+            {/* Predicted line */}
+            <Line
+              type="monotone"
+              dataKey="predicted"
+              name="Predicted Values"
+              stroke={selectedCategoryInfo?.color || "#4284f5"}
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              dot={{ r: 3 }}
+            />
+          </ComposedChart>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">

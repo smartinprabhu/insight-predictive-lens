@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -31,21 +31,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent
 } from "@/components/ui/chart";
 
+interface ForecastTabProps {
+  forecastPeriod: number;
+}
+
 // Sample data generation function with unique data for each metric
-const generateForecastData = (days = 60, metricId = "ibUnits") => {
+const generateForecastData = (actualDays = 30, forecastDays = 30, metricId = "ibUnits") => {
   const data = [];
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days / 2); // Half actual, half forecast
+  startDate.setDate(startDate.getDate() - actualDays); 
 
   // Use fixed date April 6, 2025 for forecast cutoff
   const forecastStartDate = new Date('2025-04-06');
+  
+  // Calculate the end date based on forecastDays
+  const endDate = new Date(forecastStartDate);
+  endDate.setDate(forecastStartDate.getDate() + forecastDays - 1);
 
   // Different base values and multipliers for each metric
   const metricConfig = {
@@ -57,15 +66,14 @@ const generateForecastData = (days = 60, metricId = "ibUnits") => {
   };
 
   const config = metricConfig[metricId as keyof typeof metricConfig] || metricConfig.ibUnits;
-
-  for (let i = 0; i < days; i++) {
-    const currentDate = new Date(startDate);
-    currentDate.setDate(startDate.getDate() + i);
-    
+  
+  // Generate data for each day from startDate to endDate
+  for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + 1)) {
     const isActual = currentDate < forecastStartDate;
+    const daysSinceStart = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
     // Generate unique patterns based on metric ID
-    const factor = Math.sin(i / 5) + (i / days) * config.growthTrend;
+    const factor = Math.sin(daysSinceStart / 5) + (daysSinceStart / (actualDays + forecastDays)) * config.growthTrend;
     const baseValue = config.base + (factor * config.multiplier);
     const value = Math.round(baseValue + Math.random() * config.randFactor);
     
@@ -87,7 +95,7 @@ const generateForecastData = (days = 60, metricId = "ibUnits") => {
   return data;
 };
 
-export const ForecastTab = () => {
+export const ForecastTab = ({ forecastPeriod = 30 }: ForecastTabProps) => {
   const metrics = [
     { id: "ibUnits", name: "IB Units", color: "#4284f5" },
     { id: "inventory", name: "Inventory", color: "#36b37e" },
@@ -98,11 +106,14 @@ export const ForecastTab = () => {
   
   const [selectedMetrics, setSelectedMetrics] = useState([metrics[0].id]);
   const [showConfidenceBounds, setShowConfidenceBounds] = useState(true);
+  const { toast } = useToast();
   
-  // Generate unique data for each selected metric
+  const actualDays = 30; // Fixed number of days for actual data
+  
+  // Generate unique data for each selected metric with the correct forecast period
   const getMetricData = () => {
     // Create a data structure for all dates - to ensure alignment between metrics
-    const allDates = generateForecastData(60, metrics[0].id).map(item => ({
+    const allDates = generateForecastData(actualDays, forecastPeriod, metrics[0].id).map(item => ({
       date: item.date,
       dateFormatted: item.dateFormatted,
       isActual: item.isActual,
@@ -114,7 +125,7 @@ export const ForecastTab = () => {
       
       // Add data for each selected metric
       selectedMetrics.forEach(metricId => {
-        const metricData = generateForecastData(60, metricId);
+        const metricData = generateForecastData(actualDays, forecastPeriod, metricId);
         const matchingDateData = metricData.find(d => d.date === dateItem.date);
         
         if (matchingDateData) {
@@ -138,15 +149,64 @@ export const ForecastTab = () => {
     );
   };
 
-  const forecastData = getMetricData();
+  // Use useMemo to avoid recalculating the forecast data on every render
+  const forecastData = useMemo(() => getMetricData(), [selectedMetrics, forecastPeriod]);
+  
+  const exportToCSV = () => {
+    // Create CSV content
+    const csvHeader = ["Date", "IsActual", ...selectedMetrics.flatMap(m => 
+      [`${m} Value`, `${m} Upper Bound`, `${m} Lower Bound`]
+    )].join(",");
+    
+    const csvRows = forecastData.map(item => {
+      const row = [item.date, item.isActual];
+      
+      selectedMetrics.forEach(metricId => {
+        row.push(
+          item[`${metricId}Value`] ?? "",
+          item[`${metricId}Upper`] ?? "",
+          item[`${metricId}Lower`] ?? ""
+        );
+      });
+      
+      return row.join(",");
+    });
+    
+    const csvContent = [csvHeader, ...csvRows].join("\n");
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `forecast_data_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    
+    // Trigger download
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Export successful",
+      description: "Forecast data has been exported to CSV",
+    });
+  };
+  
+  // Find the date where forecast starts
+  const forecastStartDateObj = forecastData.find(d => !d.isActual);
   
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
-          <h3 className="text-xl font-semibold">Forecast</h3>
+          <div>
+            <h3 className="text-xl font-semibold">Forecast</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {actualDays}-day history + {forecastPeriod}-day forecast
+            </p>
+          </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-[200px] justify-between">
@@ -181,6 +241,10 @@ export const ForecastTab = () => {
                 Show confidence bounds
               </label>
             </div>
+            
+            <Button variant="outline" size="icon" onClick={exportToCSV}>
+              <Download className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         
@@ -205,18 +269,20 @@ export const ForecastTab = () => {
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-white p-2 border border-gray-200 rounded shadow-md">
+                      <div className="bg-background border border-border p-2 rounded shadow-md">
                         <p className="font-medium">{label}</p>
                         <div className="mt-2">
                           {payload.map((entry, index) => {
+                            if (!entry.dataKey.toString().includes("Value")) return null;
+                            
                             const metricId = entry.dataKey.toString().replace('Value', '');
                             const metricInfo = metrics.find(m => m.id === metricId);
                             const isActualData = forecastData.find(d => d.dateFormatted === label)?.isActual;
 
                             return (
-                              <p key={`tooltip-${index}`} style={{ color: entry.stroke }}>
-                                {metricInfo?.name}: {entry.value} 
-                                {!isActualData && ' (Forecast)'}
+                              <p key={`tooltip-${index}`} className="flex justify-between">
+                                <span style={{ color: entry.color }}>{metricInfo?.name}:</span> 
+                                <span className="font-mono ml-2">{entry.value} {!isActualData && ' (Forecast)'}</span>
                               </p>
                             );
                           })}
@@ -230,12 +296,14 @@ export const ForecastTab = () => {
               <Legend />
               
               {/* Reference area to highlight forecasted period */}
-              <ReferenceArea
-                x1={forecastData.find(d => !d.isActual)?.dateFormatted}
-                x2={forecastData[forecastData.length - 1].dateFormatted}
-                fillOpacity={0.1}
-                label={{ position: 'insideTop', value: 'Forecast Period', fill: '#666', fontSize: 12 }}
-              />
+              {forecastStartDateObj && (
+                <ReferenceArea
+                  x1={forecastStartDateObj.dateFormatted}
+                  x2={forecastData[forecastData.length - 1].dateFormatted}
+                  fillOpacity={0.1}
+                  label={{ position: 'insideTop', value: 'Forecast Period', fill: '#666', fontSize: 12 }}
+                />
+              )}
               
               {/* Render each selected metric with unique data */}
               {selectedMetrics.map((metricId) => {

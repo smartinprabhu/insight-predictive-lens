@@ -8,6 +8,7 @@ import { ForecastTab } from "./ForecastTab";
 import { ModelValidationTab } from "./ModelValidationTab";
 import { InsightsTab } from "./InsightsTab";
 import { useToast } from "@/hooks/use-toast";
+import { KPIMetricsCard } from "./KPIMetricsCard";
 
 interface DashboardProps {
   onReset: () => void;
@@ -39,7 +40,7 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
       case "actualData":
         return <ActualDataTab />;
       case "forecast":
-        return <ForecastTab />;
+        return <ForecastTab forecastPeriod={forecastPeriod} />;
       case "modelValidation":
         return <ModelValidationTab />;
       case "insights":
@@ -49,6 +50,14 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
     }
   };
 
+  const kpiData = [
+    { title: "IB Units", value: 648, subtitle: "Total cases for IB units", changeValue: 12.5, changeText: "from previous period" },
+    { title: "Inventory", value: 532, subtitle: "Total cases for Inventory", changeValue: 4.2, changeText: "from previous period" },
+    { title: "Customer Returns", value: 285, subtitle: "Total cases for Customer returns", changeValue: 7.8, changeText: "from previous period" },
+    { title: "WSF China", value: 423, subtitle: "Total cases for WSF China", changeValue: 3.1, changeText: "from previous period" },
+    { title: "IB Exceptions", value: 156, subtitle: "Total cases for IB Exceptions", changeValue: -2.5, changeText: "from previous period" },
+  ];
+
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <DashboardHeader
@@ -56,6 +65,20 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
         forecastPeriod={forecastPeriod}
         onRefresh={handleRefresh}
       />
+      
+      {/* KPI Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {kpiData.map((kpi, index) => (
+          <KPIMetricsCard
+            key={index}
+            title={kpi.title}
+            value={kpi.value}
+            subtitle={kpi.subtitle}
+            changeValue={kpi.changeValue}
+            changeText={kpi.changeText}
+          />
+        ))}
+      </div>
       
       <ModelConfiguration
         modelType={modelType}
