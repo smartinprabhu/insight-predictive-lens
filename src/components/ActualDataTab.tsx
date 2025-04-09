@@ -13,111 +13,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { generateWeeklyMonthlyData, aggregateToMonthly } from "@/services/forecastService";
 
-// Sample data - in a real app, this would come from an API
-const generateDailyData = (days = 30) => {
-  const data = [];
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-
-  for (let i = 0; i < days; i++) {
-    const currentDate = new Date(startDate);
-    currentDate.setDate(startDate.getDate() + i);
-    
-    const baseIbUnits = 120 + Math.random() * 80;
-    const baseInventory = 100 + Math.random() * 50;
-    const baseCustomerReturns = 30 + Math.random() * 30;
-    const baseWsfChina = 40 + Math.random() * 40;
-    const baseIbExceptions = 15 + Math.random() * 20;
-    
-    data.push({
-      date: currentDate.toISOString().split('T')[0],
-      dateFormatted: `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`,
-      ibUnits: Math.round(baseIbUnits),
-      inventory: Math.round(baseInventory),
-      customerReturns: Math.round(baseCustomerReturns),
-      wsfChina: Math.round(baseWsfChina),
-      ibExceptions: Math.round(baseIbExceptions),
-    });
-  }
-
-  return data;
-};
-
-// Aggregate data by week or month
-const aggregateData = (data, aggregationType) => {
-  if (aggregationType === "Daily") {
-    return data;
-  }
+export const ActualDataTab = ({ aggregationType = "Weekly" }) => {
+  // Generate sample data - in a real app, this would come from the API
+  const rawData = generateWeeklyMonthlyData(15);
   
-  const aggregatedData = [];
-  const groupedData = {};
-  
-  data.forEach(item => {
-    const date = new Date(item.date);
-    let key;
-    
-    if (aggregationType === "Weekly") {
-      // Get the week number and year
-      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
-      const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-      key = `${date.getFullYear()}-W${weekNum}`;
-    } else if (aggregationType === "Monthly") {
-      key = `${date.getFullYear()}-${date.getMonth() + 1}`;
-    }
-    
-    if (!groupedData[key]) {
-      groupedData[key] = {
-        count: 0,
-        ibUnits: 0,
-        inventory: 0,
-        customerReturns: 0,
-        wsfChina: 0,
-        ibExceptions: 0,
-        firstDate: date,
-      };
-    }
-    
-    groupedData[key].count += 1;
-    groupedData[key].ibUnits += item.ibUnits;
-    groupedData[key].inventory += item.inventory;
-    groupedData[key].customerReturns += item.customerReturns;
-    groupedData[key].wsfChina += item.wsfChina;
-    groupedData[key].ibExceptions += item.ibExceptions;
-  });
-  
-  Object.entries(groupedData).forEach(([key, value]) => {
-    const { count, firstDate, ...metrics } = value;
-    
-    let dateFormatted;
-    if (aggregationType === "Weekly") {
-      dateFormatted = `Week ${key.split('-W')[1]}, ${key.split('-')[0]}`;
-    } else {
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const month = parseInt(key.split('-')[1]) - 1;
-      dateFormatted = `${monthNames[month]} ${key.split('-')[0]}`;
-    }
-    
-    aggregatedData.push({
-      date: key,
-      dateFormatted,
-      ibUnits: Math.round(metrics.ibUnits / count),
-      inventory: Math.round(metrics.inventory / count),
-      customerReturns: Math.round(metrics.customerReturns / count),
-      wsfChina: Math.round(metrics.wsfChina / count),
-      ibExceptions: Math.round(metrics.ibExceptions / count),
-    });
-  });
-  
-  return aggregatedData.sort((a, b) => a.date.localeCompare(b.date));
-};
-
-export const ActualDataTab = ({ aggregationType = "Daily" }) => {
-  const rawData = generateDailyData(30);
-  const actualData = aggregateData(rawData, aggregationType);
+  // Process data based on aggregation type
+  const actualData = aggregationType === "Monthly" 
+    ? aggregateToMonthly(rawData)
+    : rawData;
   
   const [selectedMetrics, setSelectedMetrics] = useState({
     ibUnits: true,
@@ -191,11 +98,11 @@ export const ActualDataTab = ({ aggregationType = "Daily" }) => {
   };
 
   return (
-    <Card>
+    <Card className="rounded-xl shadow-lg border dark:border-gray-700 dark:bg-gray-800/90">
       <CardContent className="pt-6">
         <div className="flex flex-row justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold">Actual Data</h3>
-          <Button variant="outline" size="icon" onClick={exportToCSV}>
+          <h3 className="text-xl font-semibold">Historical Data</h3>
+          <Button variant="outline" size="icon" onClick={exportToCSV} className="rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
             <Download className="h-4 w-4" />
           </Button>
         </div>
@@ -300,10 +207,11 @@ export const ActualDataTab = ({ aggregationType = "Daily" }) => {
                 contentStyle={{ 
                   backgroundColor: 'white', 
                   border: '1px solid #f1f1f1',
-                  borderRadius: '4px',
-                  boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)'
+                  borderRadius: '8px',
+                  boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)'
                 }}
-                labelFormatter={(value) => `Date: ${value}`}
+                labelFormatter={(value) => `Period: ${value}`}
+                formatter={(value, name) => [value, name]}
               />
               <Legend />
               
@@ -315,6 +223,7 @@ export const ActualDataTab = ({ aggregationType = "Daily" }) => {
                   fillOpacity={1}
                   fill="url(#colorIbUnits)"
                   name="IB Units"
+                  activeDot={{ r: 6, strokeWidth: 2 }}
                 />
               )}
               
@@ -326,6 +235,7 @@ export const ActualDataTab = ({ aggregationType = "Daily" }) => {
                   fillOpacity={1}
                   fill="url(#colorInventory)"
                   name="Inventory"
+                  activeDot={{ r: 6, strokeWidth: 2 }}
                 />
               )}
               
@@ -337,6 +247,7 @@ export const ActualDataTab = ({ aggregationType = "Daily" }) => {
                   fillOpacity={1}
                   fill="url(#colorCustomerReturns)"
                   name="Customer Returns"
+                  activeDot={{ r: 6, strokeWidth: 2 }}
                 />
               )}
               
@@ -348,6 +259,7 @@ export const ActualDataTab = ({ aggregationType = "Daily" }) => {
                   fillOpacity={1}
                   fill="url(#colorWsfChina)"
                   name="WSF China"
+                  activeDot={{ r: 6, strokeWidth: 2 }}
                 />
               )}
               
@@ -359,6 +271,7 @@ export const ActualDataTab = ({ aggregationType = "Daily" }) => {
                   fillOpacity={1}
                   fill="url(#colorIbExceptions)"
                   name="IB Exceptions"
+                  activeDot={{ r: 6, strokeWidth: 2 }}
                 />
               )}
             </AreaChart>

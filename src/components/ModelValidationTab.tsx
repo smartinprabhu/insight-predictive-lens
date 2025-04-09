@@ -15,33 +15,23 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Download, HelpCircle, Info } from "lucide-react";
+import { Download, HelpCircle, Info, AlertCircle } from "lucide-react";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { generateWeeklyMonthlyData, aggregateToMonthly } from "@/services/forecastService";
 
 interface ModelValidationTabProps {
   aggregationType: string;
 }
 
 // Generate sample validation data
-const generateValidationData = (metricId = "ibUnits", days = 30) => {
+const generateValidationData = (metricId = "ibUnits", weeks = 15) => {
   const data = [];
   const date = new Date();
-  date.setDate(date.getDate() - days);
+  date.setDate(date.getDate() - (weeks * 7));
 
   // Different base values and error patterns for each metric
   const metricConfig = {
@@ -54,13 +44,20 @@ const generateValidationData = (metricId = "ibUnits", days = 30) => {
 
   const config = metricConfig[metricId as keyof typeof metricConfig] || metricConfig.ibUnits;
 
-  for (let i = 0; i < days; i++) {
+  for (let i = 0; i < weeks; i++) {
     const currentDate = new Date(date);
-    currentDate.setDate(date.getDate() + i);
+    currentDate.setDate(date.getDate() + (i * 7));
+    
+    // Calculate week number
+    const firstDayOfYear = new Date(currentDate.getFullYear(), 0, 1);
+    const pastDaysOfYear = (currentDate.getTime() - firstDayOfYear.getTime()) / 86400000;
+    const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+    
+    const weekKey = `${currentDate.getFullYear()}-W${weekNum.toString().padStart(2, '0')}`;
 
     // Generate realistic looking actual vs predicted values
-    const dayFactor = i / days * config.trend;
-    const baseTrend = config.base + (config.base * dayFactor);
+    const weekFactor = i / weeks * config.trend;
+    const baseTrend = config.base + (config.base * weekFactor);
     const actualValue = Math.round(baseTrend + (Math.random() * config.errorFactor * 2));
     
     // Predicted is close to actual but with some error
@@ -73,8 +70,8 @@ const generateValidationData = (metricId = "ibUnits", days = 30) => {
     const upperBound = Math.round(predictedValue + (predictedValue * 0.05) + confidenceFactor);
 
     data.push({
-      date: currentDate.toISOString().split('T')[0],
-      dateFormatted: `${currentDate.toLocaleString('default', { month: 'short' })} ${currentDate.getDate()}`,
+      date: weekKey,
+      dateFormatted: `Week ${weekNum}`,
       actual: actualValue,
       predicted: predictedValue,
       error: actualValue - predictedValue,
@@ -87,28 +84,19 @@ const generateValidationData = (metricId = "ibUnits", days = 30) => {
   return data;
 };
 
-// Aggregate validation data by week or month
-const aggregateValidationData = (data, aggregationType) => {
-  if (aggregationType === "Daily") {
-    return data;
-  }
-
-  const aggregatedData = [];
+// Process validation data for monthly view
+const processMonthlyValidationData = (data) => {
   const groupedData = {};
 
   data.forEach(item => {
-    const date = new Date(item.date);
-    let key;
-
-    if (aggregationType === "Weekly") {
-      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-      const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-      const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-      key = `${date.getFullYear()}-W${weekNum}`;
-    } else if (aggregationType === "Monthly") {
-      key = `${date.getFullYear()}-${date.getMonth() + 1}`;
-    }
-
+    const weekParts = item.date.split('-W');
+    const year = parseInt(weekParts[0]);
+    const weekNum = parseInt(weekParts[1]);
+    
+    // Estimate month from week number (rough approximation)
+    const estimatedMonth = Math.floor((weekNum - 1) / 4) + 1;
+    const key = `${year}-${estimatedMonth}`;
+    
     if (!groupedData[key]) {
       groupedData[key] = {
         count: 0,
@@ -117,8 +105,7 @@ const aggregateValidationData = (data, aggregationType) => {
         errorSum: 0,
         errorPercentSum: 0,
         lowerBoundSum: 0,
-        upperBoundSum: 0,
-        firstDate: date
+        upperBoundSum: 0
       };
     }
 
@@ -133,32 +120,26 @@ const aggregateValidationData = (data, aggregationType) => {
   });
 
   // Convert grouped data to array and calculate averages
-  Object.entries(groupedData).forEach(([key, value]) => {
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+  return Object.entries(groupedData).map(([key, value]) => {
+    const [year, month] = key.split('-');
+    const monthIndex = parseInt(month) - 1;
+    const dateFormatted = `${monthNames[monthIndex]} ${year}`;
+    
     const group = value as any;
-    const { count, actualSum, predictedSum, errorSum, errorPercentSum, lowerBoundSum, upperBoundSum, firstDate } = group;
-
-    let dateFormatted;
-    if (aggregationType === "Weekly") {
-      dateFormatted = `Week ${key.split('-W')[1]}, ${key.split('-')[0]}`;
-    } else {
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const month = parseInt(key.split('-')[1]) - 1;
-      dateFormatted = `${monthNames[month]} ${key.split('-')[0]}`;
-    }
-
-    aggregatedData.push({
+    
+    return {
       date: key,
       dateFormatted,
-      actual: Math.round(actualSum / count),
-      predicted: Math.round(predictedSum / count),
-      error: Math.round(errorSum / count),
-      errorPercent: Math.round(errorPercentSum / count),
-      lowerBound: Math.round(lowerBoundSum / count),
-      upperBound: Math.round(upperBoundSum / count)
-    });
-  });
-
-  return aggregatedData.sort((a, b) => a.date.localeCompare(b.date));
+      actual: Math.round(group.actualSum / group.count),
+      predicted: Math.round(group.predictedSum / group.count),
+      error: Math.round(group.errorSum / group.count),
+      errorPercent: Math.round(group.errorPercentSum / group.count),
+      lowerBound: Math.round(group.lowerBoundSum / group.count),
+      upperBound: Math.round(group.upperBoundSum / group.count)
+    };
+  }).sort((a, b) => a.date.localeCompare(b.date));
 };
 
 // Calculate model error metrics
@@ -186,7 +167,7 @@ const calculateErrorMetrics = (data) => {
   };
 };
 
-export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidationTabProps) => {
+export const ModelValidationTab = ({ aggregationType = "Weekly" }: ModelValidationTabProps) => {
   const [selectedMetric, setSelectedMetric] = useState("ibUnits");
   const [showMetricsInfo, setShowMetricsInfo] = useState(false);
   const { toast } = useToast();
@@ -201,8 +182,8 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
 
   // Generate validation data for selected metric
   const validationData = useMemo(() => {
-    const rawData = generateValidationData(selectedMetric, 30);
-    return aggregateValidationData(rawData, aggregationType);
+    const rawData = generateValidationData(selectedMetric, 15);
+    return aggregationType === "Monthly" ? processMonthlyValidationData(rawData) : rawData;
   }, [selectedMetric, aggregationType]);
 
   // Calculate error metrics
@@ -238,6 +219,20 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
     });
   };
 
+  // Get performance badge based on MAPE score
+  const getPerformanceBadge = (mape) => {
+    const mapeValue = parseFloat(mape);
+    if (mapeValue < 10) {
+      return <Badge className="bg-green-500">Excellent</Badge>;
+    } else if (mapeValue < 20) {
+      return <Badge className="bg-blue-500">Good</Badge>;
+    } else if (mapeValue < 30) {
+      return <Badge className="bg-yellow-500 text-gray-800">Fair</Badge>;
+    } else {
+      return <Badge className="bg-red-500">Poor</Badge>;
+    }
+  };
+
   const selectedMetricInfo = metrics.find(m => m.id === selectedMetric);
 
   return (
@@ -246,7 +241,7 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-xl font-semibold">Model Validation</h3>
+              <h3 className="text-xl font-semibold">Model Performance</h3>
               <UITooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -254,7 +249,7 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="w-80 p-4">
-                  <p className="font-medium mb-1">About model validation</p>
+                  <p className="font-medium mb-1">About model performance</p>
                   <p className="text-sm text-muted-foreground">
                     This page shows how accurately our forecasting model predicts actual values. 
                     Lower error metrics indicate better model performance. The chart compares 
@@ -264,7 +259,7 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
               </UITooltip>
             </div>
             <p className="text-sm text-muted-foreground">
-              Model performance and error analysis ({aggregationType})
+              Historical prediction accuracy ({aggregationType})
             </p>
           </div>
 
@@ -289,7 +284,7 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
         </div>
 
         <div className="grid gap-6 lg:grid-cols-4">
-          <Card className="lg:col-span-3 shadow-md dark:border-gray-700">
+          <Card className="lg:col-span-3 shadow-md dark:border-gray-700 rounded-xl">
             <CardContent className="p-6">
               <div className="h-[400px] bg-gradient-to-b from-card/40 to-background/10 dark:from-gray-800/40 dark:to-gray-900/40 p-4 rounded-lg border border-border/10 dark:border-gray-700/30">
                 <ResponsiveContainer width="100%" height="100%">
@@ -389,10 +384,10 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
             </CardContent>
           </Card>
 
-          <Card className="shadow-md dark:border-gray-700">
+          <Card className="shadow-md dark:border-gray-700 rounded-xl">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
-                Error Metrics
+                Performance Metrics
                 <UITooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -406,72 +401,111 @@ export const ModelValidationTab = ({ aggregationType = "Daily" }: ModelValidatio
                   </TooltipContent>
                 </UITooltip>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="flex items-center gap-2">
                 For {metrics.find(m => m.id === selectedMetric)?.name}
+                {getPerformanceBadge(errorMetrics.mape)}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 mb-4">
+              <div className="space-y-4 mb-4">
                 <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between mb-1">
                     <div className="font-medium">MAPE</div>
-                    <div className={`font-mono ${parseFloat(errorMetrics.mape) < 10 ? 'text-green-500' : 'text-amber-500'}`}>
+                    <div className={`font-mono ${parseFloat(errorMetrics.mape) < 10 ? 'text-green-500' : parseFloat(errorMetrics.mape) < 20 ? 'text-blue-500' : parseFloat(errorMetrics.mape) < 30 ? 'text-yellow-500' : 'text-red-500'}`}>
                       {errorMetrics.mape}%
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Mean Absolute Percentage Error
-                  </div>
-                  <div className="w-full bg-gray-200 h-1 mt-2 rounded-full dark:bg-gray-700">
-                    <div className={`h-1 rounded-full ${parseFloat(errorMetrics.mape) < 10 ? 'bg-green-500' : 'bg-amber-500'}`} 
-                        style={{ width: `${Math.min(parseFloat(errorMetrics.mape) * 2, 100)}%` }}></div>
+                  <Progress 
+                    value={Math.min(parseFloat(errorMetrics.mape) * 2, 100)} 
+                    className="h-2"
+                    indicatorClassName={`${parseFloat(errorMetrics.mape) < 10 ? 'bg-green-500' : parseFloat(errorMetrics.mape) < 20 ? 'bg-blue-500' : parseFloat(errorMetrics.mape) < 30 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  />
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                    <span>Mean Absolute Percentage Error</span>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
+                          <Info className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p className="text-xs max-w-[180px]">
+                          Average percentage difference between predicted and actual values. Values under 10% indicate excellent accuracy.
+                        </p>
+                      </TooltipContent>
+                    </UITooltip>
                   </div>
                 </div>
 
                 <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between mb-1">
                     <div className="font-medium">RMSE</div>
                     <div className="font-mono">{errorMetrics.rmse}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Root Mean Square Error
+                  <Progress 
+                    value={Math.min(parseFloat(errorMetrics.rmse) / 2, 100)} 
+                    className="h-2"
+                  />
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                    <span>Root Mean Square Error</span>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
+                          <Info className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p className="text-xs max-w-[180px]">
+                          Measures error magnitude, giving higher weight to large errors. Lower values indicate better predictions.
+                        </p>
+                      </TooltipContent>
+                    </UITooltip>
                   </div>
                 </div>
 
                 <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between mb-1">
                     <div className="font-medium">MAE</div>
                     <div className="font-mono">{errorMetrics.mae}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Mean Absolute Error
+                  <Progress 
+                    value={Math.min(parseFloat(errorMetrics.mae) * 2, 100)} 
+                    className="h-2"
+                  />
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                    <span>Mean Absolute Error</span>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
+                          <Info className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p className="text-xs max-w-[180px]">
+                          Average absolute difference between predictions and actuals. Easier to interpret than RMSE, in the same units as the data.
+                        </p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-md mt-2 border border-gray-200 dark:bg-gray-800/50 dark:border-gray-700/50">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                    <p className="text-xs text-muted-foreground">
+                      Accuracy interpretation: {
+                        parseFloat(errorMetrics.mape) < 10 
+                          ? "Excellent prediction accuracy" 
+                          : parseFloat(errorMetrics.mape) < 20
+                            ? "Good prediction accuracy"
+                            : parseFloat(errorMetrics.mape) < 30
+                              ? "Fair prediction accuracy, may need improvement"
+                              : "Poor prediction accuracy, model needs refinement"
+                      }
+                    </p>
                   </div>
                 </div>
               </div>
-
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full text-xs justify-center">
-                    {showMetricsInfo ? "Hide" : "Show"} metrics explanations
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2 space-y-2">
-                  <div className="text-xs p-2 bg-muted rounded-md dark:bg-gray-700/30">
-                    <p className="font-medium mb-1">MAPE (Mean Absolute Percentage Error)</p>
-                    <p className="text-muted-foreground">Average percentage difference between predicted and actual values. Values under 10% indicate good accuracy.</p>
-                  </div>
-                  
-                  <div className="text-xs p-2 bg-muted rounded-md dark:bg-gray-700/30">
-                    <p className="font-medium mb-1">RMSE (Root Mean Square Error)</p>
-                    <p className="text-muted-foreground">Measures error magnitude, giving higher weight to large errors. Lower values indicate better predictions.</p>
-                  </div>
-                  
-                  <div className="text-xs p-2 bg-muted rounded-md dark:bg-gray-700/30">
-                    <p className="font-medium mb-1">MAE (Mean Absolute Error)</p>
-                    <p className="text-muted-foreground">Average absolute difference between predictions and actuals. Easier to interpret than RMSE, in the same units as the data.</p>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
             </CardContent>
           </Card>
         </div>

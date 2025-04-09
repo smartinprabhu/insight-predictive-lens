@@ -21,8 +21,8 @@ interface UploadDataFormProps {
 export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [modelType, setModelType] = useState("Prophet");
-  const [forecastPeriod, setForecastPeriod] = useState(30);
-  const [aggregationType, setAggregationType] = useState("Daily");
+  const [forecastPeriod, setForecastPeriod] = useState(12); // default to 12 weeks
+  const [aggregationType, setAggregationType] = useState("Weekly");
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,11 +73,13 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <Card className="w-full max-w-2xl dark:bg-gray-800 dark:border-gray-700">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <Card className="w-full max-w-2xl dark:bg-gray-800/90 dark:border-gray-700 rounded-xl shadow-lg">
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Upload Inventory Data</h1>
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+              Predictive Analytics Dashboard
+            </h1>
             <ThemeToggle />
           </div>
           
@@ -92,7 +94,7 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
               </label>
               <Input
                 type="file"
-                accept=".xlsx"
+                accept=".xlsx,.xls"
                 onChange={handleFileChange}
                 className="cursor-pointer dark:bg-gray-700 dark:border-gray-600"
               />
@@ -125,14 +127,14 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Forecast Period (days)
+                  Forecast Period (weeks)
                 </label>
                 <Input
                   type="number"
                   value={forecastPeriod}
                   onChange={(e) => setForecastPeriod(Number(e.target.value))}
                   min={1}
-                  max={500}
+                  max={52}
                   className="dark:bg-gray-700 dark:border-gray-600"
                 />
               </div>
@@ -149,7 +151,6 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
                     <SelectValue placeholder="Select aggregation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Daily">Daily</SelectItem>
                     <SelectItem value="Weekly">Weekly</SelectItem>
                     <SelectItem value="Monthly">Monthly</SelectItem>
                   </SelectContent>
@@ -169,7 +170,7 @@ export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
               
               <Button 
                 type="submit" 
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 text-white"
               >
                 Generate Dashboard
                 <MoveRightIcon className="ml-2 h-4 w-4" />
