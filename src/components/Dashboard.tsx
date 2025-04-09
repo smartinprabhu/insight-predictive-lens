@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { Settings } from "lucide-react";
 import { DashboardHeader } from "./DashboardHeader";
 import { ModelConfiguration } from "./ModelConfiguration";
 import { TabNavigation } from "./TabNavigation";
@@ -16,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 
 interface DashboardProps {
   onReset: () => void;
@@ -23,8 +23,8 @@ interface DashboardProps {
 
 export const Dashboard = ({ onReset }: DashboardProps) => {
   const [modelType, setModelType] = useState("Prophet");
-  const [forecastPeriod, setForecastPeriod] = useState(30);
-  const [aggregationType, setAggregationType] = useState("Daily");
+  const [forecastPeriod, setForecastPeriod] = useState(12);
+  const [aggregationType, setAggregationType] = useState("Weekly");
   const [activeTab, setActiveTab] = useState("actualData");
   const { toast } = useToast();
 
@@ -45,7 +45,7 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "actualData":
-        return <ActualDataTab aggregationType={aggregationType} />;
+        return <ActualDataTab aggregationType={aggregationType} forecastPeriod={forecastPeriod} />;
       case "forecast":
         return <ForecastTab forecastPeriod={forecastPeriod} aggregationType={aggregationType} />;
       case "modelValidation":
@@ -53,7 +53,7 @@ export const Dashboard = ({ onReset }: DashboardProps) => {
       case "insights":
         return <InsightsTab />;
       default:
-        return <ActualDataTab aggregationType={aggregationType} />;
+        return <ActualDataTab aggregationType={aggregationType} forecastPeriod={forecastPeriod} />;
     }
   };
 

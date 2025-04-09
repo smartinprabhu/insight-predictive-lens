@@ -21,9 +21,6 @@ export async function fetchForecastData(file: File, forecastPeriod: number): Pro
     
     const response = await fetch('https://f791-2409-40f4-1011-194f-19ee-f25d-8b8c-66bb.ngrok-free.app/forecast', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
       body: formData
     });
     

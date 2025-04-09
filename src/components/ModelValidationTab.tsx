@@ -1,515 +1,396 @@
 
-import React, { useState, useMemo } from "react";
+// Import the components we need
 import {
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
-  ReferenceLine,
-  Area
+  Line,
+  LineChart,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Download, HelpCircle, Info, AlertCircle } from "lucide-react";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { generateWeeklyMonthlyData, aggregateToMonthly } from "@/services/forecastService";
 
-interface ModelValidationTabProps {
-  aggregationType: string;
-}
-
-// Generate sample validation data
-const generateValidationData = (metricId = "ibUnits", weeks = 15) => {
-  const data = [];
-  const date = new Date();
-  date.setDate(date.getDate() - (weeks * 7));
-
-  // Different base values and error patterns for each metric
-  const metricConfig = {
-    ibUnits: { base: 120, errorFactor: 10, trend: 0.2 },
-    inventory: { base: 250, errorFactor: 15, trend: -0.1 },
-    customerReturns: { base: 80, errorFactor: 5, trend: 0.1 },
-    wsfChina: { base: 180, errorFactor: 12, trend: 0.3 },
-    ibExceptions: { base: 60, errorFactor: 8, trend: -0.2 },
+// Sample validation data for demonstration (would come from API in a real app)
+const getModelValidationData = () => {
+  return {
+    actual: [148, 165, 180, 170, 190, 210, 200, 220, 210, 240, 230, 250],
+    predicted: [145, 160, 175, 175, 185, 200, 205, 215, 220, 230, 235, 245],
+    lower: [130, 145, 160, 160, 170, 185, 190, 200, 205, 215, 220, 230],
+    upper: [160, 175, 190, 190, 200, 215, 220, 230, 235, 245, 250, 260],
+    labels: [
+      "Week 1",
+      "Week 2",
+      "Week 3",
+      "Week 4",
+      "Week 5",
+      "Week 6",
+      "Week 7",
+      "Week 8",
+      "Week 9",
+      "Week 10",
+      "Week 11",
+      "Week 12",
+    ],
   };
-
-  const config = metricConfig[metricId as keyof typeof metricConfig] || metricConfig.ibUnits;
-
-  for (let i = 0; i < weeks; i++) {
-    const currentDate = new Date(date);
-    currentDate.setDate(date.getDate() + (i * 7));
-    
-    // Calculate week number
-    const firstDayOfYear = new Date(currentDate.getFullYear(), 0, 1);
-    const pastDaysOfYear = (currentDate.getTime() - firstDayOfYear.getTime()) / 86400000;
-    const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-    
-    const weekKey = `${currentDate.getFullYear()}-W${weekNum.toString().padStart(2, '0')}`;
-
-    // Generate realistic looking actual vs predicted values
-    const weekFactor = i / weeks * config.trend;
-    const baseTrend = config.base + (config.base * weekFactor);
-    const actualValue = Math.round(baseTrend + (Math.random() * config.errorFactor * 2));
-    
-    // Predicted is close to actual but with some error
-    const errorPercent = Math.random() * 0.2 - 0.1; // -10% to +10% error
-    const predictedValue = Math.round(actualValue * (1 + errorPercent));
-    
-    // Generate confidence bounds (95% confidence interval)
-    const confidenceFactor = Math.max(5, config.errorFactor / 2);
-    const lowerBound = Math.round(predictedValue - (predictedValue * 0.05) - confidenceFactor);
-    const upperBound = Math.round(predictedValue + (predictedValue * 0.05) + confidenceFactor);
-
-    data.push({
-      date: weekKey,
-      dateFormatted: `Week ${weekNum}`,
-      actual: actualValue,
-      predicted: predictedValue,
-      error: actualValue - predictedValue,
-      errorPercent: Math.round((actualValue - predictedValue) / actualValue * 100),
-      lowerBound,
-      upperBound
-    });
-  }
-
-  return data;
 };
 
-// Process validation data for monthly view
-const processMonthlyValidationData = (data) => {
-  const groupedData = {};
-
-  data.forEach(item => {
-    const weekParts = item.date.split('-W');
-    const year = parseInt(weekParts[0]);
-    const weekNum = parseInt(weekParts[1]);
-    
-    // Estimate month from week number (rough approximation)
-    const estimatedMonth = Math.floor((weekNum - 1) / 4) + 1;
-    const key = `${year}-${estimatedMonth}`;
-    
-    if (!groupedData[key]) {
-      groupedData[key] = {
-        count: 0,
-        actualSum: 0,
-        predictedSum: 0,
-        errorSum: 0,
-        errorPercentSum: 0,
-        lowerBoundSum: 0,
-        upperBoundSum: 0
-      };
-    }
-
-    const group = groupedData[key];
-    group.count += 1;
-    group.actualSum += item.actual;
-    group.predictedSum += item.predicted;
-    group.errorSum += item.error;
-    group.errorPercentSum += item.errorPercent;
-    group.lowerBoundSum += item.lowerBound;
-    group.upperBoundSum += item.upperBound;
-  });
-
-  // Convert grouped data to array and calculate averages
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// Create a performance metrics dataset from the validation data
+const getPerformanceMetrics = () => {
+  const data = getModelValidationData();
+  let totalError = 0;
+  let totalAbsError = 0;
+  let totalSquaredError = 0;
+  const totalActual = data.actual.reduce((sum, value) => sum + value, 0);
   
-  return Object.entries(groupedData).map(([key, value]) => {
-    const [year, month] = key.split('-');
-    const monthIndex = parseInt(month) - 1;
-    const dateFormatted = `${monthNames[monthIndex]} ${year}`;
+  const metrics = data.actual.map((actual, index) => {
+    const predicted = data.predicted[index];
+    const error = predicted - actual;
+    const absError = Math.abs(error);
+    const squaredError = error * error;
     
-    const group = value as any;
+    totalError += error;
+    totalAbsError += absError;
+    totalSquaredError += squaredError;
     
     return {
-      date: key,
-      dateFormatted,
-      actual: Math.round(group.actualSum / group.count),
-      predicted: Math.round(group.predictedSum / group.count),
-      error: Math.round(group.errorSum / group.count),
-      errorPercent: Math.round(group.errorPercentSum / group.count),
-      lowerBound: Math.round(group.lowerBoundSum / group.count),
-      upperBound: Math.round(group.upperBoundSum / group.count)
+      period: data.labels[index],
+      actual,
+      predicted,
+      error,
+      absError,
+      squaredError,
+      percentageError: (error / actual) * 100,
     };
-  }).sort((a, b) => a.date.localeCompare(b.date));
-};
-
-// Calculate model error metrics
-const calculateErrorMetrics = (data) => {
-  let mape = 0;
-  let rmse = 0;
-  let mae = 0;
-  
-  // Sum up errors
-  data.forEach(item => {
-    mape += Math.abs(item.error / item.actual);
-    rmse += Math.pow(item.error, 2);
-    mae += Math.abs(item.error);
   });
   
-  // Calculate averages
-  mape = (mape / data.length) * 100;
-  rmse = Math.sqrt(rmse / data.length);
-  mae = mae / data.length;
+  const n = data.actual.length;
   
   return {
-    mape: mape.toFixed(2),
-    rmse: rmse.toFixed(2),
-    mae: mae.toFixed(2)
+    metrics,
+    summary: {
+      mae: totalAbsError / n,
+      mse: totalSquaredError / n,
+      rmse: Math.sqrt(totalSquaredError / n),
+      mape: (metrics.reduce((sum, item) => sum + Math.abs(item.percentageError), 0)) / n,
+      bias: totalError / n,
+    },
   };
 };
 
-export const ModelValidationTab = ({ aggregationType = "Weekly" }: ModelValidationTabProps) => {
-  const [selectedMetric, setSelectedMetric] = useState("ibUnits");
-  const [showMetricsInfo, setShowMetricsInfo] = useState(false);
-  const { toast } = useToast();
-
-  const metrics = [
-    { id: "ibUnits", name: "IB Units", color: "#4284f5" },
-    { id: "inventory", name: "Inventory", color: "#36b37e" },
-    { id: "customerReturns", name: "Customer Returns", color: "#ff9e2c" },
-    { id: "wsfChina", name: "WSF China", color: "#9061F9" },
-    { id: "ibExceptions", name: "IB Exceptions", color: "#f56565" },
-  ];
-
-  // Generate validation data for selected metric
-  const validationData = useMemo(() => {
-    const rawData = generateValidationData(selectedMetric, 15);
-    return aggregationType === "Monthly" ? processMonthlyValidationData(rawData) : rawData;
-  }, [selectedMetric, aggregationType]);
-
-  // Calculate error metrics
-  const errorMetrics = calculateErrorMetrics(validationData);
-
-  const handleMetricChange = (value) => {
-    setSelectedMetric(value);
+// Data preparation for accuracy metrics charts
+const prepareData = () => {
+  const { metrics, summary } = getPerformanceMetrics();
+  const validationData = getModelValidationData();
+  
+  // Prepare the data for the line chart
+  const lineData = validationData.labels.map((label, index) => {
+    return {
+      name: label,
+      Actual: validationData.actual[index],
+      Predicted: validationData.predicted[index],
+      "Lower Bound": validationData.lower[index],
+      "Upper Bound": validationData.upper[index],
+      Error: metrics[index].error,
+    };
+  });
+  
+  // Prepare the data for the error distribution chart
+  const errorDistData = metrics.map((item) => ({
+    name: item.period,
+    Error: item.error,
+  }));
+  
+  // Scalar metrics for the metrics cards
+  const scalarMetrics = {
+    mae: summary.mae.toFixed(2),
+    mse: summary.mse.toFixed(2),
+    rmse: summary.rmse.toFixed(2),
+    mape: summary.mape.toFixed(2),
+    bias: summary.bias.toFixed(2),
   };
+  
+  return { lineData, errorDistData, scalarMetrics };
+};
 
-  const exportToCSV = () => {
-    // Create CSV content
-    const headers = ["Date", "Actual", "Predicted", "Lower Bound", "Upper Bound", "Error", "Error Percent"];
-    const csvContent = [
-      headers.join(","),
-      ...validationData.map(row => 
-        [row.date, row.actual, row.predicted, row.lowerBound, row.upperBound, row.error, row.errorPercent].join(",")
-      )
-    ].join("\n");
+// Component for displaying error metrics
+const ErrorMetricsCard = ({ title, value, description, maxValue, color }: { 
+  title: string;
+  value: number;
+  description: string;
+  maxValue: number;
+  color: string;
+}) => {
+  // Convert string to number to ensure we have a numerical value for calculations
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  const percentage = (numericValue / maxValue) * 100;
+  
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{numericValue.toFixed(2)}</div>
+        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        <Progress
+          value={percentage}
+          className="h-2 mt-2"
+        />
+      </CardContent>
+    </Card>
+  );
+};
 
-    // Create and trigger download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `validation_${selectedMetric}_${aggregationType.toLowerCase()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast({
-      title: "Export successful",
-      description: `Validation data for ${metrics.find(m => m.id === selectedMetric)?.name} has been exported to CSV`,
-    });
+// The main component
+export const ModelValidationTab = ({ aggregationType = "Weekly" }) => {
+  const { lineData, errorDistData, scalarMetrics } = prepareData();
+  
+  // Define descriptions for error metrics
+  const metricDescriptions = {
+    mae: "Mean Absolute Error - average absolute difference between predictions and actual values",
+    mse: "Mean Squared Error - average of squared errors measuring prediction quality",
+    rmse: "Root Mean Squared Error - square root of MSE, represents standard deviation of errors",
+    mape: "Mean Absolute Percentage Error - percentage representation of prediction accuracy",
+    bias: "Average tendency of the model to over or under predict (closer to 0 is better)",
   };
-
-  // Get performance badge based on MAPE score
-  const getPerformanceBadge = (mape) => {
-    const mapeValue = parseFloat(mape);
-    if (mapeValue < 10) {
-      return <Badge className="bg-green-500">Excellent</Badge>;
-    } else if (mapeValue < 20) {
-      return <Badge className="bg-blue-500">Good</Badge>;
-    } else if (mapeValue < 30) {
-      return <Badge className="bg-yellow-500 text-gray-800">Fair</Badge>;
-    } else {
-      return <Badge className="bg-red-500">Poor</Badge>;
-    }
+  
+  // Define max values for visualizing metrics (these would typically be derived from industry standards or project requirements)
+  const maxValues = {
+    mae: 20,
+    mse: 400,
+    rmse: 20,
+    mape: 15,
+    bias: 10,
   };
-
-  const selectedMetricInfo = metrics.find(m => m.id === selectedMetric);
+  
+  // Define colors for different metrics
+  const metricColors = {
+    mae: "bg-blue-500",
+    mse: "bg-purple-500",
+    rmse: "bg-red-500",
+    mape: "bg-amber-500",
+    bias: "bg-emerald-500",
+  };
 
   return (
-    <TooltipProvider>
-      <div className="grid gap-6">
-        <div className="flex flex-col sm:flex-row justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-xl font-semibold">Model Performance</h3>
-              <UITooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <HelpCircle className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="w-80 p-4">
-                  <p className="font-medium mb-1">About model performance</p>
-                  <p className="text-sm text-muted-foreground">
-                    This page shows how accurately our forecasting model predicts actual values. 
-                    Lower error metrics indicate better model performance. The chart compares 
-                    actual historical values with what our model would have predicted for those dates.
-                  </p>
-                </TooltipContent>
-              </UITooltip>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Historical prediction accuracy ({aggregationType})
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Select value={selectedMetric} onValueChange={handleMetricChange}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select metric" />
-              </SelectTrigger>
-              <SelectContent>
-                {metrics.map(metric => (
-                  <SelectItem key={metric.id} value={metric.id}>
-                    {metric.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button variant="outline" size="icon" onClick={exportToCSV}>
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-4">
-          <Card className="lg:col-span-3 shadow-md dark:border-gray-700 rounded-xl">
-            <CardContent className="p-6">
-              <div className="h-[400px] bg-gradient-to-b from-card/40 to-background/10 dark:from-gray-800/40 dark:to-gray-900/40 p-4 rounded-lg border border-border/10 dark:border-gray-700/30">
+    <div className="space-y-6">
+      <Card className="shadow-md dark:shadow-gray-800/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl">Model Performance Validation</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Comparison between actual and predicted values with {aggregationType.toLowerCase()} aggregation
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="lineComparison" className="w-full">
+            <TabsList className="mb-4 w-full max-w-md">
+              <TabsTrigger value="lineComparison" className="flex-1">Line Comparison</TabsTrigger>
+              <TabsTrigger value="errorDistribution" className="flex-1">Error Distribution</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="lineComparison" className="pt-2">
+              <div className="h-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={validationData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                    <XAxis dataKey="dateFormatted" stroke="currentColor" className="text-muted-foreground text-opacity-70" />
-                    <YAxis stroke="currentColor" className="text-muted-foreground text-opacity-70" />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          const actual = payload[0]?.value;
-                          const predicted = payload[1]?.value;
-                          const lowerBound = payload[2]?.value;
-                          const upperBound = payload[3]?.value;
-                          const error = Math.abs(actual - predicted);
-                          const errorPercent = Math.round((error / actual) * 100);
-
-                          return (
-                            <div className="bg-popover border border-border rounded-lg p-3 shadow-xl dark:bg-gray-800 dark:border-gray-700">
-                              <div className="font-medium pb-2 border-b border-border/50 dark:border-gray-700/80 mb-2">{label}</div>
-                              <div className="space-y-1.5">
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3" style={{ backgroundColor: selectedMetricInfo?.color }}></div>
-                                    <span className="text-sm">Actual</span>
-                                  </div>
-                                  <span className="text-sm font-mono">{actual}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 border-2" style={{ borderColor: selectedMetricInfo?.color }}></div>
-                                    <span className="text-sm">Predicted</span>
-                                  </div>
-                                  <span className="text-sm font-mono">{predicted}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs">Confidence Bounds</span>
-                                  </div>
-                                  <span className="text-xs font-mono">{lowerBound} - {upperBound}</span>
-                                </div>
-                                <div className="flex justify-between items-center pt-1 border-t border-border/30 dark:border-gray-700/50 text-muted-foreground">
-                                  <span className="text-xs">Absolute Error</span>
-                                  <span className="text-xs font-mono">{error} ({errorPercent}%)</span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
+                  <LineChart
+                    data={lineData}
+                    margin={{ top: 10, right: 30, left: 20, bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 12 }}
+                      padding={{ left: 20, right: 20 }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        borderRadius: '8px',
+                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                        border: '1px solid #f1f1f1'
                       }}
+                      formatter={(value, name) => [value, name]}
+                      labelFormatter={(label) => `Period: ${label}`}
                     />
-                    <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="lowerBound"
-                      stackId="1"
-                      stroke="none"
-                      fill={`${selectedMetricInfo?.color}20`}
-                      name="Lower Bound" 
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="upperBound"
-                      stackId="1"
-                      stroke="none"
-                      fill={`${selectedMetricInfo?.color}20`}
-                      name="Upper Bound"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="actual" 
-                      name="Actual" 
-                      stroke={selectedMetricInfo?.color} 
-                      dot={{ r: 4 }} 
-                      activeDot={{ r: 6 }}
+                    <Legend verticalAlign="top" height={36} />
+                    
+                    <Line
+                      type="monotone"
+                      dataKey="Actual"
+                      stroke="#4284f5"
                       strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6, strokeWidth: 1 }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="predicted" 
-                      name="Predicted" 
-                      stroke={selectedMetricInfo?.color} 
+                    <Line
+                      type="monotone"
+                      dataKey="Predicted"
+                      stroke="#36b37e"
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6, strokeWidth: 1 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="Lower Bound"
+                      stroke="#a8aaad"
+                      strokeWidth={1}
                       strokeDasharray="5 5"
-                      strokeWidth={2}
-                      dot={{ stroke: selectedMetricInfo?.color, strokeWidth: 2, r: 4, fill: "white" }}
+                      dot={false}
                     />
-                    <ReferenceLine 
-                      y={validationData.reduce((sum, item) => sum + item.actual, 0) / validationData.length} 
-                      stroke="#666" 
-                      strokeDasharray="3 3"
-                      label={{ value: 'Average', position: 'right', fill: '#666' }}
+                    <Line
+                      type="monotone"
+                      dataKey="Upper Bound"
+                      stroke="#a8aaad"
+                      strokeWidth={1}
+                      strokeDasharray="5 5"
+                      dot={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md dark:border-gray-700 rounded-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
-                Performance Metrics
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                      <Info className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="w-80 p-4">
-                    <p className="text-sm text-muted-foreground">
-                      These metrics help evaluate forecasting accuracy. Lower values indicate better performance.
-                    </p>
-                  </TooltipContent>
-                </UITooltip>
-              </CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                For {metrics.find(m => m.id === selectedMetric)?.name}
-                {getPerformanceBadge(errorMetrics.mape)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 mb-4">
-                <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
-                  <div className="flex justify-between mb-1">
-                    <div className="font-medium">MAPE</div>
-                    <div className={`font-mono ${parseFloat(errorMetrics.mape) < 10 ? 'text-green-500' : parseFloat(errorMetrics.mape) < 20 ? 'text-blue-500' : parseFloat(errorMetrics.mape) < 30 ? 'text-yellow-500' : 'text-red-500'}`}>
-                      {errorMetrics.mape}%
-                    </div>
-                  </div>
-                  <Progress 
-                    value={Math.min(parseFloat(errorMetrics.mape) * 2, 100)} 
-                    className="h-2"
-                    indicatorClassName={`${parseFloat(errorMetrics.mape) < 10 ? 'bg-green-500' : parseFloat(errorMetrics.mape) < 20 ? 'bg-blue-500' : parseFloat(errorMetrics.mape) < 30 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                  />
-                  <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                    <span>Mean Absolute Percentage Error</span>
-                    <UITooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
-                          <Info className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p className="text-xs max-w-[180px]">
-                          Average percentage difference between predicted and actual values. Values under 10% indicate excellent accuracy.
-                        </p>
-                      </TooltipContent>
-                    </UITooltip>
-                  </div>
-                </div>
-
-                <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
-                  <div className="flex justify-between mb-1">
-                    <div className="font-medium">RMSE</div>
-                    <div className="font-mono">{errorMetrics.rmse}</div>
-                  </div>
-                  <Progress 
-                    value={Math.min(parseFloat(errorMetrics.rmse) / 2, 100)} 
-                    className="h-2"
-                  />
-                  <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                    <span>Root Mean Square Error</span>
-                    <UITooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
-                          <Info className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p className="text-xs max-w-[180px]">
-                          Measures error magnitude, giving higher weight to large errors. Lower values indicate better predictions.
-                        </p>
-                      </TooltipContent>
-                    </UITooltip>
-                  </div>
-                </div>
-
-                <div className="bg-muted p-3 rounded-md dark:bg-gray-700/50">
-                  <div className="flex justify-between mb-1">
-                    <div className="font-medium">MAE</div>
-                    <div className="font-mono">{errorMetrics.mae}</div>
-                  </div>
-                  <Progress 
-                    value={Math.min(parseFloat(errorMetrics.mae) * 2, 100)} 
-                    className="h-2"
-                  />
-                  <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                    <span>Mean Absolute Error</span>
-                    <UITooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
-                          <Info className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p className="text-xs max-w-[180px]">
-                          Average absolute difference between predictions and actuals. Easier to interpret than RMSE, in the same units as the data.
-                        </p>
-                      </TooltipContent>
-                    </UITooltip>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-gray-50 rounded-md mt-2 border border-gray-200 dark:bg-gray-800/50 dark:border-gray-700/50">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-amber-500" />
-                    <p className="text-xs text-muted-foreground">
-                      Accuracy interpretation: {
-                        parseFloat(errorMetrics.mape) < 10 
-                          ? "Excellent prediction accuracy" 
-                          : parseFloat(errorMetrics.mape) < 20
-                            ? "Good prediction accuracy"
-                            : parseFloat(errorMetrics.mape) < 30
-                              ? "Fair prediction accuracy, may need improvement"
-                              : "Poor prediction accuracy, model needs refinement"
-                      }
-                    </p>
-                  </div>
-                </div>
+              
+              <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
+                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Confidence Bounds Explained</h4>
+                <p className="text-xs text-blue-700 dark:text-blue-400">
+                  The upper and lower bounds represent the 95% confidence interval for the forecast.
+                  There is a 95% probability that the actual value will fall within these bounds.
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </TabsContent>
+            
+            <TabsContent value="errorDistribution" className="pt-2">
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={errorDistData}
+                    margin={{ top: 10, right: 30, left: 20, bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 12 }}
+                      padding={{ left: 20, right: 20 }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        borderRadius: '8px',
+                        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                        border: '1px solid #f1f1f1'
+                      }}
+                      formatter={(value, name) => [`${value} units`, name]}
+                      labelFormatter={(label) => `Period: ${label}`}
+                    />
+                    <Legend verticalAlign="top" height={36} />
+                    <Bar
+                      dataKey="Error"
+                      fill="#f56565"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="mt-4 bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+                <h4 className="text-sm font-medium text-red-800 dark:text-red-300 mb-1">Error Distribution</h4>
+                <p className="text-xs text-red-700 dark:text-red-400">
+                  This chart shows the difference between predicted and actual values across periods.
+                  Positive values indicate overprediction, while negative values indicate underprediction.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+      
+      <div>
+        <h3 className="text-lg font-medium mb-4">Error Metrics</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <ErrorMetricsCard
+            title="MAE"
+            value={parseFloat(scalarMetrics.mae)}
+            description={metricDescriptions.mae}
+            maxValue={maxValues.mae}
+            color="blue"
+          />
+          
+          <ErrorMetricsCard
+            title="MSE"
+            value={parseFloat(scalarMetrics.mse)}
+            description={metricDescriptions.mse}
+            maxValue={maxValues.mse}
+            color="purple"
+          />
+          
+          <ErrorMetricsCard
+            title="RMSE"
+            value={parseFloat(scalarMetrics.rmse)}
+            description={metricDescriptions.rmse}
+            maxValue={maxValues.rmse}
+            color="red"
+          />
+          
+          <ErrorMetricsCard
+            title="MAPE (%)"
+            value={parseFloat(scalarMetrics.mape)}
+            description={metricDescriptions.mape}
+            maxValue={maxValues.mape}
+            color="amber"
+          />
+          
+          <ErrorMetricsCard
+            title="Bias"
+            value={parseFloat(scalarMetrics.bias)}
+            description={metricDescriptions.bias}
+            maxValue={maxValues.bias}
+            color="emerald"
+          />
+        </div>
+        
+        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+          <h4 className="text-sm font-medium mb-2">How to interpret these metrics</h4>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li className="flex gap-2">
+              <span className="font-semibold text-blue-600 dark:text-blue-400">MAE:</span>
+              <span>Lower is better. This is the average absolute difference between predictions and actual values.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-semibold text-purple-600 dark:text-purple-400">MSE:</span>
+              <span>Lower is better. Heavily penalizes large errors by squaring differences.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-semibold text-red-600 dark:text-red-400">RMSE:</span>
+              <span>Lower is better. Square root of MSE. More interpretable as it's in the same units as the data.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-semibold text-amber-600 dark:text-amber-400">MAPE:</span>
+              <span>Lower is better. Shows the average percentage error, giving a relative measure of accuracy.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Bias:</span>
+              <span>Closer to zero is better. Indicates systematic over or under prediction.</span>
+            </li>
+          </ul>
         </div>
       </div>
-    </TooltipProvider>
+    </div>
   );
 };
