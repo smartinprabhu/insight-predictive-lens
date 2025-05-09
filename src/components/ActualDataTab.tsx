@@ -1,374 +1,318 @@
-
-import { useState, useEffect } from "react";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Upload, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { generateWeeklyMonthlyData, aggregateToMonthly, fetchForecastData, mapForecastData } from "@/services/forecastService";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
-export const ActualDataTab = ({ aggregationType = "Weekly", forecastPeriod = 12 }) => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [apiData, setApiData] = useState<any[] | null>(null);
-  const [currentForecastPeriod, setCurrentForecastPeriod] = useState(forecastPeriod);
-  const [openDialog, setOpenDialog] = useState(false);
-  
-  // Generate sample data for initial view - in a real app, this would come from the API
-  const sampleData = generateWeeklyMonthlyData(15);
-  
-  // Process data based on aggregation type
-  const actualData = aggregationType === "Monthly" 
-    ? aggregateToMonthly(apiData || sampleData)
-    : (apiData || sampleData);
-  
-  const [selectedMetrics, setSelectedMetrics] = useState({
-    ibUnits: true,
-    inventory: true,
-    customerReturns: true,
-    wsfChina: true,
-    ibExceptions: true,
-  });
-  
+interface DataItem {
+  Week: string;
+  'Total IB Units': number;
+  exceptions: number;
+  inventory: number;
+  returns: number;
+  wfs_china: number;
+}
+
+interface ActualDataTabProps {
+  data?: {
+    dz_df?: any[];
+  };
+  aggregationType?: string;
+  setAggregationType?: (type: string) => void;
+  plotAggregationType?: string;
+  setPlotAggregationType?: (type: string) => void;
+}
+
+const transformData = (data: any[], aggregationType: string): DataItem[] => {
+  if (aggregationType === 'Monthly') {
+    const monthlyData: { [key: string]: DataItem } = {};
+    data.forEach(item => {
+      const date = new Date(item['Week']);
+      const month = date.toLocaleString('default', { month: 'long' });
+      const year = date.getFullYear();
+      const key = `${month} ${year}`;
+      
+      if (!monthlyData[key]) {
+        monthlyData[key] = {
+          Week: key,
+          'Total IB Units': 0,
+          exceptions: 0,
+          inventory: 0,
+          returns: 0,
+          wfs_china: 0,
+        };
+      }
+      
+      monthlyData[key]['Total IB Units'] += item['Total IB Units'] || 0;
+      monthlyData[key].exceptions += item.exceptions || 0;
+      monthlyData[key].inventory += item.inventory || 0;
+      monthlyData[key].returns += item.returns || 0;
+      monthlyData[key].wfs_china += item.wfs_china || 0;
+    });
+    
+    return Object.values(monthlyData);
+  } else {
+    return data.map(item => ({
+      Week: item['Week'],
+      'Total IB Units': item['Total IB Units'] || 0,
+      exceptions: item.exceptions || 0,
+      inventory: item.inventory || 0,
+      returns: item.returns || 0,
+      wfs_china: item.wfs_china || 0,
+    }));
+  }
+};
+
+const metricLabels: { [key: string]: string } = {
+  'Total IB Units': 'IB Units',
+  exceptions: 'IB Exceptions',
+  inventory: 'Inventory',
+  returns: 'Customer Returns',
+  wfs_china: 'WSF China',
+};
+
+const formatNumber = (value: number) => {
+  if (value >= 1000000) return `${(value/1000000).toFixed(1)}M`;
+  if (value >= 1000) return `${(value/1000).toFixed(1)}K`;
+  return value.toLocaleString();
+};
+
+function getISOWeekNumber(date: Date): number {
+  const tempDate = new Date(date.getTime());
+  tempDate.setHours(0, 0, 0, 0);
+  tempDate.setDate(tempDate.getDate() + 4 - (tempDate.getDay() || 7));
+  const yearStart = new Date(tempDate.getFullYear(), 0, 1);
+  const weekNo = Math.ceil((((tempDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return weekNo;
+}
+
+export const ActualDataTab = ({ 
+  data, 
+  aggregationType, 
+  plotAggregationType, 
+  setPlotAggregationType 
+}: ActualDataTabProps) => {
   const { toast } = useToast();
 
+  const [selectedMetrics, setSelectedMetrics] = useState({
+    'Total IB Units': true,
+    exceptions: true,
+    inventory: true,
+    returns: true,
+    wfs_china: true,
+  });
+
+  const transformedData = data?.dz_df ? transformData(data.dz_df, plotAggregationType || 'Weekly') : [];
+
+  const tickInterval = (() => {
+    const len = transformedData.length;
+    if (len <= 20) return 0;
+    if (len <= 50) return 2;
+    if (len <= 100) return 5;
+    return Math.floor(len / 20);
+  })();
+
+  if (!transformedData.length) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="h-[400px] flex items-center justify-center">
+            <span className="text-gray-500">No data available</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const handleMetricToggle = (metric: keyof typeof selectedMetrics) => {
-    setSelectedMetrics((prev) => ({
-      ...prev,
-      [metric]: !prev[metric],
-    }));
-  };
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    }
+    setSelectedMetrics(prev => ({ ...prev, [metric]: !prev[metric] }));
   };
 
-  const handleUpload = async () => {
-    if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select a file to upload",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    
-    try {
-      toast({
-        title: "Processing file",
-        description: "Uploading and analyzing your data...",
-      });
-      
-      const forecastData = await fetchForecastData(file, currentForecastPeriod);
-      if (forecastData.length > 0) {
-        const mappedData = mapForecastData(forecastData);
-        setApiData(mappedData);
-        
-        toast({
-          title: "Upload successful",
-          description: "Your data has been processed successfully",
-        });
-        setOpenDialog(false);
-      } else {
-        toast({
-          title: "Processing error",
-          description: "Could not process the file. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Upload error",
-        description: "An error occurred while uploading the file",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const updateForecastPeriod = async () => {
-    if (file) {
-      try {
-        setIsUploading(true);
-        const forecastData = await fetchForecastData(file, currentForecastPeriod);
-        if (forecastData.length > 0) {
-          const mappedData = mapForecastData(forecastData);
-          setApiData(mappedData);
-          
-          toast({
-            title: "Forecast updated",
-            description: `Forecast period updated to ${currentForecastPeriod} weeks`,
-          });
-        }
-      } catch (error) {
-        console.error("Error updating forecast period:", error);
-      } finally {
-        setIsUploading(false);
-      }
-    }
-  };
-  
   const exportToCSV = () => {
-    // Create CSV content
-    const headerRow = ["Date"];
-    const visibleMetrics = [];
-    
-    if (selectedMetrics.ibUnits) {
-      headerRow.push("IB Units");
-      visibleMetrics.push("ibUnits");
-    }
-    if (selectedMetrics.inventory) {
-      headerRow.push("Inventory");
-      visibleMetrics.push("inventory");
-    }
-    if (selectedMetrics.customerReturns) {
-      headerRow.push("Customer Returns");
-      visibleMetrics.push("customerReturns");
-    }
-    if (selectedMetrics.wsfChina) {
-      headerRow.push("WSF China");
-      visibleMetrics.push("wsfChina");
-    }
-    if (selectedMetrics.ibExceptions) {
-      headerRow.push("IB Exceptions");
-      visibleMetrics.push("ibExceptions");
-    }
-    
-    const csvHeader = headerRow.join(",");
-    
-    const csvRows = actualData.map(item => {
-      const row = [item.date];
-      visibleMetrics.forEach(metric => row.push(item[metric]));
-      return row.join(",");
-    });
-    
-    const csvContent = [csvHeader, ...csvRows].join("\n");
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = [
+      ['Week', 'Total IB Units', 'Exceptions', 'Inventory', 'Returns', 'WFS China'].join(','),
+      ...transformedData.map(item => [
+        item.Week,
+        item['Total IB Units'],
+        item.exceptions,
+        item.inventory,
+        item.returns,
+        item.wfs_china
+      ].join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `actual_data_${aggregationType.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.href = url;
+    link.download = 'actual_data.csv';
     document.body.appendChild(link);
-    
-    // Trigger download
     link.click();
     document.body.removeChild(link);
-    
     toast({
-      title: "Export successful",
-      description: `Actual data (${aggregationType}) has been exported to CSV`,
+      title: "Data Exported",
+      description: "Historical Data has been downloaded as CSV",
     });
   };
 
-  // Effect to update data when forecast period changes
-  useEffect(() => {
-    if (file) {
-      updateForecastPeriod();
-    }
-  }, [currentForecastPeriod]);
-
   return (
-    <Card className="rounded-xl shadow-lg border dark:border-gray-700 dark:bg-gray-800/90">
+    <Card className="text-gray-900 dark:text-gray-100">
       <CardContent className="pt-6">
-        <div className="flex flex-row justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold">Historical Data</h3>
-          <div className="flex space-x-2">
-            <div className="flex items-center gap-2">
-              <Input 
-                type="number" 
-                value={currentForecastPeriod}
-                onChange={(e) => setCurrentForecastPeriod(parseInt(e.target.value) || 1)}
-                className="w-20 h-9"
-                min={1}
-                max={52}
-              />
-              <span className="text-sm text-gray-500 dark:text-gray-400">weeks</span>
-            </div>
-            
-            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Upload className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Upload Excel File</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <Input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleFileChange}
-                    className="cursor-pointer"
-                  />
-                  <p className="text-sm text-gray-500">
-                    Upload an Excel file to generate actual and forecast data
-                  </p>
-                </div>
-                <DialogFooter>
-                  <Button 
-                    onClick={handleUpload} 
-                    disabled={isUploading || !file}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  >
-                    {isUploading ? "Processing..." : "Upload & Process"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            
-            <Button variant="outline" size="icon" onClick={exportToCSV} className="rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-              <Download className="h-4 w-4" />
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Historical Data Analysis</h2>
+          <div className="flex gap-2 items-center">
+            <span className="text-sm font-medium">Aggregation by:</span>
+            <Button 
+              variant={plotAggregationType === 'Weekly' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setPlotAggregationType && setPlotAggregationType('Weekly')}
+            >
+              Weekly
+            </Button>
+            <Button 
+              variant={plotAggregationType === 'Monthly' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setPlotAggregationType && setPlotAggregationType('Monthly')}
+            >
+              Monthly
+            </Button>
+            <Button onClick={exportToCSV} variant="outline" size="sm" className="ml-2">
+              <Download className="mr-0.3 h-2 w-2"/>
             </Button>
           </div>
         </div>
-        
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="ibUnits" 
-              checked={selectedMetrics.ibUnits} 
-              onCheckedChange={() => handleMetricToggle('ibUnits')} 
-            />
-            <label htmlFor="ibUnits" className="text-sm font-medium text-chart-ibunits cursor-pointer">
-              IB Units
-            </label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="inventory" 
-              checked={selectedMetrics.inventory} 
-              onCheckedChange={() => handleMetricToggle('inventory')} 
-            />
-            <label htmlFor="inventory" className="text-sm font-medium text-chart-inventory cursor-pointer">
-              Inventory
-            </label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="customerReturns" 
-              checked={selectedMetrics.customerReturns} 
-              onCheckedChange={() => handleMetricToggle('customerReturns')} 
-            />
-            <label htmlFor="customerReturns" className="text-sm font-medium text-chart-customerReturns cursor-pointer">
-              Customer Returns
-            </label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="wsfChina" 
-              checked={selectedMetrics.wsfChina} 
-              onCheckedChange={() => handleMetricToggle('wsfChina')} 
-            />
-            <label htmlFor="wsfChina" className="text-sm font-medium text-chart-wsfChina cursor-pointer">
-              WSF China
-            </label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="ibExceptions" 
-              checked={selectedMetrics.ibExceptions} 
-              onCheckedChange={() => handleMetricToggle('ibExceptions')} 
-            />
-            <label htmlFor="ibExceptions" className="text-sm font-medium text-chart-ibExceptions cursor-pointer">
-              IB Exceptions
-            </label>
-          </div>
+        <div className="flex gap-4 mb-4 flex-wrap">
+          {Object.keys(selectedMetrics).map(metric => (
+            <div key={metric} className="flex items-center space-x-2">
+              <Checkbox
+                id={metric}
+                checked={selectedMetrics[metric as keyof typeof selectedMetrics]}
+                onCheckedChange={() => handleMetricToggle(metric as keyof typeof selectedMetrics)}
+                style={{ accentColor:
+                  metric === 'Total IB Units' ? '#8884d8' :
+                  metric === 'exceptions' ? '#82ca9d' :
+                  metric === 'inventory' ? '#ffc658' :
+                  metric === 'returns' ? '#ff7300' :
+                  metric === 'wfs_china' ? '#a05195' : undefined
+                 }}
+              />
+              <label htmlFor={metric} className="text-sm font-medium" style={{ color:
+                  metric === 'Total IB Units' ? '#8884d8' :
+                  metric === 'exceptions' ? '#82ca9d' :
+                  metric === 'inventory' ? '#ffc658' :
+                  metric === 'returns' ? '#ff7300' :
+                  metric === 'wfs_china' ? '#a05195' : undefined
+                 }}>
+                {metricLabels[metric] || metric}
+              </label>
+            </div>
+          ))}
         </div>
-        
-        <div className="w-full h-[400px] mt-4">
+        <div className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={actualData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="colorIbUnits" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4284f5" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#4284f5" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorInventory" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#36b37e" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#36b37e" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorCustomerReturns" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ff9e2c" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#ff9e2c" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorWsfChina" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#9061F9" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#9061F9" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="colorIbExceptions" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f56565" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#f56565" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
+            <AreaChart data={transformedData}>
+              <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
-                dataKey="dateFormatted" 
-                tick={{ fontSize: 12 }} 
-                tickLine={false}
+                dataKey="Week" 
+                stroke="currentColor"
+                tickFormatter={(tick) => {
+                  const date = new Date(tick);
+                  if (isNaN(date.getTime())) return tick;
+                  const day = date.getDate().toString().padStart(2, '0');
+                  const month = date.toLocaleString('default', { month: 'short' });
+                  const year = date.getFullYear();
+                  return `${day} ${month}\n${year}`;
+                }}
+                tick={({ x, y, payload }) => {
+                  const date = new Date(payload.value);
+                  if (isNaN(date.getTime())) return null;
+                  
+                  const day = date.getDate().toString().padStart(2, '0');
+                  const month = date.toLocaleString('default', { month: 'short' });
+                  const year = date.getFullYear();
+                  const yy = year.toString();
+
+                  return (
+                    <text
+                      x={x}
+                      y={y + 15}
+                      textAnchor="middle"
+                      fontSize={10}
+                      style={{ whiteSpace: 'pre', fill: 'currentColor' }}
+                    >
+                      {` ${month}\n${yy}`}
+                    </text>
+                  );
+                }}
+                interval={tickInterval}
+                height={100}
               />
               <YAxis 
-                tick={{ fontSize: 12 }} 
-                tickLine={false}
-                axisLine={false} 
+                tickFormatter={formatNumber}
               />
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #f1f1f1',
-                  borderRadius: '8px',
-                  boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)'
-                }}
-                labelFormatter={(value) => `Period: ${value}`}
-                formatter={(value, name) => {
-                  let displayName = name;
-                  if (name === "IB Units") displayName = "Total IB Units";
-                  if (name === "Inventory") displayName = "Inventory";
-                  if (name === "Customer Returns") displayName = "Customer Returns";
-                  if (name === "WSF China") displayName = "WSF China";
-                  if (name === "IB Exceptions") displayName = "IB Exceptions";
-                  return [value, displayName];
+              <YAxis 
+                yAxisId="right" 
+                orientation="right" 
+                tickFormatter={formatNumber}
+              />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload || payload.length === 0) return null;
+
+                  const date = new Date(label);
+                  if (isNaN(date.getTime())) return null;
+
+                  const day = date.getDate().toString().padStart(2, '0');
+                  const month = date.toLocaleString('default', { month: 'short' });
+                  const year = date.getFullYear();
+                  const week = getISOWeekNumber(date);
+                  const dateStr = `${day} ${month} ${year} (W${week})`;
+
+                  return (
+                    <div className="p-2 rounded-lg border text-sm bg-white text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600">
+                      <div className="font-medium mb-1">{dateStr}</div>
+                      {payload.map((entry: any) => (
+                        <div key={entry.name} className="flex items-center gap-2">
+                          <div
+                            style={{
+                              width: 10,
+                              height: 10,
+                              backgroundColor: entry.stroke,
+                              borderRadius: 2,
+                            }}
+                          ></div>
+                          <span>{metricLabels[entry.name] || entry.name}</span>
+                          <span className="font-bold">{formatNumber(entry.value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
                 }}
               />
-              <Legend />
+              <Legend
+                wrapperStyle={{ marginBottom: 20 }}
+                formatter={(value) => metricLabels[value] || value}
+              />
               
-              {selectedMetrics.ibUnits && (
+              {selectedMetrics['Total IB Units'] && (
+                <Area
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="Total IB Units"
+                  stroke="#8884d8"
+                  fill="#8884d8"
+                  strokeWidth={2}
+                />
+              )}
+              
+              {selectedMetrics.exceptions && (
                 <Area
                   type="monotone"
-                  dataKey="ibUnits"
-                  stroke="#4284f5"
-                  fillOpacity={1}
-                  fill="url(#colorIbUnits)"
-                  name="IB Units"
-                  activeDot={{ r: 6, strokeWidth: 2 }}
+                  dataKey="exceptions"
+                  stroke="#82ca9d"
+                  fill="#82ca9d"
+                  strokeWidth={2}
                 />
               )}
               
@@ -376,47 +320,29 @@ export const ActualDataTab = ({ aggregationType = "Weekly", forecastPeriod = 12 
                 <Area
                   type="monotone"
                   dataKey="inventory"
-                  stroke="#36b37e"
-                  fillOpacity={1}
-                  fill="url(#colorInventory)"
-                  name="Inventory"
-                  activeDot={{ r: 6, strokeWidth: 2 }}
+                  stroke="#ffc658"
+                  fill="#ffc658"
+                  strokeWidth={2}
                 />
               )}
               
-              {selectedMetrics.customerReturns && (
+              {selectedMetrics.returns && (
                 <Area
                   type="monotone"
-                  dataKey="customerReturns"
-                  stroke="#ff9e2c"
-                  fillOpacity={1}
-                  fill="url(#colorCustomerReturns)"
-                  name="Customer Returns"
-                  activeDot={{ r: 6, strokeWidth: 2 }}
+                  dataKey="returns"
+                  stroke="#ff7300"
+                  fill="#ff7300"
+                  strokeWidth={2}
                 />
               )}
               
-              {selectedMetrics.wsfChina && (
+              {selectedMetrics.wfs_china && (
                 <Area
                   type="monotone"
-                  dataKey="wsfChina"
-                  stroke="#9061F9"
-                  fillOpacity={1}
-                  fill="url(#colorWsfChina)"
-                  name="WSF China"
-                  activeDot={{ r: 6, strokeWidth: 2 }}
-                />
-              )}
-              
-              {selectedMetrics.ibExceptions && (
-                <Area
-                  type="monotone"
-                  dataKey="ibExceptions"
-                  stroke="#f56565"
-                  fillOpacity={1}
-                  fill="url(#colorIbExceptions)"
-                  name="IB Exceptions"
-                  activeDot={{ r: 6, strokeWidth: 2 }}
+                  dataKey="wfs_china"
+                  stroke="#a05195"
+                  fill="#a05195"
+                  strokeWidth={2}
                 />
               )}
             </AreaChart>

@@ -41,6 +41,13 @@ interface ForecastTabProps {
   };
   insights: any;
   loading?: boolean;
+  externalFactors?: {
+    majorEvents: boolean;
+    dynamicTarget: boolean;
+    dynamicTargetStartDate: string;
+    dynamicTargetEndDate: string;
+    dynamicTargetDecreasePercentage: string;
+  };
 }
 
 const getIconForInsightType = (type: string) => {
@@ -60,7 +67,7 @@ const getIconForInsightType = (type: string) => {
   }
 };
 
-const transformData = (data: any[]): any[] => {
+const transformData = (data: any[], isForecast: boolean = false): any[] => {
   return data.map((item) => ({
     Week: item["Week"],
     "Total IB Units": item["Total IB Units"] || 0,
@@ -78,7 +85,7 @@ const transformData = (data: any[]): any[] => {
     wfs_china: item.wfs_china || 0,
     wfs_china_lower: item.wfs_china_lower || 0,
     wfs_china_upper: item.wfs_china_upper || 0,
-    isForecast: false, // Mark Historical Data
+    isForecast,
   }));
 };
 
@@ -106,6 +113,13 @@ export const ForecastTab = ({
   data,
   insights,
   loading = false,
+  externalFactors = {
+    majorEvents: false,
+    dynamicTarget: false,
+    dynamicTargetStartDate: "",
+    dynamicTargetEndDate: "",
+    dynamicTargetDecreasePercentage: "",
+  },
 }: ForecastTabProps) => {
   const metrics = [
     { id: "Total IB Units", name: "IB Units", color: "#8884d8" },
@@ -120,41 +134,61 @@ export const ForecastTab = ({
 
   const dzData = useMemo(() => {
     return data.dz_df
-      ? transformData(data.dz_df)
-          .slice(-5)
-          .map((d) => ({ ...d, isForecast: false }))
+      ? transformData(data.dz_df, false).slice(-5) // Last 5 weeks of Historical Data
       : [];
-  }, [data]);
+  }, [data.dz_df]);
 
   const futureData = useMemo(() => {
-    if (!data.future_df) return [];
-    const fieldsToAdjust = [
-      "Total IB Units",
-      "Total IB Units_lower",
-      "Total IB Units_upper",
-      "exceptions",
-      "exceptions_lower",
-      "exceptions_upper",
-      "inventory",
-      "inventory_lower",
-      "inventory_upper",
-      "returns",
-      "returns_lower",
-      "returns_upper",
-      "wfs_china",
-      "wfs_china_lower",
-      "wfs_china_upper",
-    ];
-    return transformData(data.future_df).map((d) => {
-      const adjusted = { ...d, isForecast: true };
-      fieldsToAdjust.forEach((field) => {
-        if (typeof adjusted[field] === "number") {
-          adjusted[field] = adjusted[field] * 0.86; // 14% reduction
-        }
+    if (!data.future_df || !dzData.length) return [];
+
+    // Calculate trend from the last 3 data points of dzData
+    const trendWindow = dzData.slice(-3);
+    const metricTrends: { [key: string]: number } = {};
+
+    metrics.forEach((metric) => {
+      const values = trendWindow.map((item) => item[metric.id] || 0);
+      if (values.length >= 2) {
+        const differences = values.slice(1).map((v, i) => v - values[i]);
+        const averageChange = differences.reduce((sum, diff) => sum + diff, 0) / differences.length;
+        metricTrends[metric.id] = averageChange / values[values.length - 1]; // Relative change rate
+      } else {
+        metricTrends[metric.id] = 0; // No trend if insufficient data
+      }
+    });
+
+    return data.future_df.map((item, index) => {
+      const lastActual = dzData[dzData.length - 1];
+      const weekDate = new Date(item.Week || new Date());
+      const isInDynamicTargetRange =
+        externalFactors.dynamicTarget &&
+        externalFactors.dynamicTargetStartDate &&
+        externalFactors.dynamicTargetEndDate &&
+        weekDate >= new Date(externalFactors.dynamicTargetStartDate) &&
+        weekDate <= new Date(externalFactors.dynamicTargetEndDate);
+      const decreaseFactor =
+        isInDynamicTargetRange && externalFactors.dynamicTargetDecreasePercentage
+          ? 1 - parseFloat(externalFactors.dynamicTargetDecreasePercentage) / 100
+          : 1;
+
+      const majorEventFactor = externalFactors.majorEvents && index === 0 ? 1.1 : 1; // 10% spike for major events on first forecast week
+
+      const transformed = transformData([item], true)[0];
+      const adjusted: any = { ...transformed };
+
+      metrics.forEach((metric) => {
+        const lastValue = lastActual[metric.id] || 0;
+        const trendRate = metricTrends[metric.id] || 0;
+        const forecastValue =
+          lastValue * (1 + trendRate * (index + 1)) * decreaseFactor * majorEventFactor;
+
+        adjusted[metric.id] = Math.max(0, forecastValue);
+        adjusted[`${metric.id}_lower`] = Math.max(0, forecastValue * 0.9); // 10% lower bound
+        adjusted[`${metric.id}_upper`] = forecastValue * 1.1; // 10% upper bound
       });
+
       return adjusted;
     });
-  }, [data]);
+  }, [data.future_df, dzData, externalFactors]);
 
   const combinedData = useMemo(() => {
     const allData = [...dzData, ...futureData];
@@ -246,7 +280,7 @@ export const ForecastTab = ({
           <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-semibold">Trends & Forecast</h3>
+                <h3 className="text-xl font-semibold">Data Analysis</h3>
                 <UITooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -254,9 +288,9 @@ export const ForecastTab = ({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent className="w-80 p-4">
-                    <p className="font-medium mb-201">About this chart</p>
+                    <p className="font-medium mb-2">About this chart</p>
                     <p className="text-sm text-muted-foreground">
-                      This chart shows actual and forecasted data for various metrics.
+                      This chart shows actual and forecasted data for various metrics, with forecasts adjusted for trends and external factors.
                     </p>
                   </TooltipContent>
                 </UITooltip>
@@ -277,36 +311,32 @@ export const ForecastTab = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-[200px]">
-  <DropdownMenuLabel>Select Metrics</DropdownMenuLabel>
-  <DropdownMenuSeparator />
-  <DropdownMenuCheckboxItem
-    key="select-all"
-    checked={selectedMetrics.length === metrics.length}
-    onCheckedChange={(checked) => {
-      if (checked) {
-        setSelectedMetrics(metrics.map((m) => m.id));
-      } else {
-        setSelectedMetrics([]);
-      }
-    }}
-    onSelect={(e) => e.preventDefault()}
-  >
-    Select All
-  </DropdownMenuCheckboxItem>
-  <DropdownMenuSeparator />
-  {metrics.map((metric) => (
-    <DropdownMenuCheckboxItem
-      key={metric.id}
-      checked={selectedMetrics.includes(metric.id)}
-      onCheckedChange={() => handleMetricToggle(metric.id)}
-      onSelect={(e) => e.preventDefault()}
-    >
-      {metric.name}
-    </DropdownMenuCheckboxItem>
-  ))}
-  <DropdownMenuSeparator />
-
-</DropdownMenuContent>
+                  <DropdownMenuLabel>Select Metrics</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    key="select-all"
+                    checked={selectedMetrics.length === metrics.length}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedMetrics(metrics.map((m) => m.id));
+                      } else {
+                        setSelectedMetrics([]);
+                      }
+                    }}
+                  >
+                    Select All
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  {metrics.map((metric) => (
+                    <DropdownMenuCheckboxItem
+                      key={metric.id}
+                      checked={selectedMetrics.includes(metric.id)}
+                      onCheckedChange={() => handleMetricToggle(metric.id)}
+                    >
+                      {metric.name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
               </DropdownMenu>
 
               <Button
@@ -321,21 +351,8 @@ export const ForecastTab = ({
           </div>
 
           <div className="w-full h-[400px] bg-gradient-to-b from-card/40 to-background/10 p-4 rounded-lg border border-border/10 mb-6">
-            {loading ? (
-              <div className="space-y-4 h-full flex flex-col justify-center items-center">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="h-4 bg-gray-300 rounded w-3/4 animate-pulse"
-                  ></div>
-                ))}
-                <div className="flex justify-center">
-                  <CircularProgress />
-                </div>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={combinedData} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={combinedData} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
                 <defs>
                   {metrics.map((metric) => (
                     <React.Fragment key={`gradient-${metric.id}`}>
@@ -520,7 +537,7 @@ export const ForecastTab = ({
                         dataKey={`${metricId}_actual`}
                         name={metricInfo?.name}
                         stroke={metricInfo?.color}
-                        strokeWidth={2}
+                        strokeWidth=2
                         fill={
                           metricId === "Total IB Units"
                             ? "#928EDA"
@@ -580,20 +597,22 @@ export const ForecastTab = ({
                 })}
               </AreaChart>
             </ResponsiveContainer>
-            )}
           </div>
 
-          {(loading || (!insights && !data.dz_df)) ? (
+          {loading ? (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Automated Insights</h3>
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
                   className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 animate-pulse"
-                > <CircularProgress />
+                >
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">
                       <div className="h-5 w-5 bg-gray-300 rounded-full"></div>
+                    </div>
+                    <div className="flex justify-center">
+                      <CircularProgress />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
@@ -605,31 +624,25 @@ export const ForecastTab = ({
                   </div>
                 </div>
               ))}
-
             </div>
           ) : insights && Object.keys(insights).length > 0 ? (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Automated Insights</h3>
-              
               {Object.keys(insights).map((key: string, index: number) => (
                 <div
                   key={index}
                   className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800"
                 >
-
-               
-
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5">
                       {getIconForInsightType(
                         key.toLowerCase().includes("return") ? "anomaly" : "trend"
                       )}
                     </div>
-                    
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <h4 className="font-medium text-base sm:text-lg text-gray-900 dark:text-gray-100">
-                          {metrics.find(m => m.id === key)?.name?.replace(/_/g, ' ') || key}
+                          {metrics.find((m) => m.id === key)?.name?.replace(/_/g, " ") || key}
                         </h4>
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

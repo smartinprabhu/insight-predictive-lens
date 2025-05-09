@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface DashboardHeaderProps {
-  title?: string;
+  title: string;
   lastUpdated: string;
-  forecastPeriod: number;
-  onRefresh: () => void;
+  forecastPeriod?: string | number;
+  onRefresh?: () => void;
 }
 
 export const DashboardHeader = ({
-  title = "Predictive Analytics Dashboard",
+  title = "Walmart Fulfillment Services ",
   lastUpdated,
   forecastPeriod,
   onRefresh
@@ -23,21 +23,11 @@ export const DashboardHeader = ({
           {title}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Last updated: {lastUpdated} • {forecastPeriod}-day forecast
+          Last updated: {lastUpdated} • {forecastPeriod}
         </p>
       </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRefresh}
-          className="flex items-center gap-1"
-        >
-          <RefreshCcw className="h-4 w-4" />
-          <span>Refresh</span>
-        </Button>
-        <ThemeToggle />
+
       </div>
-    </div>
+
   );
 };

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import axios from "axios";
 import {
   LineChart,
   Line,
@@ -22,67 +23,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
-const modelMetrics = {
-  'Prophet': { MAPE: 3.8, RMSE: 900, MAE: 650, 'R²': 0.92 },
-  'ARIMA': { MAPE: 4.8, RMSE: 1100, MAE: 750, 'R²': 0.88 },
-  'SARIMAX': { MAPE: 5.5, RMSE: 1300, MAE: 850, 'R²': 0.82 },
-    'Weighted Moving Average': { MAPE: 5.5, RMSE: 1300, MAE: 850, 'R²': 0.82 },
-      'ETS': { MAPE: 5.5, RMSE: 1300, MAE: 850, 'R²': 0.82 },
-  'CatBoost': { MAPE: 4.2, RMSE: 1000, MAE: 700, 'R²': 0.90 },
-  'XGBoost': { MAPE: 4.5, RMSE: 1050, MAE: 720, 'R²': 0.89 },
-  'LightGBM': { MAPE: 4.0, RMSE: 950, MAE: 680, 'R²': 0.91 },
-  'ARIMA+LightGBM': { MAPE: 5.2, RMSE: 1200, MAE: 800, 'R²': 0.85 },
-  'Prophet+XGBoost': { MAPE: 4.1, RMSE: 980, MAE: 690, 'R²': 0.91 },
-  'SARIMAX+CatBoost': { MAPE: 4.3, RMSE: 1020, MAE: 710, 'R²': 0.90 },
-};
-
-const calculateModelScore = (metrics) => {
-  if (!metrics) return 0;
-  const mapeScore = metrics.MAPE ? (20 - metrics.MAPE) / 20 : 0;
-  const rmseScore = metrics.RMSE ? (1500 - metrics.RMSE) / 1500 : 0;
-  const maeScore = metrics.MAE ? (1000 - metrics.MAE) / 1000 : 0;
-  const r2Score = metrics['R²'] ? metrics['R²'] : 0;
-  return (mapeScore + rmseScore + maeScore + r2Score) / 4;
-};
-
-const ModelRating = ({ score }) => {
-  const stars = Math.round(score * 5);
-  return (
-    <div className="flex items-center">
-      {Array(5).fill(null).map((_, i) => (
-        <svg
-          key={i}
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill={i < stars ? 'currentColor' : 'none'}
-          stroke="currentColor"
-          className="w-4 h-4 text-yellow-400"
-        >
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ))}
-    </div>
-  );
-};
 
 const modelAdjustments = {
+
   'Prophet': 0,      
-  'ARIMA': -0.1,   
-       'ETS': -0.125,
-          
-         'Weighted Moving Average': -0.2,   
+  'ARIMA': -0.1,      
   'LightGBM': -0.70,  
   'XGBoost': 0.3,    
   'SARIMAX': 0.30,  
+  'Ensemble': -0.2,  
   'CatBoost': -0.3   
 };
 
@@ -149,8 +98,6 @@ const allModels = [
   { label: "Prophet", value: "Prophet" },
   { label: "ARIMA", value: "ARIMA" },
   { label: "SARIMAX", value: "SARIMAX" },
-    { label: "Weighted Moving Average", value: "Weighted Moving Average" },
-      { label: "ETS", value: "ETS" },
   { label: "CatBoost", value: "CatBoost" },
   { label: "XGBoost", value: "XGBoost" },
   { label: "LightGBM", value: "LightGBM" },
@@ -181,10 +128,10 @@ function getISOWeekNumber(date: Date): number {
 }
 
 export const ModelValidationTab = ({ aggregationType = "Weekly", data, modelType }) => {
-
   const [selectedMetric, setSelectedMetric] = useState("Total IB Units");
   const [selectedModels, setSelectedModels] = useState<string[]>([modelType]);
   const [showForecastSettings, setShowForecastSettings] = useState(false);
+  const [modelSelectOpen, setModelSelectOpen] = useState(false);
 
   const handleModelToggle = (modelValue: string) => {
     setSelectedModels((current) =>
@@ -197,33 +144,22 @@ export const ModelValidationTab = ({ aggregationType = "Weekly", data, modelType
   const adjustment = selectedModels.length === 1 ? modelAdjustments[selectedModels[0]] || 0 : 0;
 
   const combinedData = useMemo(() => {
-
     const rawCombinedData = data?.combined;
     if (!rawCombinedData || typeof rawCombinedData !== "object") {
       console.warn("Invalid combined format: Expected an object, but got:", rawCombinedData);
       return [];
     }
-    const flattenedData = flattenCombinedData(rawCombinedData, selectedModels);
-
-    return flattenedData;
+    return flattenCombinedData(rawCombinedData, selectedModels);
   }, [data?.combined, selectedModels]);
 
-
-
   const filteredData = useMemo(() => {
-
     if (!combinedData?.length) return [];
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const filtered = combinedData.filter(item => new Date(item.Week) >= oneYearAgo);
-
-    return filtered;
+    return combinedData.filter(item => new Date(item.Week) >= oneYearAgo);
   }, [combinedData]);
 
-
-
   if (!filteredData.length) {
-
     return (
       <div className="flex items-center justify-center h-[400px]">
         <p className="text-muted-foreground">No data available for the selected metric.</p>
@@ -245,7 +181,7 @@ return (
         <Card className="flex-1 shadow-md dark:border-gray-700 relative overflow-visible">
           <div className="relative">
             <CardHeader>
-              <CardTitle>Model Validation</CardTitle>
+              <CardTitle>{metrics.find(m => m.id === selectedMetric)?.name}</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <div className="absolute top-2 right-2 z-10 flex items-center space-x-2">
@@ -261,45 +197,44 @@ return (
                     ))}
                   </SelectContent>
                 </Select>
-                <DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button variant="outline" className="w-[180px] justify-between">
-      {selectedModels.length === 1
-        ? allModels.find(m => m.value === selectedModels[0])?.label
-        : `${selectedModels.length} models selected`}
-      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-    </Button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent className="w-[180px]" onCloseAutoFocus={(e) => e.preventDefault()}>
-    <DropdownMenuLabel>Select Models</DropdownMenuLabel>
-    <DropdownMenuSeparator />
-    <DropdownMenuCheckboxItem
-      key="select-all"
-      checked={selectedModels.length === allModels.length}
-      onCheckedChange={(checked) => {
-        if (checked) {
-          setSelectedModels(allModels.map(m => m.value));
-        } else {
-          setSelectedModels([]);
-        }
-      }}
-      onSelect={(e) => e.preventDefault()}
-    >
-      Select All
-    </DropdownMenuCheckboxItem>
-    <DropdownMenuSeparator />
-    {allModels.map(model => (
-  <DropdownMenuCheckboxItem
-    key={model.value}
-    checked={selectedModels.includes(model.value)}
-    onCheckedChange={() => handleModelToggle(model.value)}
-    onSelect={(e) => e.preventDefault()} // Added to prevent closing
-  >
-    {model.label}
-  </DropdownMenuCheckboxItem>
-))}
-  </DropdownMenuContent>
-</DropdownMenu>
+                <DropdownMenu open={modelSelectOpen} onOpenChange={setModelSelectOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-[180px] justify-between">
+                      {selectedModels.length === 1
+                        ? allModels.find(m => m.value === selectedModels[0])?.label
+                        : `${selectedModels.length} models selected`}
+                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[180px]" onCloseAutoFocus={(e) => e.preventDefault()}>
+                    <DropdownMenuLabel>Select Models</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                      key="select-all"
+                      checked={selectedModels.length === allModels.length}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedModels(allModels.map(m => m.value));
+                        } else {
+                          setSelectedModels([]);
+                        }
+                      }}
+                    >
+                      Select All
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuSeparator />
+                    {allModels.map(model => (
+                      <DropdownMenuCheckboxItem
+                        key={model.value}
+                        checked={selectedModels.includes(model.value)}
+                        onCheckedChange={() => handleModelToggle(model.value)}
+                        onSelect={(e) => e.preventDefault()} // Prevent dropdown from closing
+                      >
+                        {model.label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -445,147 +380,105 @@ const formattedDate = isNaN(date.getTime())
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-10">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
-                  Model Performance Comparison
-                </h3>
-                <Table>
-<TableHeader>
-  <TableRow className="bg-gray-100 dark:bg-gray-800">
-    <TableHead className="font-bold">Model</TableHead>
-    <TableHead className="font-bold">MAPE</TableHead>
-    <TableHead className="font-bold">RMSE</TableHead>
-    <TableHead className="font-bold">MAE</TableHead>
-    <TableHead className="font-bold">R²</TableHead>
-    <TableHead className="font-bold">Rating</TableHead>
-  </TableRow>
-</TableHeader>
-                  <TableBody>
-                    {selectedModels
-                      .sort((a, b) => {
-                        const scoreA = calculateModelScore(modelMetrics[a]);
-                        const scoreB = calculateModelScore(modelMetrics[b]);
-                        return scoreB - scoreA; // Sort in descending order
-                      })
-                      .map(model => (
-                        <TableRow key={model}>
-                          <TableCell>{model}</TableCell>
-                          <TableCell>{modelMetrics[model]?.MAPE ?? 'N/A'}</TableCell>
-                          <TableCell>{modelMetrics[model]?.RMSE ?? 'N/A'}</TableCell>
-                          <TableCell>{modelMetrics[model]?.MAE ?? 'N/A'}</TableCell>
-                          <TableCell>{modelMetrics[model]?.['R²'] ?? 'N/A'}</TableCell>
-                          <TableCell>
-                            <ModelRating score={calculateModelScore(modelMetrics[model])} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </div>
             </CardContent>
           </div>
         </Card>
       )}
-    </div>
-  </TooltipProvider>
-);
-};
-
-const RenderPerformanceMetrics = ({ selectedModels, modelAdjustments, data, selectedMetric, metrics }) => {
-  if (selectedModels.length !== 1) return null;
-
-  const modelType = selectedModels[0];
-  let metricValues = data?.metrics?.[selectedMetric] || {};
-  if (modelType && modelAdjustments[modelType] < 0) {
-    metricValues = Object.fromEntries(Object.entries(metricValues).map(([k, v]) => [k, Number(v) * (1 + modelAdjustments[modelType])]));
-  }
-
-  return (
-    <Card className="w-[300px] shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col gap-2">
-      <div className="flex items-center justify-between mb-1">
-        <h4 className="font-semibold text-sm">Performance Metrics</h4>
-        <span className="text-green-700 bg-green-100 px-2 py-0.5 rounded-full text-[10px] font-semibold">Good</span>
-      </div>
-      <p className="text-[10px] text-muted-foreground mb-1">For {metrics.find(m => m.id === selectedMetric)?.name}</p>
-      {[
-        { key: "MAPE", label: "Mean Absolute Percentage Error" },
-        { key: "RMSE", label: "Root Mean Squared Error" },
-        { key: "MAE", label: "Mean Absolute Error" },
-        { key: "MSE", label: "Mean Squared Error" },
-        { key: "R²", label: "R-squared" },
-      ].map(({ key, label }) => (
-        <div key={key} className="flex justify-between items-center rounded-lg p-2 bg-gray-50 dark:bg-gray-800">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1 mb-0.5">
-              <span className="font-semibold text-xs">{key}</span>
+        {data?.metrics && selectedModels.length === 1 && (
+          <Card className="w-[300px] shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between mb-1">
+              <h4 className="font-semibold text-sm">Performance Metrics for {selectedModels[0]}</h4>
+              <span className="text-green-700 bg-green-100 px-2 py-0.5 rounded-full text-[10px] font-semibold">Good</span>
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              {label}
-              <TooltipProvider>
-                <div className="relative group inline-block">
-                  <div className="flex items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[9px] font-semibold w-4 h-4 cursor-default">
-                    i
+            <p className="text-[10px] text-muted-foreground mb-1">For {metrics.find(m => m.id === selectedMetric)?.name}</p>
+            {[
+              { key: "MAPE", label: "Mean Absolute Percentage Error" },
+              { key: "RMSE", label: "Root Mean Squared Error" },
+              { key: "MAE", label: "Mean Absolute Error" },
+              { key: "MSE", label: "Mean Squared Error" },
+              { key: "R²", label: "R-squared" },
+            ].map(({ key, label }) => {
+              let metricValues = data.metrics?.[selectedMetric] || {};
+              if (modelType && modelAdjustments[modelType] < 0) {
+                metricValues = Object.fromEntries(Object.entries(metricValues).map(([k, v]) => [k, Number(v) * (1 + modelAdjustments[modelType])]));
+              }
+              return (
+                <div key={key} className="flex justify-between items-center rounded-lg p-2 bg-gray-50 dark:bg-gray-800">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className="font-semibold text-xs">{key}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      {label}
+                      <TooltipProvider>
+                        <div className="relative group inline-block">
+                          <div className="flex items-center justify-center rounded-full border border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[9px] font-semibold w-4 h-4 cursor-default">
+                            i
+                          </div>
+                          <div className="absolute z-50 hidden group-hover:block bg-white dark:bg-gray-800 text-[10px] text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded p-2 w-56 shadow-lg -left-1/2 top-5">
+                            <div className="font-semibold mb-1">{label}</div>
+                            {(() => {
+                              const val = metricValues[key];
+                              if (key === "MSE") {
+                                return (
+                                  <>
+                                    <p>Mean Squared Error measures average squared difference between predicted and actual values. Lower is better.</p>
+                                    <p className="mt-1 font-medium">{val !== undefined ? (val < 1 ? "Excellent" : val < 10 ? "Good" : "High error") : "N/A"}</p>
+                                  </>
+                                );
+                              } else if (key === "MAE") {
+                                return (
+                                  <>
+                                    <p>Mean Absolute Error measures average absolute difference. Lower is better.</p>
+                                    <p className="mt-1 font-medium">{val !== undefined ? (val < 1 ? "Excellent" : val < 10 ? "Good" : "High error") : "N/A"}</p>
+                                  </>
+                                );
+                              } else if (key === "RMSE") {
+                                return (
+                                  <>
+                                    <p>Root Mean Squared Error, in same units as data. Lower is better.</p>
+                                    <p className="mt-1 font-medium">{val !== undefined ? (val < 1 ? "Excellent" : val < 10 ? "Good" : "High error") : "N/A"}</p>
+                                  </>
+                                );
+                              } else if (key === "MAPE") {
+                                return (
+                                  <>
+                                    <p>Mean Absolute Percentage Error. Lower is better.</p>
+                                    <p className="mt-1 font-medium">{val !== undefined ? (val < 5 ? "Excellent" : val < 20 ? "Good" : "High error") : "N/A"}</p>
+                                  </>
+                                );
+                              } else if (key === "R²") {
+                                return (
+                                  <>
+                                    <p>R-squared indicates proportion of variance explained. Closer to 1 is better.</p>
+                                    <p className="mt-1 font-medium">{val !== undefined ? (val > 0.9 ? "Excellent" : val > 0.7 ? "Good" : "Poor fit") : "N/A"}</p>
+                                  </>
+                                );
+                              } else {
+                                return null;
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      </TooltipProvider>
+                    </div>
                   </div>
-                  <div className="absolute z-50 hidden group-hover:block bg-white dark:bg-gray-800 text-[10px] text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded p-2 w-56 shadow-lg -left-1/2 top-5">
-                    <div className="font-semibold mb-1">{label}</div>
-                    {(() => {
-                      const val = metricValues[key];
-                      if (key === "MSE") {
-                        return (
-                          <>
-                            <p>Mean Squared Error measures average squared difference between predicted and actual values. Lower is better.</p>
-                            <p className="mt-1 font-medium">{val !== undefined ? (val < 1 ? "Excellent" : val < 10 ? "Good" : "High error") : "N/A"}</p>
-                          </>
-                        );
-                      } else if (key === "MAE") {
-                        return (
-                          <>
-                            <p>Mean Absolute Error measures average absolute difference. Lower is better.</p>
-                            <p className="mt-1 font-medium">{val !== undefined ? (val < 1 ? "Excellent" : val < 10 ? "Good" : "High error") : "N/A"}</p>
-                          </>
-                        );
-                      } else if (key === "RMSE") {
-                        return (
-                          <>
-                            <p>Root Mean Squared Error, in same units as data. Lower is better.</p>
-                            <p className="mt-1 font-medium">{val !== undefined ? (val < 1 ? "Excellent" : val < 10 ? "Good" : "High error") : "N/A"}</p>
-                          </>
-                        );
-                      } else if (key === "MAPE") {
-                        return (
-                          <>
-                            <p>Mean Absolute Percentage Error. Lower is better.</p>
-                            <p className="mt-1 font-medium">{val !== undefined ? (val < 5 ? "Excellent" : val < 20 ? "Good" : "High error") : "N/A"}</p>
-                          </>
-                        );
-                      } else if (key === "R²") {
-                        return (
-                          <>
-                            <p>R-squared indicates proportion of variance explained. Closer to 1 is better.</p>
-                            <p className="mt-1 font-medium">{val !== undefined ? (val > 0.9 ? "Excellent" : val > 0.7 ? "Good" : "Poor fit") : "N/A"}</p>
-                          </>
-                        );
-                      } else {
-                        return null;
-                      }
-                    })()}
-                  </div>
+                  <span className="text-sm font-semibold">
+                    {key === "R²" && metricValues[key] !== undefined
+                      ? Math.abs(Number(metricValues[key])).toFixed(2)
+                      : metricValues[key] !== undefined
+                        ? Number(metricValues[key]).toFixed(2)
+                        : "N/A"}
+                  </span>
                 </div>
-              </TooltipProvider>
+              );
+            })}
+            <div className="text-[10px] p-2 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 mt-1">
+              Accuracy interpretation: <span className="font-medium">Good</span> prediction accuracy
             </div>
-          </div>
-          <span className="text-sm font-semibold">
-            {key === "R²" && metricValues[key] !== undefined
-              ? Math.abs(Number(metricValues[key])).toFixed(2)
-              : metricValues[key] !== undefined
-                ? Number(metricValues[key]).toFixed(2)
-                : "N/A"}
-          </span>
-        </div>
-      ))}
-      <div className="text-[10px] p-2 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 mt-1">
-        Accuracy interpretation: <span className="font-medium">Good</span> prediction accuracy
+          </Card>
+        )}
       </div>
-    </Card>
+    </TooltipProvider>
   );
 };

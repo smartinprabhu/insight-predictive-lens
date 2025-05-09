@@ -1,58 +1,31 @@
-# Welcome to your Lovable project
+# Predictive Dashboard UI
 
-## Project info
+## Project Overview
 
-**URL**: https://lovable.dev/projects/3ac4b69e-98f9-4c41-92fa-d7055a29fc0b
+This project is a predictive dashboard for data visualization and predictive maintenance, built with React, TypeScript, and Vite.
 
-## How can I edit this code?
+## Getting Started
 
-There are several ways of editing your application.
+To get started with this project, follow these steps:
 
-**Use Lovable**
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/your-repo/insight-predictive-lens-main.git
+   ```
+2. Navigate to the project directory:
+   ```sh
+   cd insight-predictive-lens-main
+   ```
+3. Install the necessary dependencies:
+   ```sh
+   npm install
+   ```
+4. Start the development server:
+   ```sh
+   npm run dev
+   ```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3ac4b69e-98f9-4c41-92fa-d7055a29fc0b) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
+## Technologies Used
 
 - Vite
 - TypeScript
@@ -60,14 +33,34 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## Features
 
-Simply open [Lovable](https://lovable.dev/projects/3ac4b69e-98f9-4c41-92fa-d7055a29fc0b) and click on Share -> Publish.
+- Many tabs for different data visualizations (Historical Data, Insights, Forecast, Model Validation)
+- Easy-to-use tools for data upload and analysis
+- Responsive design using Tailwind CSS
 
-## Can I connect a custom domain to my Lovable project?
+## Contribution Guidelines
 
-Yes it is!
+Contributions are welcome! Please follow these guidelines:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Commit your changes with clear and concise messages.
+4. Create a pull request against the main branch.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Deployment
+
+To deploy this project, you can use Docker and Nginx. The `Dockerfile` and `docker-compose.yml` are provided for containerization.
+
+1. Build the Docker image:
+   ```sh
+   docker-compose build
+   ```
+2. Start the containers:
+   ```sh
+   docker-compose up
+   ```
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.

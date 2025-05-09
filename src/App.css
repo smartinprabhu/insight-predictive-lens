@@ -4,6 +4,20 @@
   padding: 2rem;
   text-align: center;
 }
+/* Ensure icons are always visible */
+.sidebar-menu-icon {
+  display: inline-block;
+  width: 20px; /* Adjust size as needed */
+  height: 20px; /* Adjust size as needed */
+  margin-right: 10px; /* Adjust spacing as needed */
+}
+
+/* Adjust icon styles when sidebar is collapsed */
+.sidebar-collapsed .sidebar-menu-icon {
+  margin-right: 0; /* Remove spacing when sidebar is collapsed */
+  display: block; /* Ensure icons are displayed as block elements */
+  margin: 0 auto; /* Center the icons */
+}
 
 .logo {
   height: 6em;

@@ -1,182 +1,201 @@
-
 import { useState } from "react";
+import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue 
+  SelectValue
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { MoveRightIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "./ThemeToggle";
+import LoadingSkeleton from "./LoadingSkeleton";
+import CircularProgress from '@mui/material/CircularProgress';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-interface UploadDataFormProps {
-  onSubmit: () => void;
+// List of API URLs to try
+const apiUrls = [
+  "http://localhost:5011",
+  "http://15.206.169.202:5011",
+  "http://aptino-dev.zentere.com:5011"
+];
+
+// Helper function to try each URL until one succeeds
+async function tryApiUrls(endpoint, formData) {
+  for (const url of apiUrls) {
+    try {
+      const response = await axios.post(`${url}/${endpoint}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error(`Failed to connect to ${url}:`, error);
+    }
+  }
+  throw new Error("All API URLs failed");
 }
 
-export const UploadDataForm = ({ onSubmit }: UploadDataFormProps) => {
+interface UploadDataFormProps {
+  onFileUpload: (file: File) => void;
+  onSubmit: () => void;
+  onApiResponse: (responseData: any) => void;
+  setOpenModal: () => void;
+}
+
+export const UploadDataForm = ({ onFileUpload, onSubmit, onApiResponse }: UploadDataFormProps) => {
   const [file, setFile] = useState<File | null>(null);
-  const [modelType, setModelType] = useState("Prophet");
-  const [forecastPeriod, setForecastPeriod] = useState(12); // default to 12 weeks
-  const [aggregationType, setAggregationType] = useState("Weekly");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [weeks, setWeeks] = useState<number>(4);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (!selectedFile.name.endsWith('.xlsx')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a valid Excel (.xlsx) file.",
+        });
+        return;
+      }
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+      onFileUpload(selectedFile);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // If no file is selected, we'll use sample data
+
     if (!file) {
       toast({
-        title: "Using sample data",
-        description: "No file was uploaded. Sample data will be used for demonstration.",
+        title: "No file selected",
+        description: "Please select a file to upload.",
       });
-    } else {
-      toast({
-        title: "Processing data",
-        description: "Your file is being analyzed. Please wait...",
-      });
+      return;
     }
-    
-    // Simulate processing time
-    setTimeout(() => {
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('weeks', weeks.toString());
+
+    setLoading(true);
+    try {
+      const response = await tryApiUrls("forecast", formData);
+
       toast({
         title: "Analysis complete",
         description: "Your dashboard has been generated successfully.",
       });
-      onSubmit();
-    }, 2000);
-  };
 
-  const handleUseSampleData = () => {
-    toast({
-      title: "Using sample data",
-      description: "Sample data will be used for demonstration.",
-    });
-    
-    setTimeout(() => {
-      toast({
-        title: "Analysis complete",
-        description: "Your dashboard has been generated with sample data.",
-      });
+      onApiResponse(response.data);
       onSubmit();
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while processing your file.",
+      });
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-2xl dark:bg-gray-800/90 dark:border-gray-700 rounded-xl shadow-lg">
-        <CardContent className="pt-6">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 p-6">
+      <Card className="w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800">
+        <CardContent className="p-8">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-              Predictive Analytics Dashboard
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Walmart</h1>
             <ThemeToggle />
           </div>
-          
+
+          <p className="text-gray-500 dark:text-gray-400 mb-4 text-center">
+            Upload your Excel file to generate predictive insights and forecasts.
+          </p>
           <p className="text-gray-500 dark:text-gray-400 mb-6 text-center">
-            Upload your Excel file to generate predictive insights
+            Supported format: <strong>.xlsx</strong>
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Excel File
               </label>
               <Input
                 type="file"
-                accept=".xlsx,.xls"
+                accept=".xlsx"
                 onChange={handleFileChange}
                 className="cursor-pointer dark:bg-gray-700 dark:border-gray-600"
               />
-              
-              <p className="text-xs text-muted-foreground mt-2">
-                Upload your Excel file or use sample data for demonstration purposes.
-              </p>
+
+              {previewUrl && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="mt-2">Preview File</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>File Preview</DialogTitle>
+                    </DialogHeader>
+                    <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                      Preview not available for Excel files.
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Model Type
-                </label>
-                <Select
-                  value={modelType}
-                  onValueChange={setModelType}
-                >
-                  <SelectTrigger className="w-full dark:bg-gray-700 dark:border-gray-600">
-                    <SelectValue placeholder="Select model type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Prophet">Prophet</SelectItem>
-                    <SelectItem value="ARIMA">ARIMA</SelectItem>
-                    <SelectItem value="LSTM">LSTM</SelectItem>
-                    <SelectItem value="XGBoost">XGBoost</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Forecast Period (weeks)
-                </label>
-                <Input
-                  type="number"
-                  value={forecastPeriod}
-                  onChange={(e) => setForecastPeriod(Number(e.target.value))}
-                  min={1}
-                  max={52}
-                  className="dark:bg-gray-700 dark:border-gray-600"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Aggregation Type
-                </label>
-                <Select
-                  value={aggregationType}
-                  onValueChange={setAggregationType}
-                >
-                  <SelectTrigger className="w-full dark:bg-gray-700 dark:border-gray-600">
-                    <SelectValue placeholder="Select aggregation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Weekly">Weekly</SelectItem>
-                    <SelectItem value="Monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Number of Weeks for Forecast
+              </label>
+              <Input
+                type="number"
+                min="1"
+                value={weeks}
+                onChange={(e) => setWeeks(Number(e.target.value))}
+                className="dark:bg-gray-700 dark:border-gray-600"
+              />
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-3">
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={handleUseSampleData}
-                className="dark:border-gray-600 dark:hover:bg-gray-700"
+            <div className="flex justify-center">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                Use Sample Data
-              </Button>
-              
-              <Button 
-                type="submit" 
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 text-white"
-              >
-                Generate Dashboard
-                <MoveRightIcon className="ml-2 h-4 w-4" />
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <CircularProgress size={20} sx={{ color: 'white' }} />
+                    Generating...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    Generate Dashboard
+                    <MoveRightIcon className="h-4 w-4" />
+                  </div>
+                )}
               </Button>
             </div>
           </form>
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-800/50">
+              <CircularProgress size={40} />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
