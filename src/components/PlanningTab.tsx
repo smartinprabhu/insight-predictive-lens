@@ -4,9 +4,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Minus } from "lucide-react";
+import { Download, Plus, Minus, Maximize, Minimize } from "lucide-react";
 import { formatPercentage } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface WeekData {
   date: string;
@@ -34,6 +41,7 @@ export const PlanningTab: React.FC = () => {
   const [periodStart, setPeriodStart] = useState(3);
   const [periodEnd, setPeriodEnd] = useState(8);
   const [weekData, setWeekData] = useState<WeekData[]>([]);
+  const [expandedView, setExpandedView] = useState(false);
 
   // Initialize or update week data
   useEffect(() => {
@@ -110,262 +118,333 @@ export const PlanningTab: React.FC = () => {
     }
   };
 
-  // Export to Excel (simplified - would need a proper Excel export library for production)
+  // Export to Excel
   const exportToExcel = () => {
     // In a real implementation, use a library like xlsx or exceljs
     console.log("Exporting data to Excel:", weekData);
-    alert("Export functionality would save an Excel file with the current planning data.");
+    
+    // Create CSV content
+    const headerRow = ["Date", "Volume", "AHT", "Shrinkage", "Occupancy", "Attrition", "Required", "Actual", "O/U"];
+    const csvRows = [headerRow.join(",")];
+    
+    weekData.forEach(week => {
+      const required = calculateRequired(week);
+      const ou = calculateOU(week.actual, required);
+      
+      const row = [
+        week.date,
+        week.volume,
+        week.aht,
+        (week.shrinkage * 100).toFixed(0),
+        (week.occupancy * 100).toFixed(0),
+        (week.attrition * 100).toFixed(0),
+        required,
+        week.actual,
+        ou
+      ];
+      csvRows.push(row.join(","));
+    });
+    
+    // Create and trigger download
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `workforce_planning_${businessUnit}_${lob.replace(" ", "_")}_weeks_${periodStart}-${periodEnd}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
+  // Toggle expanded view
+  const toggleExpandedView = () => {
+    setExpandedView(!expandedView);
+  };
+
+  const renderPlanningTable = () => (
+    <div className="overflow-x-auto bg-card dark:bg-card rounded-lg shadow">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-32 bg-muted dark:bg-muted sticky left-0 z-10">Metric</TableHead>
+            {weekData.map((week, index) => (
+              <TableHead 
+                key={index} 
+                className="text-center bg-muted dark:bg-muted font-medium"
+              >
+                {week.date}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {/* Volume Row */}
+          <TableRow>
+            <TableCell colSpan={weekData.length + 1} className="bg-blue-100 font-medium dark:bg-blue-950 dark:text-blue-200">
+              Volume
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Volume (Contacts)</TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`volume-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={week.volume}
+                  onChange={(e) => handleInputChange(index, 'volume', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+
+          {/* Assumptions Section */}
+          <TableRow>
+            <TableCell colSpan={weekData.length + 1} className="bg-green-100 font-medium dark:bg-green-950 dark:text-green-200">
+              Assumptions
+            </TableCell>
+          </TableRow>
+          
+          {/* AHT Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">AHT (seconds)</TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`aht-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={week.aht}
+                  onChange={(e) => handleInputChange(index, 'aht', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* Shrinkage Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Shrinkage (%)</TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`shrinkage-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={(week.shrinkage * 100).toFixed(0)}
+                  onChange={(e) => handleInputChange(index, 'shrinkage', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* Occupancy Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Occupancy (%)</TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`occupancy-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={(week.occupancy * 100).toFixed(0)}
+                  onChange={(e) => handleInputChange(index, 'occupancy', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* Attrition Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Attrition (%)</TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`attrition-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={(week.attrition * 100).toFixed(0)}
+                  onChange={(e) => handleInputChange(index, 'attrition', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* Factors Section */}
+          <TableRow>
+            <TableCell colSpan={weekData.length + 1} className="bg-pink-100 font-medium dark:bg-pink-950 dark:text-pink-200">
+              Factors
+            </TableCell>
+          </TableRow>
+          
+          {/* Required Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Required (HC)</TableCell>
+            {weekData.map((week, index) => {
+              const required = calculateRequired(week);
+              return (
+                <TableCell 
+                  key={`required-${index}`} 
+                  className="text-center border font-medium bg-muted dark:bg-muted"
+                >
+                  {required}
+                </TableCell>
+              );
+            })}
+          </TableRow>
+          
+          {/* Actual Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Actual (HC)</TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`actual-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={week.actual}
+                  onChange={(e) => handleInputChange(index, 'actual', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* O/U Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">O/U</TableCell>
+            {weekData.map((week, index) => {
+              const required = calculateRequired(week);
+              const overUnder = calculateOU(week.actual, required);
+              return (
+                <TableCell 
+                  key={`ou-${index}`} 
+                  className={`text-center border font-medium ${
+                    overUnder < 0 ? 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950' : 
+                    overUnder > 0 ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950' : 
+                    'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  {overUnder}
+                </TableCell>
+              );
+            })}
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
-    <Card className="p-4 shadow-lg">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Business Unit</label>
-          <Select 
-            value={businessUnit} 
-            onValueChange={setBusinessUnit}
+    <Card className="p-4 shadow-lg bg-card dark:border-gray-700">
+      <CardHeader className="p-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+        <CardTitle className="text-xl font-semibold">Workforce Planning</CardTitle>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={toggleExpandedView}
+            className="transition-all duration-200"
           >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Business Unit" />
-            </SelectTrigger>
-            <SelectContent>
-              {businessUnits.map((unit) => (
-                <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {expandedView ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          </Button>
+          <Button variant="outline" onClick={exportToExcel} className="flex items-center gap-2">
+            <Download className="h-4 w-4" /> Export to Excel
+          </Button>
         </div>
-        
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Line of Business</label>
-          <Select 
-            value={lob} 
-            onValueChange={setLob}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select LoB" />
-            </SelectTrigger>
-            <SelectContent>
-              {lobOptions[businessUnit as keyof typeof lobOptions]?.map((option) => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Period</label>
-          <div className="flex items-center space-x-2">
-            <Input 
-              value={`Week ${periodStart.toString().padStart(2, '0')} – Week ${periodEnd.toString().padStart(2, '0')}`}
-              readOnly
-              className="flex-1"
-            />
-            <Button variant="outline" size="icon" onClick={removeWeek} disabled={periodEnd <= periodStart + 1}>
-              <Minus className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={addWeek}>
-              <Plus className="h-4 w-4" />
-            </Button>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Business Unit</label>
+            <Select 
+              value={businessUnit} 
+              onValueChange={setBusinessUnit}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Business Unit" />
+              </SelectTrigger>
+              <SelectContent>
+                {businessUnits.map((unit) => (
+                  <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Line of Business</label>
+            <Select 
+              value={lob} 
+              onValueChange={setLob}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select LoB" />
+              </SelectTrigger>
+              <SelectContent>
+                {lobOptions[businessUnit as keyof typeof lobOptions]?.map((option) => (
+                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Period</label>
+            <div className="flex items-center space-x-2">
+              <Input 
+                value={`Week ${periodStart.toString().padStart(2, '0')} – Week ${periodEnd.toString().padStart(2, '0')}`}
+                readOnly
+                className="flex-1"
+              />
+              <Button variant="outline" size="icon" onClick={removeWeek} disabled={periodEnd <= periodStart + 1}>
+                <Minus className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={addWeek}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex justify-end mb-4">
-        <Button variant="outline" onClick={exportToExcel} className="flex items-center gap-2">
-          <Download className="h-4 w-4" /> Export to Excel
-        </Button>
-      </div>
-
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-32 bg-gray-100 sticky left-0 z-10">Metric</TableHead>
-              {weekData.map((week, index) => (
-                <TableHead 
-                  key={index} 
-                  className="text-center bg-gray-100 font-medium"
-                >
-                  {week.date}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {/* Volume Row */}
-            <TableRow>
-              <TableCell colSpan={weekData.length + 1} className="bg-blue-100 font-medium">
-                Volume
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-medium border sticky left-0 bg-white">Volume (Contacts)</TableCell>
-              {weekData.map((week, index) => (
-                <TableCell 
-                  key={`volume-${index}`} 
-                  className="text-center border"
-                >
-                  <Input 
-                    type="number"
-                    value={week.volume}
-                    onChange={(e) => handleInputChange(index, 'volume', e.target.value)}
-                    className="w-24 text-center mx-auto"
-                  />
-                </TableCell>
-              ))}
-            </TableRow>
-
-            {/* Assumptions Section */}
-            <TableRow>
-              <TableCell colSpan={weekData.length + 1} className="bg-green-100 font-medium">
-                Assumptions
-              </TableCell>
-            </TableRow>
-            
-            {/* AHT Row */}
-            <TableRow>
-              <TableCell className="font-medium border sticky left-0 bg-white">AHT (seconds)</TableCell>
-              {weekData.map((week, index) => (
-                <TableCell 
-                  key={`aht-${index}`} 
-                  className="text-center border"
-                >
-                  <Input 
-                    type="number"
-                    value={week.aht}
-                    onChange={(e) => handleInputChange(index, 'aht', e.target.value)}
-                    className="w-24 text-center mx-auto"
-                  />
-                </TableCell>
-              ))}
-            </TableRow>
-            
-            {/* Shrinkage Row */}
-            <TableRow>
-              <TableCell className="font-medium border sticky left-0 bg-white">Shrinkage (%)</TableCell>
-              {weekData.map((week, index) => (
-                <TableCell 
-                  key={`shrinkage-${index}`} 
-                  className="text-center border"
-                >
-                  <Input 
-                    type="number"
-                    value={(week.shrinkage * 100).toFixed(0)}
-                    onChange={(e) => handleInputChange(index, 'shrinkage', e.target.value)}
-                    className="w-24 text-center mx-auto"
-                  />
-                </TableCell>
-              ))}
-            </TableRow>
-            
-            {/* Occupancy Row */}
-            <TableRow>
-              <TableCell className="font-medium border sticky left-0 bg-white">Occupancy (%)</TableCell>
-              {weekData.map((week, index) => (
-                <TableCell 
-                  key={`occupancy-${index}`} 
-                  className="text-center border"
-                >
-                  <Input 
-                    type="number"
-                    value={(week.occupancy * 100).toFixed(0)}
-                    onChange={(e) => handleInputChange(index, 'occupancy', e.target.value)}
-                    className="w-24 text-center mx-auto"
-                  />
-                </TableCell>
-              ))}
-            </TableRow>
-            
-            {/* Attrition Row */}
-            <TableRow>
-              <TableCell className="font-medium border sticky left-0 bg-white">Attrition (%)</TableCell>
-              {weekData.map((week, index) => (
-                <TableCell 
-                  key={`attrition-${index}`} 
-                  className="text-center border"
-                >
-                  <Input 
-                    type="number"
-                    value={(week.attrition * 100).toFixed(0)}
-                    onChange={(e) => handleInputChange(index, 'attrition', e.target.value)}
-                    className="w-24 text-center mx-auto"
-                  />
-                </TableCell>
-              ))}
-            </TableRow>
-            
-            {/* Factors Section */}
-            <TableRow>
-              <TableCell colSpan={weekData.length + 1} className="bg-pink-100 font-medium">
-                Factors
-              </TableCell>
-            </TableRow>
-            
-            {/* Required Row */}
-            <TableRow>
-              <TableCell className="font-medium border sticky left-0 bg-white">Required (HC)</TableCell>
-              {weekData.map((week, index) => {
-                const required = calculateRequired(week);
-                return (
-                  <TableCell 
-                    key={`required-${index}`} 
-                    className="text-center border font-medium bg-gray-50"
-                  >
-                    {required}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-            
-            {/* Actual Row */}
-            <TableRow>
-              <TableCell className="font-medium border sticky left-0 bg-white">Actual (HC)</TableCell>
-              {weekData.map((week, index) => (
-                <TableCell 
-                  key={`actual-${index}`} 
-                  className="text-center border"
-                >
-                  <Input 
-                    type="number"
-                    value={week.actual}
-                    onChange={(e) => handleInputChange(index, 'actual', e.target.value)}
-                    className="w-24 text-center mx-auto"
-                  />
-                </TableCell>
-              ))}
-            </TableRow>
-            
-            {/* O/U Row */}
-            <TableRow>
-              <TableCell className="font-medium border sticky left-0 bg-white">O/U</TableCell>
-              {weekData.map((week, index) => {
-                const required = calculateRequired(week);
-                const overUnder = calculateOU(week.actual, required);
-                return (
-                  <TableCell 
-                    key={`ou-${index}`} 
-                    className={`text-center border font-medium ${
-                      overUnder < 0 ? 'text-red-600 bg-red-50' : 
-                      overUnder > 0 ? 'text-green-600 bg-green-50' : 
-                      'text-gray-600'
-                    }`}
-                  >
-                    {overUnder}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-
-      <div className="mt-4 text-sm text-gray-500">
-        <p>* Calculation: Required HC = (Volume × AHT) / (60 × 480 × 5 × Occupancy × (1-Shrinkage) × (1-Attrition))</p>
-        <p>* O/U = Actual - Required</p>
-      </div>
+        {/* Render the planning table or show the expanded view dialog */}
+        {expandedView ? (
+          <Dialog open={expandedView} onOpenChange={setExpandedView}>
+            <DialogContent className="max-w-screen-xl w-[90vw] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold flex justify-between items-center">
+                  <span>Workforce Planning - {businessUnit} / {lob}</span>
+                  <Button variant="outline" size="icon" onClick={() => setExpandedView(false)}>
+                    <Minimize className="h-4 w-4" />
+                  </Button>
+                </DialogTitle>
+                <DialogDescription>
+                  Period: Week {periodStart.toString().padStart(2, '0')} – Week {periodEnd.toString().padStart(2, '0')}
+                </DialogDescription>
+              </DialogHeader>
+              {renderPlanningTable()}
+            </DialogContent>
+          </Dialog>
+        ) : (
+          renderPlanningTable()
+        )}
+        
+        <div className="mt-4 text-sm text-muted-foreground">
+          <p>* Calculation: Required HC = (Volume × AHT) / (60 × 480 × 5 × Occupancy × (1-Shrinkage) × (1-Attrition))</p>
+          <p>* O/U = Actual - Required</p>
+        </div>
+      </CardContent>
     </Card>
   );
 };
-
