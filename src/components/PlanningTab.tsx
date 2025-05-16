@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Minus, Maximize, Minimize } from "lucide-react";
+import { Download, Plus, Minus, Maximize, Minimize, Info } from "lucide-react";
 import { formatPercentage } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,6 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WeekData {
   date: string;
@@ -42,6 +48,50 @@ export const PlanningTab: React.FC = () => {
   const [periodEnd, setPeriodEnd] = useState(8);
   const [weekData, setWeekData] = useState<WeekData[]>([]);
   const [expandedView, setExpandedView] = useState(false);
+
+  // Metric explanations for info buttons
+  const metricExplanations = {
+    volume: {
+      title: "Volume",
+      description: "The total number of customer contacts (calls, chats, emails) expected during the week. This is a key driver for staffing requirements.",
+      impact: "Higher volume directly increases the required headcount. Volume is distributed according to the volume distribution mix based on teams."
+    },
+    aht: {
+      title: "Average Handle Time (AHT)",
+      description: "The average time in seconds an agent spends handling a customer contact, including talk time, hold time, and after-call work.",
+      impact: "Longer AHT means agents can handle fewer contacts per hour, increasing required headcount."
+    },
+    shrinkage: {
+      title: "Shrinkage",
+      description: "The percentage of paid time that agents are not available to handle contacts due to breaks, training, meetings, time off, etc.",
+      impact: "Higher shrinkage rates mean you need more agents to cover the same contact volume."
+    },
+    occupancy: {
+      title: "Occupancy",
+      description: "The percentage of logged-in time that agents spend actively handling contacts. Target typically ranges from 75-85%.",
+      impact: "Lower occupancy targets improve agent experience but require more headcount."
+    },
+    attrition: {
+      title: "Attrition",
+      description: "The percentage of agents expected to leave the company during the period. Accounts for ongoing hiring needs.",
+      impact: "Higher attrition increases the need for additional headcount to maintain service levels."
+    },
+    required: {
+      title: "Required Headcount",
+      description: "The calculated number of agents needed based on volume, AHT, shrinkage, occupancy, and attrition.",
+      impact: "Changes to assumptions will affect the required headcount calculation."
+    },
+    actual: {
+      title: "Actual Headcount",
+      description: "The actual number of agents currently employed or planned for the period based on team allocations.",
+      impact: "Actual headcount is distributed according to team volume distribution mix."
+    },
+    ou: {
+      title: "Over/Under (O/U)",
+      description: "The difference between actual and required headcount, indicating surplus or deficit in staffing.",
+      impact: "Negative values indicate understaffing, which may impact service quality. Positive values indicate overstaffing, which increases costs."
+    }
+  };
 
   // Initialize or update week data
   useEffect(() => {
@@ -161,6 +211,33 @@ export const PlanningTab: React.FC = () => {
     setExpandedView(!expandedView);
   };
 
+  // Helper function to render metric label with info tooltip
+  const renderMetricLabel = (metricKey: keyof typeof metricExplanations) => {
+    const metric = metricExplanations[metricKey];
+    return (
+      <div className="flex items-center gap-1">
+        <span>{metric.title}</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <span className="sr-only">Info about {metric.title}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-sm bg-background border shadow-lg">
+              <div className="space-y-2 p-1">
+                <h4 className="font-medium">{metric.title}</h4>
+                <p className="text-sm text-muted-foreground">{metric.description}</p>
+                <p className="text-sm font-medium">Impact: {metric.impact}</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    );
+  };
+
   const renderPlanningTable = () => (
     <div className="overflow-x-auto bg-card dark:bg-card rounded-lg shadow">
       <Table>
@@ -185,7 +262,9 @@ export const PlanningTab: React.FC = () => {
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Volume (Contacts)</TableCell>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('volume')}
+            </TableCell>
             {weekData.map((week, index) => (
               <TableCell 
                 key={`volume-${index}`} 
@@ -210,7 +289,9 @@ export const PlanningTab: React.FC = () => {
           
           {/* AHT Row */}
           <TableRow>
-            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">AHT (seconds)</TableCell>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('aht')}
+            </TableCell>
             {weekData.map((week, index) => (
               <TableCell 
                 key={`aht-${index}`} 
@@ -228,7 +309,9 @@ export const PlanningTab: React.FC = () => {
           
           {/* Shrinkage Row */}
           <TableRow>
-            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Shrinkage (%)</TableCell>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('shrinkage')}
+            </TableCell>
             {weekData.map((week, index) => (
               <TableCell 
                 key={`shrinkage-${index}`} 
@@ -246,7 +329,9 @@ export const PlanningTab: React.FC = () => {
           
           {/* Occupancy Row */}
           <TableRow>
-            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Occupancy (%)</TableCell>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('occupancy')}
+            </TableCell>
             {weekData.map((week, index) => (
               <TableCell 
                 key={`occupancy-${index}`} 
@@ -264,7 +349,9 @@ export const PlanningTab: React.FC = () => {
           
           {/* Attrition Row */}
           <TableRow>
-            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Attrition (%)</TableCell>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('attrition')}
+            </TableCell>
             {weekData.map((week, index) => (
               <TableCell 
                 key={`attrition-${index}`} 
@@ -289,7 +376,9 @@ export const PlanningTab: React.FC = () => {
           
           {/* Required Row */}
           <TableRow>
-            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Required (HC)</TableCell>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('required')}
+            </TableCell>
             {weekData.map((week, index) => {
               const required = calculateRequired(week);
               return (
@@ -305,7 +394,9 @@ export const PlanningTab: React.FC = () => {
           
           {/* Actual Row */}
           <TableRow>
-            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">Actual (HC)</TableCell>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('actual')}
+            </TableCell>
             {weekData.map((week, index) => (
               <TableCell 
                 key={`actual-${index}`} 
@@ -323,7 +414,9 @@ export const PlanningTab: React.FC = () => {
           
           {/* O/U Row */}
           <TableRow>
-            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">O/U</TableCell>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('ou')}
+            </TableCell>
             {weekData.map((week, index) => {
               const required = calculateRequired(week);
               const overUnder = calculateOU(week.actual, required);
