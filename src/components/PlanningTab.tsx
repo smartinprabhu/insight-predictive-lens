@@ -93,17 +93,37 @@ export const PlanningTab: React.FC = () => {
     }
   };
 
+  // Function to generate a date string for a Saturday in a specific week
+  const getSaturdayDateForWeek = (weekNumber: number): string => {
+    const currentYear = new Date().getFullYear();
+    // January 1st of the current year
+    const firstDayOfYear = new Date(currentYear, 0, 1);
+    // Calculate days to first Saturday
+    const dayOfWeek = firstDayOfYear.getDay(); // 0 = Sunday, 6 = Saturday
+    const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7;
+    
+    // First Saturday of the year
+    const firstSaturday = new Date(currentYear, 0, 1 + daysToFirstSaturday);
+    
+    // Add (weekNumber - 1) * 7 days to get to the Saturday of the specified week
+    const targetSaturday = new Date(firstSaturday);
+    targetSaturday.setDate(firstSaturday.getDate() + (weekNumber - 1) * 7);
+    
+    // Format as "DD-MMM" (e.g., "15-Mar")
+    const day = targetSaturday.getDate().toString().padStart(2, '0');
+    const month = targetSaturday.toLocaleString('en-US', { month: 'short' });
+    
+    return `${day}-${month}`;
+  };
+
   // Initialize or update week data
   useEffect(() => {
     // Create week data for the period range
-    const currentYear = new Date().getFullYear();
     const newWeekData: WeekData[] = [];
     
     // Generate weeks for the period (in reverse order - most recent first)
     for (let week = periodEnd; week >= periodStart; week--) {
-      const weekNumber = week.toString().padStart(2, '0');
-      // Simple date calculation (approximate - just for display)
-      const date = `${weekNumber}-Mar`;
+      const date = getSaturdayDateForWeek(week);
       
       newWeekData.push({
         date,
