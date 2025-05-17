@@ -216,7 +216,7 @@ export const ForecastTab = ({
       return newEntry;
     });
   }, [dzData, futureData]);
-
+  
   const handleMetricToggle = (metricId: string) => {
     setSelectedMetrics((current) =>
       current.includes(metricId)
@@ -537,7 +537,7 @@ export const ForecastTab = ({
                         dataKey={`${metricId}_actual`}
                         name={metricInfo?.name}
                         stroke={metricInfo?.color}
-                        strokeWidth=2
+                        strokeWidth={2}
                         fill={
                           metricId === "Total IB Units"
                             ? "#928EDA"
