@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -199,7 +198,7 @@ export const PlanningTab: React.FC = () => {
   };
   
   // Calculate Required HC based on formula
-  const calculateRequired = (data: WeekData) => {
+  const calculateRequired = (data: WeekData): number => {
     // Total Handling Time = Volume × AHT (in seconds)
     const totalHandlingTime = data.volume * data.aht;
     
@@ -217,7 +216,7 @@ export const PlanningTab: React.FC = () => {
   };
 
   // Calculate O/U (Over/Under)
-  const calculateOU = (actual: number, required: number) => {
+  const calculateOU = (actual: number, required: number): number => {
     return actual - required;
   };
 

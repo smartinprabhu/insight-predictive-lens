@@ -1,11 +1,10 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { 
   ColDef, 
   ICellRendererParams,
   CellClassParams,
-  GridReadyEvent as AgGridReadyEvent
+  GridReadyEvent
 } from 'ag-grid-community';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -265,8 +264,8 @@ const PlanningGrid: React.FC<PlanningGridProps> = ({
     return cols;
   }, [weekData]);
 
-  // Fixed the type for onGridReady to match ag-grid-react version
-  const onGridReady = useCallback((params: AgGridReadyEvent) => {
+  // Fixed the type for onGridReady
+  const onGridReady = useCallback((params: GridReadyEvent) => {
     setGridApi(params.api);
     // Auto-size columns after grid is ready
     setTimeout(() => {
@@ -288,7 +287,7 @@ const PlanningGrid: React.FC<PlanningGridProps> = ({
     <div className="ag-theme-alpine dark:ag-theme-alpine-dark w-full h-[500px]">
       <AgGridReact
         rowData={rowData}
-        columnDefs={columnDefs}
+        columnDefs={columnDefs as any}
         defaultColDef={defaultColDef}
         context={gridContext}
         onGridReady={onGridReady}
