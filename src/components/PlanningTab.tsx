@@ -109,11 +109,12 @@ export const PlanningTab: React.FC = () => {
     const targetSaturday = new Date(firstSaturday);
     targetSaturday.setDate(firstSaturday.getDate() + (weekNumber - 1) * 7);
     
-    // Format as "DD-MMM" (e.g., "15-Mar")
+    // Format as "DD-MMM-YY" (e.g., "03-Feb-25")
     const day = targetSaturday.getDate().toString().padStart(2, '0');
     const month = targetSaturday.toLocaleString('en-US', { month: 'short' });
+    const year = targetSaturday.getFullYear() % 100; // Get last 2 digits of year
     
-    return `${day}-${month}`;
+    return `${day}-${month.toLowerCase()}-${year}`;
   };
 
   // Initialize or update week data
@@ -121,7 +122,7 @@ export const PlanningTab: React.FC = () => {
     // Create week data for the period range
     const newWeekData: WeekData[] = [];
     
-    // Generate weeks for the period (in reverse order - most recent first)
+    // Generate weeks for the period (in natural order - most recent first to oldest)
     for (let week = periodEnd; week >= periodStart; week--) {
       const date = getSaturdayDateForWeek(week);
       
