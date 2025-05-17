@@ -27,7 +27,7 @@ interface WeekData {
 export const PlanningTab: React.FC = () => {
   // Business unit options
   const businessUnits = ["WFS", "WCS", "ATS", "CAS"];
-  const lobOptions = {
+  const lobOptions: Record<string, string[]> = {
     "WFS": ["US Phone", "EU Phone", "APAC Chat", "Global Email"],
     "WCS": ["Technical Support", "Customer Service", "Sales"],
     "ATS": ["Platform A", "Platform B", "Platform C"],

@@ -348,9 +348,9 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
       let processedData = response.data;
 
       if (aggregationType === "Monthly" && Array.isArray(processedData)) {
-        const monthlyData = {};
+        const monthlyData: Record<string, any> = {};
 
-        processedData.forEach((item) => {
+        processedData.forEach((item: any) => {
           const dateStr = item.date || item.ds; // support 'date' or 'ds'
           if (!dateStr) return;
 
@@ -370,8 +370,8 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
         });
 
         // Average numeric fields
-        processedData = Object.values(monthlyData).map((item) => {
-          const count = item.count;
+        processedData = Object.values(monthlyData).map((item: any) => {
+          const count = item.count || 1;
           const newItem = { ...item };
           Object.keys(newItem).forEach((key) => {
             if (typeof newItem[key] === "number" && key !== "count") {
