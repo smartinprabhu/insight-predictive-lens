@@ -3,11 +3,9 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { 
   ColDef, 
-  ICellRendererParams, 
-  ValueFormatterParams,
-  ValueGetterParams,
+  ICellRendererParams,
   CellClassParams,
-  GridReadyEvent
+  GridReadyEvent as AgGridReadyEvent
 } from 'ag-grid-community';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +20,7 @@ import {
 // Import AG Grid styles
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
+import '../styles/ag-grid-custom.css';  // Import custom AG Grid styles
 
 // Types
 interface MetricExplanation {
@@ -117,7 +116,7 @@ const SectionHeaderRenderer = (props: ICellRendererParams) => {
   );
 };
 
-export const PlanningGrid: React.FC<PlanningGridProps> = ({ 
+const PlanningGrid: React.FC<PlanningGridProps> = ({ 
   weekData, 
   metricExplanations,
   onDataChange
@@ -147,7 +146,7 @@ export const PlanningGrid: React.FC<PlanningGridProps> = ({
 
   // Transform the data for AG Grid
   const rowData = useMemo(() => {
-    if (!weekData.length) return [];
+    if (!weekData || !weekData.length) return [];
     
     // Create rows for each metric
     const metrics = [
@@ -188,8 +187,10 @@ export const PlanningGrid: React.FC<PlanningGridProps> = ({
           } else if (metric.metricKey === 'ou') {
             const required = calculateRequired(week);
             row[`week${weekIndex}`] = calculateOU(week.actual, required);
-          } else {
+          } else if (week[metric.metricKey as keyof WeekData] !== undefined) {
             row[`week${weekIndex}`] = week[metric.metricKey as keyof WeekData];
+          } else {
+            row[`week${weekIndex}`] = 0; // Default value if undefined
           }
         });
         
@@ -218,13 +219,13 @@ export const PlanningGrid: React.FC<PlanningGridProps> = ({
         cellClass: (params: CellClassParams) => {
           return params.data.isHeader 
             ? 'bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-100' 
-            : 'sticky left-0 z-10';
+            : 'sticky left-0 z-10 bg-white dark:bg-gray-900'; // Add bg color to make sticky work
         }
       }
     ];
     
     // Add columns for each week
-    if (weekData.length > 0) {
+    if (weekData && weekData.length > 0) {
       weekData.forEach((week, index) => {
         cols.push({
           headerName: week.date,
@@ -264,13 +265,14 @@ export const PlanningGrid: React.FC<PlanningGridProps> = ({
     return cols;
   }, [weekData]);
 
-  const onGridReady = (params: GridReadyEvent) => {
+  // Fixed the type for onGridReady to match ag-grid-react version
+  const onGridReady = useCallback((params: AgGridReadyEvent) => {
     setGridApi(params.api);
     // Auto-size columns after grid is ready
     setTimeout(() => {
       params.api.sizeColumnsToFit();
     }, 0);
-  };
+  }, []);
   
   const gridContext = useMemo(() => ({
     updateData: onDataChange,
@@ -283,10 +285,10 @@ export const PlanningGrid: React.FC<PlanningGridProps> = ({
   }), []);
 
   return (
-    <div className="ag-theme-alpine dark:ag-theme-alpine-dark w-full h-[500px]" style={{ height: '500px' }}>
+    <div className="ag-theme-alpine dark:ag-theme-alpine-dark w-full h-[500px]">
       <AgGridReact
         rowData={rowData}
-        columnDefs={columnDefs as any}
+        columnDefs={columnDefs}
         defaultColDef={defaultColDef}
         context={gridContext}
         onGridReady={onGridReady}
@@ -296,6 +298,7 @@ export const PlanningGrid: React.FC<PlanningGridProps> = ({
         rowHeight={48}
         suppressRowClickSelection={true}
         enableCellTextSelection={true}
+        suppressCellFocus={false}
       />
     </div>
   );

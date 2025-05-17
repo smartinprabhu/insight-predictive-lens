@@ -273,7 +273,7 @@ export const PlanningTab: React.FC = () => {
                 <SelectValue placeholder="Select LoB" />
               </SelectTrigger>
               <SelectContent>
-                {lobOptions[businessUnit as keyof typeof lobOptions]?.map((option) => (
+                {lobOptions[businessUnit]?.map((option) => (
                   <SelectItem key={option} value={option}>{option}</SelectItem>
                 ))}
               </SelectContent>
