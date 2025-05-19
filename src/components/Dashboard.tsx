@@ -68,7 +68,7 @@ export const Dashboard = ({
       title: "Forecast Accuracy",
       value: 92,
       subtitle: "Last period",
-      changeValue: 4.2, // Ensure this is a number, not a string
+      changeValue: 4.2,  // Fixed: Ensuring this is a number, not a string
       changeText: "vs previous period",
       invertChange: false
     },
