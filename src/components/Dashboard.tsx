@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Settings, Home, FileText, BarChart, Info, LogOut, RefreshCw, Upload } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { DashboardHeader } from "./DashboardHeader";
-import { Sidebar } from "./Sidebar"; // Changed from CustomSidebar to Sidebar
+import CustomSidebar from "./Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ModelConfiguration } from "./ModelConfiguration";
 import CircularProgress from '@mui/material/CircularProgress';
@@ -349,9 +348,9 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
       let processedData = response.data;
 
       if (aggregationType === "Monthly" && Array.isArray(processedData)) {
-        const monthlyData: Record<string, any> = {};
+        const monthlyData = {};
 
-        processedData.forEach((item: any) => {
+        processedData.forEach((item) => {
           const dateStr = item.date || item.ds; // support 'date' or 'ds'
           if (!dateStr) return;
 
@@ -371,8 +370,8 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
         });
 
         // Average numeric fields
-        processedData = Object.values(monthlyData).map((item: any) => {
-          const count = item.count || 1;
+        processedData = Object.values(monthlyData).map((item) => {
+          const count = item.count;
           const newItem = { ...item };
           Object.keys(newItem).forEach((key) => {
             if (typeof newItem[key] === "number" && key !== "count") {
@@ -560,7 +559,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden">
-        <Sidebar
+        <CustomSidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           setOpenModal={setIsDrawerOpen}

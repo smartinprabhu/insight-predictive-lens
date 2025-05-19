@@ -1,9 +1,12 @@
+
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Plus, Minus, Maximize, Minimize } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Download, Plus, Minus, Maximize, Minimize, Info } from "lucide-react";
+import { formatPercentage } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import PlanningGrid from "./PlanningGrid";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WeekData {
   date: string;
@@ -26,7 +34,7 @@ interface WeekData {
 export const PlanningTab: React.FC = () => {
   // Business unit options
   const businessUnits = ["WFS", "WCS", "ATS", "CAS"];
-  const lobOptions: Record<string, string[]> = {
+  const lobOptions = {
     "WFS": ["US Phone", "EU Phone", "APAC Chat", "Global Email"],
     "WCS": ["Technical Support", "Customer Service", "Sales"],
     "ATS": ["Platform A", "Platform B", "Platform C"],
@@ -132,6 +140,29 @@ export const PlanningTab: React.FC = () => {
     setWeekData(newWeekData);
   }, [periodStart, periodEnd]);
 
+  // Calculate Required HC based on formula
+  const calculateRequired = (data: WeekData) => {
+    // Total Handling Time = Volume × AHT (in seconds)
+    const totalHandlingTime = data.volume * data.aht;
+    
+    // Effective Minutes per Agent per Week = 480 × Occupancy × (1 − Shrinkage) × (1 − Attrition)
+    // 480 minutes = 8 hours per day * 60 minutes * 5 days per week
+    const effectiveMinutesPerAgent = 480 * 5 * data.occupancy * (1 - data.shrinkage) * (1 - data.attrition);
+    
+    // Convert total handling time from seconds to minutes
+    const totalHandlingTimeMinutes = totalHandlingTime / 60;
+    
+    // Required HC = Total Handling Time / Effective Minutes per Agent
+    const required = Math.ceil(totalHandlingTimeMinutes / effectiveMinutesPerAgent);
+    
+    return required;
+  };
+
+  // Calculate O/U (Over/Under)
+  const calculateOU = (actual: number, required: number) => {
+    return actual - required;
+  };
+
   // Handle changes to assumption inputs
   const handleInputChange = (index: number, field: keyof WeekData, value: string) => {
     const newWeekData = [...weekData];
@@ -168,7 +199,6 @@ export const PlanningTab: React.FC = () => {
     const csvRows = [headerRow.join(",")];
     
     weekData.forEach(week => {
-      // Calculate required and O/U
       const required = calculateRequired(week);
       const ou = calculateOU(week.actual, required);
       
@@ -196,34 +226,239 @@ export const PlanningTab: React.FC = () => {
     link.click();
     document.body.removeChild(link);
   };
-  
-  // Calculate Required HC based on formula
-  const calculateRequired = (data: WeekData): number => {
-    // Total Handling Time = Volume × AHT (in seconds)
-    const totalHandlingTime = data.volume * data.aht;
-    
-    // Effective Minutes per Agent per Week = 480 × Occupancy × (1 − Shrinkage) × (1 − Attrition)
-    // 480 minutes = 8 hours per day * 60 minutes * 5 days per week
-    const effectiveMinutesPerAgent = 480 * 5 * data.occupancy * (1 - data.shrinkage) * (1 - data.attrition);
-    
-    // Convert total handling time from seconds to minutes
-    const totalHandlingTimeMinutes = totalHandlingTime / 60;
-    
-    // Required HC = Total Handling Time / Effective Minutes per Agent
-    const required = Math.ceil(totalHandlingTimeMinutes / effectiveMinutesPerAgent);
-    
-    return required;
-  };
-
-  // Calculate O/U (Over/Under)
-  const calculateOU = (actual: number, required: number): number => {
-    return actual - required;
-  };
 
   // Toggle expanded view
   const toggleExpandedView = () => {
     setExpandedView(!expandedView);
   };
+
+  // Helper function to render metric label with info tooltip
+  const renderMetricLabel = (metricKey: keyof typeof metricExplanations) => {
+    const metric = metricExplanations[metricKey];
+    return (
+      <div className="flex items-center gap-1">
+        <span>{metric.title}</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <span className="sr-only">Info about {metric.title}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-sm bg-background border shadow-lg">
+              <div className="space-y-2 p-1">
+                <h4 className="font-medium">{metric.title}</h4>
+                <p className="text-sm text-muted-foreground">{metric.description}</p>
+                <p className="text-sm font-medium">Impact: {metric.impact}</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    );
+  };
+
+  const renderPlanningTable = () => (
+    <div className="overflow-x-auto bg-card dark:bg-card rounded-lg shadow">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-32 bg-muted dark:bg-muted sticky left-0 z-10">Metric</TableHead>
+            {weekData.map((week, index) => (
+              <TableHead 
+                key={index} 
+                className="text-center bg-muted dark:bg-muted font-medium"
+              >
+                {week.date}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {/* Volume Row */}
+          <TableRow>
+            <TableCell colSpan={weekData.length + 1} className="bg-blue-100 font-medium dark:bg-blue-950 dark:text-blue-200">
+              Volume
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('volume')}
+            </TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`volume-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={week.volume}
+                  onChange={(e) => handleInputChange(index, 'volume', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+
+          {/* Assumptions Section */}
+          <TableRow>
+            <TableCell colSpan={weekData.length + 1} className="bg-green-100 font-medium dark:bg-green-950 dark:text-green-200">
+              Assumptions
+            </TableCell>
+          </TableRow>
+          
+          {/* AHT Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('aht')}
+            </TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`aht-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={week.aht}
+                  onChange={(e) => handleInputChange(index, 'aht', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* Shrinkage Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('shrinkage')}
+            </TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`shrinkage-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={(week.shrinkage * 100).toFixed(0)}
+                  onChange={(e) => handleInputChange(index, 'shrinkage', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* Occupancy Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('occupancy')}
+            </TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`occupancy-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={(week.occupancy * 100).toFixed(0)}
+                  onChange={(e) => handleInputChange(index, 'occupancy', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* Attrition Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('attrition')}
+            </TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`attrition-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={(week.attrition * 100).toFixed(0)}
+                  onChange={(e) => handleInputChange(index, 'attrition', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* Factors Section */}
+          <TableRow>
+            <TableCell colSpan={weekData.length + 1} className="bg-pink-100 font-medium dark:bg-pink-950 dark:text-pink-200">
+              Factors
+            </TableCell>
+          </TableRow>
+          
+          {/* Required Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('required')}
+            </TableCell>
+            {weekData.map((week, index) => {
+              const required = calculateRequired(week);
+              return (
+                <TableCell 
+                  key={`required-${index}`} 
+                  className="text-center border font-medium bg-muted dark:bg-muted"
+                >
+                  {required}
+                </TableCell>
+              );
+            })}
+          </TableRow>
+          
+          {/* Actual Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('actual')}
+            </TableCell>
+            {weekData.map((week, index) => (
+              <TableCell 
+                key={`actual-${index}`} 
+                className="text-center border"
+              >
+                <Input 
+                  type="number"
+                  value={week.actual}
+                  onChange={(e) => handleInputChange(index, 'actual', e.target.value)}
+                  className="w-24 text-center mx-auto"
+                />
+              </TableCell>
+            ))}
+          </TableRow>
+          
+          {/* O/U Row */}
+          <TableRow>
+            <TableCell className="font-medium border sticky left-0 bg-card dark:bg-card">
+              {renderMetricLabel('ou')}
+            </TableCell>
+            {weekData.map((week, index) => {
+              const required = calculateRequired(week);
+              const overUnder = calculateOU(week.actual, required);
+              return (
+                <TableCell 
+                  key={`ou-${index}`} 
+                  className={`text-center border font-medium ${
+                    overUnder < 0 ? 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950' : 
+                    overUnder > 0 ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950' : 
+                    'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  {overUnder}
+                </TableCell>
+              );
+            })}
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+  );
 
   return (
     <Card className="p-4 shadow-lg bg-card dark:border-gray-700">
@@ -272,7 +507,7 @@ export const PlanningTab: React.FC = () => {
                 <SelectValue placeholder="Select LoB" />
               </SelectTrigger>
               <SelectContent>
-                {lobOptions[businessUnit]?.map((option) => (
+                {lobOptions[businessUnit as keyof typeof lobOptions]?.map((option) => (
                   <SelectItem key={option} value={option}>{option}</SelectItem>
                 ))}
               </SelectContent>
@@ -297,7 +532,7 @@ export const PlanningTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Render the planning grid */}
+        {/* Render the planning table or show the expanded view dialog */}
         {expandedView ? (
           <Dialog open={expandedView} onOpenChange={setExpandedView}>
             <DialogContent className="max-w-screen-xl w-[90vw] max-h-[90vh] overflow-y-auto">
@@ -312,19 +547,11 @@ export const PlanningTab: React.FC = () => {
                   Period: Week {periodStart.toString().padStart(2, '0')} – Week {periodEnd.toString().padStart(2, '0')}
                 </DialogDescription>
               </DialogHeader>
-              <PlanningGrid 
-                weekData={weekData}
-                metricExplanations={metricExplanations}
-                onDataChange={handleInputChange}
-              />
+              {renderPlanningTable()}
             </DialogContent>
           </Dialog>
         ) : (
-          <PlanningGrid 
-            weekData={weekData}
-            metricExplanations={metricExplanations}
-            onDataChange={handleInputChange}
-          />
+          renderPlanningTable()
         )}
         
         <div className="mt-4 text-sm text-muted-foreground">
