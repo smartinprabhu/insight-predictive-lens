@@ -77,7 +77,7 @@ export const Dashboard = ({
       title: "Agent Availability",
       value: 105,
       subtitle: "Full-time equivalent",
-      changeValue: -2.5,
+      changeValue: -2.5, // Ensuring this is a number, not a string
       changeText: "vs required",
       invertChange: true
     }
