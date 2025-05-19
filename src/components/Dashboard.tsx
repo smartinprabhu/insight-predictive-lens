@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import KPIMetrics from "./KPIMetrics"; // Using default import
 import { ActualDataTab } from "./ActualDataTab";
@@ -28,7 +29,7 @@ export const Dashboard = ({
   const mockData = {
     title: "Walmart Fulfillment Services",
     lastUpdated: "May 19, 2025",
-    forecastPeriod: 4, // Changed from string to number
+    forecastPeriod: "Q2 2025",
     insights: [
       { id: 1, title: "Insight 1", description: "Description for insight 1" },
       { id: 2, title: "Insight 2", description: "Description for insight 2" }
@@ -67,7 +68,7 @@ export const Dashboard = ({
       title: "Forecast Accuracy",
       value: 92,
       subtitle: "Last period",
-      changeValue: 4.2,
+      changeValue: 4.2, // Fixed: Making sure this is a number value, not a string
       changeText: "vs previous period",
       invertChange: false
     },
