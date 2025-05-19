@@ -23,29 +23,31 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// List of API URLs to try
+// List of API URLs to try - removed unreliable ngrok URL
 const apiUrls = [
   "http://localhost:5011",
-  "http://15.206.169.202:5011",
-  // "http://aptino-dev.zentere.com:5011", 
-  "https://d12b-2409-40f4-10fe-4cc7-b95b-cff9-a9bd-bc7b.ngrok-free.app "
+  "http://15.206.169.202:5011"
 ];
 
 // Helper function to try each URL until one succeeds
 async function tryApiUrls(endpoint, formData) {
+  let lastError = null;
   for (const url of apiUrls) {
     try {
       const response = await axios.post(`${url}/${endpoint}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        timeout: 10000, // 10 second timeout
       });
       return response;
     } catch (error) {
-      console.error(`Failed to connect to ${url}:`, error);
+      lastError = error;
+      console.error(`Failed to connect to ${url}:`, error.message);
     }
   }
-  throw new Error("All API URLs failed");
+  // Throw a more descriptive error
+  throw new Error(`Failed to connect to any API endpoints. Last error: ${lastError?.message || 'Unknown error'}`);
 }
 
 interface UploadDataFormProps {
@@ -106,8 +108,9 @@ export const UploadDataForm = ({ onFileUpload, onSubmit, onApiResponse, setOpenM
       onSubmit();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An error occurred while processing your file.",
+        title: "Connection Error",
+        description: error.message || "Failed to connect to the server. Please try again later.",
+        variant: "destructive"
       });
       console.error(error);
     } finally {
