@@ -23,31 +23,22 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// List of API URLs to try - removed unreliable ngrok URL
-const apiUrls = [
-  "http://localhost:5011",
-  "http://15.206.169.202:5011"
-];
+// Use the API_URL from environment variables
+const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://backend:5011';
 
-// Helper function to try each URL until one succeeds
-async function tryApiUrls(endpoint, formData) {
-  let lastError = null;
-  for (const url of apiUrls) {
-    try {
-      const response = await axios.post(`${url}/${endpoint}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        timeout: 10000, // 10 second timeout
-      });
-      return response;
-    } catch (error) {
-      lastError = error;
-      console.error(`Failed to connect to ${url}:`, error.message);
-    }
+async function tryApiUrls(endpoint: string, formData: FormData) {
+  try {
+    const response = await axios.post(`${apiBaseUrl}/${endpoint}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 10000, // 10 second timeout
+    });
+    return response;
+  } catch (error) {
+    console.error(`Failed to connect to API:`, error.message);
+    throw new Error(`Failed to connect to the server: ${error.message}`);
   }
-  // Throw a more descriptive error
-  throw new Error(`Failed to connect to any API endpoints. Last error: ${lastError?.message || 'Unknown error'}`);
 }
 
 interface UploadDataFormProps {
