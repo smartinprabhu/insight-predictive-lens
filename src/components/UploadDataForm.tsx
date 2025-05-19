@@ -23,22 +23,28 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// Use the API_URL from environment variables
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://backend:5011';
+// List of API URLs to try
+const apiUrls = [
+  "http://localhost:5011",
+  "http://15.206.169.202:5011",
+  "http://aptino-dev.zentere.com:5011"
+];
 
-async function tryApiUrls(endpoint: string, formData: FormData) {
-  try {
-    const response = await axios.post(`${apiBaseUrl}/${endpoint}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      timeout: 10000, // 10 second timeout
-    });
-    return response;
-  } catch (error) {
-    console.error(`Failed to connect to API:`, error.message);
-    throw new Error(`Failed to connect to the server: ${error.message}`);
+// Helper function to try each URL until one succeeds
+async function tryApiUrls(endpoint, formData) {
+  for (const url of apiUrls) {
+    try {
+      const response = await axios.post(`${url}/${endpoint}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error(`Failed to connect to ${url}:`, error);
+    }
   }
+  throw new Error("All API URLs failed");
 }
 
 interface UploadDataFormProps {
@@ -99,9 +105,8 @@ export const UploadDataForm = ({ onFileUpload, onSubmit, onApiResponse, setOpenM
       onSubmit();
     } catch (error) {
       toast({
-        title: "Connection Error",
-        description: error.message || "Failed to connect to the server. Please try again later.",
-        variant: "destructive"
+        title: "Error",
+        description: "An error occurred while processing your file.",
       });
       console.error(error);
     } finally {
