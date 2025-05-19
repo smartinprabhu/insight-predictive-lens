@@ -79,9 +79,9 @@ export const SummaryDashboard: React.FC = () => {
     { channel: 'Email', volume: 51000, hours: 13000, headcount: 85 },
   ];
 
-  // Custom formatter for y-axis labels (thousands)
-  const formatYAxis = (value: number) => {
-    return value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value;
+  // Custom formatter for y-axis labels (thousands) - fixed to return a string
+  const formatYAxis = (value: number): string => {
+    return value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value.toString();
   };
 
   const formatNumber = (value: number) => {

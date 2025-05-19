@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -97,7 +96,10 @@ export const RecruitmentPipeline: React.FC = () => {
   // Helper to update a field in the pipeline data
   const updateField = (weekIndex: number, field: keyof PipelineData, value: number) => {
     const updatedData = [...pipelineData];
-    updatedData[weekIndex][field] = value;
+    updatedData[weekIndex] = {
+      ...updatedData[weekIndex],
+      [field]: value
+    };
     
     // Recalculate attritionHC if attritionRate changes
     if (field === 'attritionRate') {
@@ -119,13 +121,17 @@ export const RecruitmentPipeline: React.FC = () => {
       
       // Update starting HC for next week
       if (i + 1 < updatedData.length) {
-        updatedData[i + 1].startingHC = updatedData[i].endingHC;
+        updatedData[i + 1] = {
+          ...updatedData[i + 1],
+          startingHC: updatedData[i].endingHC
+        };
       }
     }
     
     setPipelineData(updatedData);
   };
 
+  
   return (
     <div className="space-y-6">
       <Card>

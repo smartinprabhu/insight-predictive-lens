@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 
 export const DashboardDummy = () => {
   // Fix the string/array conversion errors
-  const [selectedOption, setSelectedOption] = useState<string>(''); // Changed from string to string[]
+  const [selectedOption, setSelectedOption] = useState<string>('');
   
   // Example handler function that was causing type errors
   const handleChange = (value: string) => {
@@ -15,7 +15,7 @@ export const DashboardDummy = () => {
   
   // Fix the join error - ensure we're working with an array
   const someFunction = () => {
-    const items: string[] = ['item1', 'item2']; // Use an array instead of string
+    const items: string[] = ['item1', 'item2']; 
     return items.join(', ');
   };
   
@@ -23,6 +23,8 @@ export const DashboardDummy = () => {
     <div>
       <h1>Dashboard Dummy</h1>
       <p>This is a placeholder file to fix type errors.</p>
+      <p>Selected option: {selectedOption}</p>
+      <p>Items: {someFunction()}</p>
     </div>
   );
 };
