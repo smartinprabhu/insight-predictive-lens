@@ -1,12 +1,12 @@
 
 import React, { useState } from "react";
-import KPIMetrics from "./KPIMetrics"; // Fixed import
+import KPIMetrics from "./KPIMetrics"; // Using default import
 import { ActualDataTab } from "./ActualDataTab";
 import { ForecastTab } from "./ForecastTab";
 import { ModelValidationTab } from "./ModelValidationTab";
 import { InsightsTab } from "./InsightsTab";
 import { PlanningTab } from "./PlanningTab";
-import UploadDataTabWithNavigation from "./UploadDataTabWithNavigation"; // Fixed import
+import UploadDataTabWithNavigation from "./UploadDataTabWithNavigation"; // Using default import
 import CustomSidebar from "./Sidebar";
 import { DashboardHeader } from "./DashboardHeader";
 
