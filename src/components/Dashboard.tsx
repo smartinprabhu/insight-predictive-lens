@@ -69,7 +69,7 @@ export const Dashboard = ({
       title: "Forecast Accuracy",
       value: 92,
       subtitle: "Last period",
-      changeValue: 4.2, // Converting string to number if needed
+      changeValue: 4.2, // Ensuring this is a number
       changeText: "vs previous period",
       invertChange: false
     },
@@ -77,7 +77,7 @@ export const Dashboard = ({
       title: "Agent Availability",
       value: 105,
       subtitle: "Full-time equivalent",
-      changeValue: -2.5, // Ensuring this is a number, not a string
+      changeValue: -2.5, // Converting to a number (was likely a string)
       changeText: "vs required",
       invertChange: true
     }
