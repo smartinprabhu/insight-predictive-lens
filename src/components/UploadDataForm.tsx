@@ -27,7 +27,8 @@ import {
 const apiUrls = [
   "http://localhost:5011",
   "http://15.206.169.202:5011",
-  "http://aptino-dev.zentere.com:5011"
+  // "http://aptino-dev.zentere.com:5011", 
+  "https://d12b-2409-40f4-10fe-4cc7-b95b-cff9-a9bd-bc7b.ngrok-free.app "
 ];
 
 // Helper function to try each URL until one succeeds
