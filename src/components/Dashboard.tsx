@@ -38,6 +38,50 @@ export const Dashboard = ({
     aggregationType: "Weekly"
   };
 
+  // Sample KPI data for the KPIMetrics component
+  const kpiData = [
+    {
+      title: "Total Contacts",
+      value: 15420,
+      subtitle: "Last 30 days",
+      changeValue: 12.5,
+      changeText: "vs previous period",
+      invertChange: false
+    },
+    {
+      title: "Average Handle Time",
+      value: 5.2,
+      subtitle: "Minutes per contact",
+      changeValue: -3.1,
+      changeText: "vs previous period",
+      invertChange: true
+    },
+    {
+      title: "Occupancy Rate",
+      value: 87,
+      subtitle: "Agent utilization",
+      changeValue: 2.3,
+      changeText: "vs target",
+      invertChange: false
+    },
+    {
+      title: "Forecast Accuracy",
+      value: 92,
+      subtitle: "Last period",
+      changeValue: 4.2,
+      changeText: "vs previous period",
+      invertChange: false
+    },
+    {
+      title: "Agent Availability",
+      value: 105,
+      subtitle: "Full-time equivalent",
+      changeValue: -2.5,
+      changeText: "vs required",
+      invertChange: true
+    }
+  ];
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
@@ -62,7 +106,7 @@ export const Dashboard = ({
             {/* Show appropriate tab content based on activeTab */}
             {activeTab === "businessPerformance" && (
               <>
-                <KPIMetrics />
+                <KPIMetrics kpiData={kpiData} loading={false} />
               </>
             )}
             {activeTab === "actualData" && <ActualDataTab />}

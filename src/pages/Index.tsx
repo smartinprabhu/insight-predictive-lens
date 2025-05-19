@@ -16,8 +16,8 @@ const Index = () => {
     setShowDashboard(false);
   };
   
-  const handleFileUpload = (files: FileList | null) => {
-    console.log("Files uploaded:", files);
+  const handleFileUpload = (file: File) => {
+    console.log("File uploaded:", file);
     // Implement file upload logic here if needed
   };
   
@@ -29,8 +29,14 @@ const Index = () => {
         <UploadDataForm 
           onSubmit={handleFormSubmit} 
           onApiResponse={setApiResponse}
-          onFileUpload={handleFileUpload}
-          setOpenModal={setOpenModal}
+          onFileUpload={(fileOrFiles: File | FileList | null) => {
+            if (fileOrFiles instanceof File) {
+              handleFileUpload(fileOrFiles);
+            } else if (fileOrFiles instanceof FileList && fileOrFiles.length > 0) {
+              handleFileUpload(fileOrFiles[0]);
+            }
+          }}
+          setOpenModal={() => setOpenModal(!openModal)}
         />
       )}
     </div>
