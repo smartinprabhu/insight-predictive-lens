@@ -38,7 +38,7 @@ export const Dashboard = ({
     aggregationType: "Weekly"
   };
 
-  // Sample KPI data for the KPIMetrics component
+  // Sample KPI data for the KPIMetrics component - ensuring all changeValue props are numbers
   const kpiData = [
     {
       title: "Total Contacts",
