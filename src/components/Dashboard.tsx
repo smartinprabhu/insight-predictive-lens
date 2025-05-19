@@ -38,7 +38,7 @@ export const Dashboard = ({
     aggregationType: "Weekly"
   };
 
-  // Sample KPI data for the KPIMetrics component - ensuring all changeValue props are numbers
+  // Sample KPI data for the KPIMetrics component
   const kpiData = [
     {
       title: "Total Contacts",
@@ -68,7 +68,7 @@ export const Dashboard = ({
       title: "Forecast Accuracy",
       value: 92,
       subtitle: "Last period",
-      changeValue: 4.2,
+      changeValue: 4.2, // Ensure this is a number, not a string
       changeText: "vs previous period",
       invertChange: false
     },
