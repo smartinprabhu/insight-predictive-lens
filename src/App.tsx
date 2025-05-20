@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-// import PlanningPage from "./components/app/PlanningPage";
+import PlanningPage from "./pages/PlanningPage";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +32,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/dashboard" element={<Index />} />
-            {/* <Route path="/planning" element={<PlanningPage />} />  */}
+            <Route path="/planning" element={<PlanningPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
