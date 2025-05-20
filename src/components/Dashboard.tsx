@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import KPIMetrics from "./KPIMetrics"; // Using default import
 import { ActualDataTab } from "./ActualDataTab";
@@ -9,7 +8,6 @@ import { PlanningTab } from "./PlanningTab";
 import UploadDataTabWithNavigation from "./UploadDataTabWithNavigation"; // Using default import
 import CustomSidebar from "./Sidebar";
 import { DashboardHeader } from "./DashboardHeader";
-import { SidebarProvider } from "@/components/ui/sidebar";
 
 export const Dashboard = ({ 
   onReset, 
@@ -30,7 +28,7 @@ export const Dashboard = ({
   const mockData = {
     title: "Walmart Fulfillment Services",
     lastUpdated: "May 19, 2025",
-    forecastPeriod: "Q2 2025",
+    forecastPeriod: 4, // Changed from string to number
     insights: [
       { id: 1, title: "Insight 1", description: "Description for insight 1" },
       { id: 2, title: "Insight 2", description: "Description for insight 2" }
@@ -69,7 +67,7 @@ export const Dashboard = ({
       title: "Forecast Accuracy",
       value: 92,
       subtitle: "Last period",
-      changeValue: Number(4.2),  // Converting to number explicitly
+      changeValue: 4.2,
       changeText: "vs previous period",
       invertChange: false
     },
@@ -77,65 +75,63 @@ export const Dashboard = ({
       title: "Agent Availability",
       value: 105,
       subtitle: "Full-time equivalent",
-      changeValue: Number(-2.5),  // Converting to number explicitly
+      changeValue: -2.5,
       changeText: "vs required",
       invertChange: true
     }
   ];
 
   return (
-    <SidebarProvider>
-      <div className="flex h-screen overflow-hidden bg-background">
-        {/* Sidebar */}
-        <CustomSidebar 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab}
-          setOpenModal={setOpenModal}
-          handleLogout={handleLogout}
-          isSidebarCollapsed={isSidebarCollapsed}
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Sidebar */}
+      <CustomSidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        setOpenModal={setOpenModal}
+        handleLogout={handleLogout}
+        isSidebarCollapsed={isSidebarCollapsed}
+      />
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <DashboardHeader 
+          title={mockData.title} 
+          lastUpdated={mockData.lastUpdated}
+          forecastPeriod={mockData.forecastPeriod}
         />
 
-        {/* Main Content */}
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <DashboardHeader 
-            title={mockData.title} 
-            lastUpdated={mockData.lastUpdated}
-            forecastPeriod={mockData.forecastPeriod}
-          />
-
-          <div className="flex-1 overflow-auto p-4 md:p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
-              {/* Show appropriate tab content based on activeTab */}
-              {activeTab === "businessPerformance" && (
-                <>
-                  <KPIMetrics kpiData={kpiData} loading={false} />
-                </>
-              )}
-              {activeTab === "actualData" && <ActualDataTab />}
-              {activeTab === "forecast" && (
-                <ForecastTab 
-                  aggregationType={mockData.aggregationType}
-                  modelType={mockData.modelType}
-                  forecastPeriod={mockData.forecastPeriod}
-                  data={apiResponse || {}}
-                  insights={mockData.insights}
-                />
-              )}
-              {activeTab === "modelValidation" && (
-                <ModelValidationTab 
-                  data={apiResponse || {}}
-                  modelType={mockData.modelType}
-                />
-              )}
-              {activeTab === "insights" && (
-                <InsightsTab insights={mockData.insights} />
-              )}
-              {activeTab === "planning" && <PlanningTab />}
-              {activeTab === "uploadData" && <UploadDataTabWithNavigation />}
-            </div>
+        <div className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Show appropriate tab content based on activeTab */}
+            {activeTab === "businessPerformance" && (
+              <>
+                <KPIMetrics kpiData={kpiData} loading={false} />
+              </>
+            )}
+            {activeTab === "actualData" && <ActualDataTab />}
+            {activeTab === "forecast" && (
+              <ForecastTab 
+                aggregationType={mockData.aggregationType}
+                modelType={mockData.modelType}
+                forecastPeriod={mockData.forecastPeriod}
+                data={apiResponse || {}}
+                insights={mockData.insights}
+              />
+            )}
+            {activeTab === "modelValidation" && (
+              <ModelValidationTab 
+                data={apiResponse || {}}
+                modelType={mockData.modelType}
+              />
+            )}
+            {activeTab === "insights" && (
+              <InsightsTab insights={mockData.insights} />
+            )}
+            {activeTab === "planning" && <PlanningTab />}
+            {activeTab === "uploadData" && <UploadDataTabWithNavigation />}
           </div>
         </div>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
