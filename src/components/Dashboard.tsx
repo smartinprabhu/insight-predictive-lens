@@ -66,45 +66,9 @@ async function tryApiUrls(endpoint, formData) {
   throw new Error("All API URLs failed");
 }
 
-const ForecastSettings = () => {
-  // Implement ForecastSettings component
-};
-
-// Format large numbers with suffixes for better readability
-function formatNumber(value) {
-  if (value === null || value === undefined || isNaN(value)) return "0";
-  const absValue = Math.abs(value);
-  if (absValue >= 1.0e9) {
-    return (value / 1.0e9).toFixed(2).replace(/\.00$/, "") + "B";
-  } else if (absValue >= 1.0e6) {
-    return (value / 1.0e6).toFixed(2).replace(/\.00$/, "") + "M";
-  } else if (absValue >= 1.0e3) {
-    return (value / 1.0e3).toFixed(2).replace(/\.00$/, "") + "K";
-  } else {
-    return value.toString();
-  }
-}
-
-// Helper to get ISO week number from a date string
 interface DashboardProps {
   onReset: () => void;
   apiResponse: any;
-}
-
-function getISOWeekNumber(dateStr) {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return null;
-
-  // Set to nearest Thursday: current date + 4 - current day number
-  const target = new Date(date.valueOf());
-  const dayNr = (date.getDay() + 6) % 7; // Monday=0, Sunday=6
-  target.setDate(target.getDate() - dayNr + 3);
-
-  // January 4th is always in week 1
-  const jan4 = new Date(target.getFullYear(), 0, 4);
-  const dayDiff = (target.getTime() - jan4.getTime()) / 86400000;
-  return 1 + Math.floor(dayDiff / 7);
 }
 
 export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
@@ -556,6 +520,10 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     navigate("/");
   };
 
+  const handleNavigateToPlanningPage = () => {
+    navigate("/planning");
+  };
+
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden">
@@ -585,6 +553,14 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
               >
                 <RefreshCw className="h-4 w-4" />
                 Refresh Dashboard
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNavigateToPlanningPage}
+                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                Planning
               </Button>
               <ThemeToggle />
             </div>
