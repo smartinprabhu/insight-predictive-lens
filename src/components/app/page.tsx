@@ -365,6 +365,7 @@ const parseDateFromHeaderStringMMDDYYYY = (dateMMDD: string, year: string): Date
   if (isNaN(month) || isNaN(day) || isNaN(parseInt(year))) return null;
   const parsedDate = new Date(parseInt(year), month - 1, day);
   if (parsedDate.getFullYear() !== parseInt(year) || parsedDate.getMonth() !== month - 1 || parsedDate.getDate() !== day) {
+<<<<<<< HEAD
     return null;
   }
   return parsedDate;
@@ -1512,3 +1513,5 @@ export default function CapacityInsightsPage() {
   );
 }
 // --- END MAIN PAGE COMPONENT ---
+=======
+>>>>>>> 01a79c2 (hh)

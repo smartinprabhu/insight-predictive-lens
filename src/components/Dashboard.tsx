@@ -19,7 +19,7 @@ import { KPIMetricsCard } from "./KPIMetricsCard";
 import KPIMetrics from "./KPIMetrics";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { PlanningTab } from "./PlanningTab";
+import PlanningTab from "./PlanningTab";
 import {
   Popover,
   PopoverContent,
