@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
@@ -1058,7 +1057,7 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
             {item.name}
           </button>
         </TableCell>
-        {periodHeaders.map((ph, idx) => (
+        {periodHeaders.map((ph) => (
              <TableCell
                 key={`${item.id}-${ph}-nameplaceholder`}
                 className={cn(
@@ -1207,11 +1206,12 @@ export default function CapacityInsightsPage() {
         };
       }
 
-      (teamEntry.periodicInputData[periodHeader] as any)[metricKey] = isNaN(newValue) ? null : newValue;
+      const inputData = teamEntry.periodicInputData[periodHeader] as Partial<TeamPeriodicMetrics>;
+      (inputData as Record<string, number | null>)[metricKey] = isNaN(newValue) ? null : newValue;
 
       if (metricKey === 'volumeMixPercentage') {
         const updatedTeamMix = Math.max(0, Math.min(100, isNaN(newValue) ? 0 : newValue));
-        (teamEntry.periodicInputData[periodHeader] as any)[metricKey] = updatedTeamMix;
+        (inputData as Record<string, number | null>)[metricKey] = updatedTeamMix;
 
         const otherTeams = lobEntry.teams.filter(t => t.teamName !== teamNameToUpdate);
         const currentTotalMixOfOtherTeams = otherTeams.reduce((sum, t) => {
@@ -1238,7 +1238,8 @@ export default function CapacityInsightsPage() {
                 newShare = remainingMixPercentage - distributedSum;
               }
               newShare = Math.max(0, Math.min(100, parseFloat(newShare.toFixed(1)) ) );
-              (team.periodicInputData[periodHeader] as any).volumeMixPercentage = newShare;
+              const teamInputData = team.periodicInputData[periodHeader] as Partial<TeamPeriodicMetrics>;
+              (teamInputData as Record<string, number>)['volumeMixPercentage'] = newShare;
               distributedSum += newShare;
             }
           } else {
@@ -1252,7 +1253,8 @@ export default function CapacityInsightsPage() {
               if (i === otherTeams.length -1 && otherTeams.length > 1) {
                   currentMix = remainingMixPercentage - distributedSum;
               }
-              (team.periodicInputData[periodHeader] as any).volumeMixPercentage = Math.max(0, Math.min(100, parseFloat(currentMix.toFixed(1)) ));
+              const teamInputData = team.periodicInputData[periodHeader] as Partial<TeamPeriodicMetrics>;
+              (teamInputData as Record<string, number>)['volumeMixPercentage'] = Math.max(0, Math.min(100, parseFloat(currentMix.toFixed(1))));
               distributedSum += parseFloat(currentMix.toFixed(1));
             });
           }
@@ -1266,11 +1268,12 @@ export default function CapacityInsightsPage() {
         if (finalSum !== 100 && lobEntry.teams.length > 0) {
             const diff = 100 - finalSum;
             const teamToAdjust = lobEntry.teams.find(t => t.teamName === teamNameToUpdate) || lobEntry.teams[0];
-             if (!teamToAdjust.periodicInputData[periodHeader]) {
+            if (!teamToAdjust.periodicInputData[periodHeader]) {
                 teamToAdjust.periodicInputData[periodHeader] = {};
               }
-            (teamToAdjust.periodicInputData[periodHeader] as any).volumeMixPercentage =
-                Math.max(0, Math.min(100, parseFloat( ((teamToAdjust.periodicInputData[periodHeader] as any).volumeMixPercentage + diff).toFixed(1) ) ));
+            const currentValue = (teamToAdjust.periodicInputData[periodHeader] as Record<string, number>)['volumeMixPercentage'] || 0;
+            (teamToAdjust.periodicInputData[periodHeader] as Record<string, number>)['volumeMixPercentage'] =
+                Math.max(0, Math.min(100, parseFloat((currentValue + diff).toFixed(1))));
         }
       }
       return newData;
