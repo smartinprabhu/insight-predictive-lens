@@ -1,97 +1,61 @@
 
-/* Custom AG Grid Styles */
 .ag-theme-alpine,
 .ag-theme-alpine-dark {
   --ag-header-height: 40px;
-  --ag-header-background-color: var(--ag-background-color);
-  --ag-header-foreground-color: var(--ag-foreground-color);
-  --ag-header-cell-hover-background-color: var(--ag-header-background-color);
-  --ag-header-cell-moving-background-color: var(--ag-header-background-color);
-}
-
-.ag-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* Make the metrics column sticky */
-.ag-cell.sticky-col {
-  position: sticky !important;
-  left: 0;
-  z-index: 3;
-}
-
-/* Row styles */
-.ag-row {
-  border-bottom: 1px solid var(--ag-border-color);
-}
-
-/* Header row styling */
-.ag-header-row {
-  background-color: var(--ag-header-background-color);
-  font-weight: 600;
-}
-
-/* Style for AG Grid in dark mode */
-.dark .ag-theme-alpine-dark {
-  --ag-background-color: #1f2937;
-  --ag-foreground-color: #e5e7eb;
-  --ag-border-color: #374151;
-  --ag-header-background-color: #1f2937;
-  --ag-header-foreground-color: #e5e7eb;
-  --ag-odd-row-background-color: #1f2937;
-  --ag-header-column-separator-color: #374151;
-  --ag-row-border-color: #374151;
-}
-
-/* Style for AG Grid in light mode */
-.ag-theme-alpine {
+  --ag-header-foreground-color: #333;
+  --ag-header-background-color: #f5f5f5;
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-color: #ddd;
+  
+  /* Row styling */
+  --ag-row-border-color: #e2e8f0;
+  --ag-row-hover-color: rgba(0, 0, 0, 0.05);
+  --ag-odd-row-background-color: #ffffff;
+  --ag-alpine-active-color: #4f46e5;
+  
+  /* Cell styling */
+  --ag-cell-horizontal-padding: 8px;
+  
+  /* Force display of rows/cells */
   --ag-background-color: #ffffff;
-  --ag-foreground-color: #111827;
-  --ag-border-color: #e5e7eb;
-  --ag-header-column-separator-color: #e5e7eb;
-  --ag-row-border-color: #f3f4f6;
+  --ag-foreground-color: #333;
+  --ag-data-color: #111;
 }
 
-/* Input styling */
-.ag-theme-alpine .ag-cell input,
-.ag-theme-alpine-dark .ag-cell input {
-  border: 1px solid var(--ag-border-color);
+.ag-theme-alpine-dark {
+  --ag-background-color: #1e293b;
+  --ag-foreground-color: #f1f5f9;
+  --ag-header-background-color: #0f172a;
+  --ag-header-foreground-color: #f1f5f9;
+  --ag-data-color: #f1f5f9;
+  
+  /* Row styling */
+  --ag-row-border-color: #334155;
+  --ag-row-hover-color: rgba(255, 255, 255, 0.1);
+  --ag-odd-row-background-color: #1e293b;
+  --ag-alpine-active-color: #6366f1;
+}
+
+/* Additional styling */
+.ag-header-cell-text {
+  font-weight: 600;
+}
+
+.ag-row-odd {
+  background-color: var(--ag-odd-row-background-color);
+}
+
+.ag-row-hover {
+  background-color: var(--ag-row-hover-color) !important;
+}
+
+/* Sticky left column */
+.ag-sticky-column {
   background-color: var(--ag-background-color);
-  color: var(--ag-foreground-color);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
 }
 
-/* Improve the header cell appearance */
-.ag-header-cell {
-  padding: 0.5rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  border-bottom: 2px solid var(--ag-border-color);
-}
-
-/* Add shadows for sticky elements */
-.sticky-left {
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
-}
-
-/* Adjust cell spacing */
+/* Fix for cell visibility */
 .ag-cell {
-  padding: 0.5rem;
-}
-
-/* Section header row styling */
-.ag-row.section-header {
-  background-color: var(--ag-header-background-color);
-  font-weight: 600;
+  display: flex;
+  align-items: center;
 }
