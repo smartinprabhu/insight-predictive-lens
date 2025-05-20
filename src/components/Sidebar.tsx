@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   FileClock,
@@ -52,9 +53,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
             alt="Logo"
             className={`transition-all duration-300 ${
               isSidebarCollapsed ? 'w-8 h-8 mx-auto' : 'w-16 h-16 mx-auto'
-            }`}
-            alt="Logo"
-            className="w-40 h-30 mb-0"
+            } w-40 h-30 mb-0`}
           />
         </div>
         <SidebarGroup className="w-auto mt-0">

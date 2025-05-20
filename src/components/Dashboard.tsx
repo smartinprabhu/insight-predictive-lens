@@ -66,6 +66,23 @@ async function tryApiUrls(endpoint, formData) {
   throw new Error("All API URLs failed");
 }
 
+// Helper to get ISO week number from a date string
+function getISOWeekNumber(dateStr: string | undefined): number | null {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return null;
+
+  // Set to nearest Thursday: current date + 4 - current day number
+  const target = new Date(date.valueOf());
+  const dayNr = (date.getDay() + 6) % 7; // Monday=0, Sunday=6
+  target.setDate(target.getDate() - dayNr + 3);
+
+  // January 4th is always in week 1
+  const jan4 = new Date(target.getFullYear(), 0, 4);
+  const dayDiff = (target.getTime() - jan4.getTime()) / 86400000;
+  return 1 + Math.floor(dayDiff / 7);
+}
+
 interface DashboardProps {
   onReset: () => void;
   apiResponse: any;
@@ -312,9 +329,9 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
       let processedData = response.data;
 
       if (aggregationType === "Monthly" && Array.isArray(processedData)) {
-        const monthlyData = {};
+        const monthlyData: Record<string, any> = {};
 
-        processedData.forEach((item) => {
+        processedData.forEach((item: any) => {
           const dateStr = item.date || item.ds; // support 'date' or 'ds'
           if (!dateStr) return;
 
@@ -334,7 +351,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
         });
 
         // Average numeric fields
-        processedData = Object.values(monthlyData).map((item) => {
+        processedData = Object.values(monthlyData).map((item: any) => {
           const count = item.count;
           const newItem = { ...item };
           Object.keys(newItem).forEach((key) => {
