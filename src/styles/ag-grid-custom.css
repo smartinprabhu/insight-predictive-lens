@@ -20,6 +20,9 @@
   --ag-background-color: #ffffff;
   --ag-foreground-color: #333;
   --ag-data-color: #111;
+  
+  /* Custom sticky header styling */
+  --ag-sticky-background-color: var(--ag-background-color);
 }
 
 .ag-theme-alpine-dark {
@@ -34,6 +37,9 @@
   --ag-row-hover-color: rgba(255, 255, 255, 0.1);
   --ag-odd-row-background-color: #1e293b;
   --ag-alpine-active-color: #6366f1;
+  
+  /* Dark mode sticky header styling */
+  --ag-sticky-background-color: var(--ag-background-color);
 }
 
 /* Additional styling */
@@ -49,13 +55,45 @@
   background-color: var(--ag-row-hover-color) !important;
 }
 
+/* Sticky header row styling */
+.ag-header {
+  position: sticky !important;
+  top: 0;
+  z-index: 10;
+  background-color: var(--ag-header-background-color);
+}
+
 /* Sticky left column */
 .ag-sticky-column {
-  background-color: var(--ag-background-color);
+  background-color: var(--ag-sticky-background-color) !important;
+  z-index: 5;
+  left: 0;
+  position: sticky !important;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
 
 /* Fix for cell visibility */
 .ag-cell {
   display: flex;
   align-items: center;
+}
+
+/* Responsive container for the grid */
+.responsive-grid-container {
+  width: 100%;
+  overflow-x: auto;
+  background-color: var(--ag-background-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Make section headers match UI styling */
+.section-header {
+  background-color: var(--ag-secondary-color, #f8fafc);
+  font-weight: 600;
+}
+
+/* Dark mode section header */
+.dark .section-header {
+  background-color: var(--ag-secondary-color, #1e293b);
 }

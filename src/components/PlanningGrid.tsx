@@ -61,7 +61,7 @@ const InputCellRenderer = (props: ICellRendererParams) => {
       type="number"
       value={displayValue}
       onChange={(e) => updateField(rowIndex, field, e.target.value)}
-      className="w-24 text-center mx-auto h-8"
+      className="w-full text-center mx-auto h-8"
     />
   );
 };
@@ -111,7 +111,7 @@ const LabelCellRenderer = (props: ICellRendererParams) => {
 // Header Custom Component
 const SectionHeaderRenderer = (props: ICellRendererParams) => {
   return (
-    <div className="font-semibold text-base px-2 py-1">{props.value}</div>
+    <div className="font-semibold text-base px-2 py-1 section-header">{props.value}</div>
   );
 };
 
@@ -218,8 +218,10 @@ const PlanningGrid: React.FC<PlanningGridProps> = ({
         cellClass: (params: CellClassParams) => {
           return params.data.isHeader 
             ? 'bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-100' 
-            : 'sticky left-0 z-10 bg-white dark:bg-gray-900'; // Add bg color to make sticky work
-        }
+            : 'ag-sticky-column';
+        },
+        suppressMovable: true,
+        lockPosition: true
       }
     ];
     
@@ -281,24 +283,31 @@ const PlanningGrid: React.FC<PlanningGridProps> = ({
   const defaultColDef = useMemo(() => ({
     sortable: false,
     resizable: true,
+    suppressMovable: true,
   }), []);
 
   return (
-    <div className="ag-theme-alpine dark:ag-theme-alpine-dark w-full h-[500px]">
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={columnDefs as any}
-        defaultColDef={defaultColDef}
-        context={gridContext}
-        onGridReady={onGridReady}
-        domLayout="normal"
-        suppressMovableColumns={true}
-        headerHeight={40}
-        rowHeight={48}
-        suppressRowClickSelection={true}
-        enableCellTextSelection={true}
-        suppressCellFocus={false}
-      />
+    <div className="responsive-grid-container p-1 rounded-md">
+      <div className="ag-theme-alpine dark:ag-theme-alpine-dark w-full h-[500px]">
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={columnDefs as any}
+          defaultColDef={defaultColDef}
+          context={gridContext}
+          onGridReady={onGridReady}
+          domLayout="normal"
+          suppressMovableColumns={true}
+          headerHeight={40}
+          rowHeight={48}
+          suppressRowClickSelection={true}
+          enableCellTextSelection={true}
+          suppressCellFocus={false}
+          suppressColumnVirtualisation={true}
+          suppressRowVirtualisation={true}
+          getRowClass={(params) => params.data?.isHeader ? 'section-header' : ''}
+          enableBrowserTooltips={true}
+        />
+      </div>
     </div>
   );
 };
