@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -95,6 +94,7 @@ export const PlanningTab: React.FC = () => {
 
   // Function to generate a date string for a Saturday in a specific week
   const getSaturdayDateForWeek = (weekNumber: number): string => {
+    // ... keep existing code (date string generation function)
     const currentYear = new Date().getFullYear();
     // January 1st of the current year
     const firstDayOfYear = new Date(currentYear, 0, 1);
@@ -141,7 +141,8 @@ export const PlanningTab: React.FC = () => {
   }, [periodStart, periodEnd]);
 
   // Calculate Required HC based on formula
-  const calculateRequired = (data: WeekData) => {
+  const calculateRequired = (data: WeekData): number => {
+    // ... keep existing code (calculateRequired function)
     // Total Handling Time = Volume × AHT (in seconds)
     const totalHandlingTime = data.volume * data.aht;
     
@@ -159,7 +160,7 @@ export const PlanningTab: React.FC = () => {
   };
 
   // Calculate O/U (Over/Under)
-  const calculateOU = (actual: number, required: number) => {
+  const calculateOU = (actual: number, required: number): number => {
     return actual - required;
   };
 
@@ -191,6 +192,7 @@ export const PlanningTab: React.FC = () => {
 
   // Export to Excel
   const exportToExcel = () => {
+    // ... keep existing code (export function)
     // In a real implementation, use a library like xlsx or exceljs
     console.log("Exporting data to Excel:", weekData);
     
@@ -234,6 +236,7 @@ export const PlanningTab: React.FC = () => {
 
   // Helper function to render metric label with info tooltip
   const renderMetricLabel = (metricKey: keyof typeof metricExplanations) => {
+    // ... keep existing code (render metric label function)
     const metric = metricExplanations[metricKey];
     return (
       <div className="flex items-center gap-1">
@@ -260,6 +263,7 @@ export const PlanningTab: React.FC = () => {
   };
 
   const renderPlanningTable = () => (
+    // ... keep existing code (render planning table function)
     <div className="overflow-x-auto bg-card dark:bg-card rounded-lg shadow">
       <Table>
         <TableHeader>

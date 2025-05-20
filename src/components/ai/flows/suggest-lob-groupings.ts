@@ -1,3 +1,4 @@
+
 // The directive tells Next.js it's a server-side module.
 'use server';
 
@@ -10,8 +11,8 @@
  * - SuggestLoBGroupingsOutput - The output type for the suggestLoBGroupings function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {ai} from '../genkit';
+import {z} from 'zod';
 
 // Define the input schema for the flow.
 const SuggestLoBGroupingsInputSchema = z.object({
@@ -49,7 +50,7 @@ export async function suggestLoBGroupings(
 }
 
 // Define the prompt
-const suggestLoBGroupingsPrompt = ai.definePrompt({
+const suggestLoBGroupingsPrompt = {
   name: 'suggestLoBGroupingsPrompt',
   input: {
     schema: SuggestLoBGroupingsInputSchema,
@@ -73,17 +74,41 @@ Format your response as a JSON object matching this schema:
   "reasoning": "Explanation of why these groupings are optimal."
 }
 `,
-});
+};
 
 // Define the Genkit flow
-const suggestLoBGroupingsFlow = ai.defineFlow(
-  {
-    name: 'suggestLoBGroupingsFlow',
-    inputSchema: SuggestLoBGroupingsInputSchema,
-    outputSchema: SuggestLoBGroupingsOutputSchema,
-  },
-  async input => {
-    const {output} = await suggestLoBGroupingsPrompt(input);
-    return output!;
+const suggestLoBGroupingsFlow = async (
+  input: SuggestLoBGroupingsInput
+): Promise<SuggestLoBGroupingsOutput> => {
+  try {
+    const promptTemplate = suggestLoBGroupingsPrompt.prompt;
+    
+    // Replace placeholders with actual values
+    const filledPrompt = promptTemplate
+      .replace('{{{currentBusinessUnits}}}', JSON.stringify(input.currentBusinessUnits))
+      .replace('{{{historicalCapacityData}}}', input.historicalCapacityData);
+    
+    const response = await ai.prompt(filledPrompt);
+    const responseText = await response.text();
+    
+    try {
+      const parsedResponse = JSON.parse(responseText);
+      return {
+        suggestedGroupings: parsedResponse.suggestedGroupings || [],
+        reasoning: parsedResponse.reasoning || "No reasoning provided."
+      };
+    } catch (parseError) {
+      console.error("Failed to parse AI response as JSON:", parseError);
+      return {
+        suggestedGroupings: [],
+        reasoning: "Failed to generate groupings due to parsing error."
+      };
+    }
+  } catch (error) {
+    console.error("Error in suggestLoBGroupingsFlow:", error);
+    return {
+      suggestedGroupings: [],
+      reasoning: "Failed to generate groupings due to an error."
+    };
   }
-);
+};
