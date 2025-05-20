@@ -1,17 +1,9 @@
-
 import React from "react";
 import { KPIMetricsCard } from "./KPIMetricsCard";
 import LoadingSkeleton from "./LoadingSkeleton";
 
 interface KPIMetricsProps {
-  kpiData: {
-    title: string;
-    value: number | string;
-    subtitle?: string;
-    changeValue: number;
-    changeText?: string;
-    invertChange?: boolean;
-  }[];
+  kpiData: any[];
   loading: boolean;
 }
 

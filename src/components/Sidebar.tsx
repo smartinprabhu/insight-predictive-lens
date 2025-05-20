@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   FileClock,
@@ -38,15 +37,7 @@ const tabs = [
   { id: "uploadData", name: "Upload Data" },
 ];
 
-interface CustomSidebarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  setOpenModal: (open: boolean) => void;
-  handleLogout: () => void;
-  isSidebarCollapsed: boolean;
-}
-
-const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, isSidebarCollapsed }: CustomSidebarProps) => {
+const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, isSidebarCollapsed }) => {
   const [isWalmartWFSOpen, setIsWalmartWFSOpen] = React.useState(true);
 
   return (
@@ -62,6 +53,8 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
             className={`transition-all duration-300 ${
               isSidebarCollapsed ? 'w-8 h-8 mx-auto' : 'w-16 h-16 mx-auto'
             }`}
+            alt="Logo"
+            className="w-40 h-30 mb-0"
           />
         </div>
         <SidebarGroup className="w-auto mt-0">

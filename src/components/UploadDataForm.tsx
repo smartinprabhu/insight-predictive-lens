@@ -48,13 +48,13 @@ async function tryApiUrls(endpoint, formData) {
 }
 
 interface UploadDataFormProps {
-  onFileUpload: (fileOrFiles: File | FileList | null) => void;
+  onFileUpload: (file: File) => void;
   onSubmit: () => void;
   onApiResponse: (responseData: any) => void;
   setOpenModal: () => void;
 }
 
-export const UploadDataForm = ({ onFileUpload, onSubmit, onApiResponse, setOpenModal }: UploadDataFormProps) => {
+export const UploadDataForm = ({ onFileUpload, onSubmit, onApiResponse }: UploadDataFormProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [weeks, setWeeks] = useState<number>(4);
