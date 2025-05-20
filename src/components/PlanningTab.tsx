@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -170,7 +171,10 @@ export const PlanningTab: React.FC = () => {
     if (field === 'shrinkage' || field === 'occupancy' || field === 'attrition') {
       newWeekData[index][field] = parseFloat(value) / 100;
     } else {
-      newWeekData[index][field] = parseFloat(value) as any; // Use type assertion to bypass TypeScript error
+      // Use specific type for each field to avoid type errors
+      if (field === 'volume' || field === 'aht' || field === 'actual') {
+        newWeekData[index][field] = parseFloat(value);
+      }
     }
     
     setWeekData(newWeekData);
