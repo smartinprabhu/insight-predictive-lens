@@ -811,14 +811,13 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
     return <Minus className="h-4 w-4 text-muted-foreground mx-auto" />;
   }
 
-  const rawValue = (metricData as Record<string, any>)[metricDef.key];
+  const rawValue = metricData[metricDef.key as keyof (TeamPeriodicMetrics | AggregatedPeriodicMetrics)];
 
   if (item.itemType === 'Team' && metricDef.isEditableForTeam) {
     const teamName = item.name as TeamName;
     const lobId = item.lobId;
 
     if (!lobId) {
-      // console.error("Error in MetricCellContent: Missing LOB ID for team item:", item);
       return <span className="text-xs text-destructive">Error: Missing LOB ID</span>;
     }
 
@@ -869,7 +868,7 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
     displayValue = `${numValue.toFixed(1)}%`;
   } else if (metricDef.isTime) {
     displayValue = `${numValue.toFixed(1)} min`;
-  } else if (metricDef.isHC || ['moveIn', 'moveOut', 'newHireBatch', 'newHireProduction'].includes(metricDef.key as string) ) {
+  } else if (metricDef.isHC || ['moveIn', 'moveOut', 'newHireBatch', 'newHireProduction'].includes(metricDef.key as string)) {
     const digits = (['moveIn', 'moveOut', 'newHireBatch', 'newHireProduction'].includes(metricDef.key as string)) ? 0 : 2;
     displayValue = numValue.toFixed(digits);
   } else if (typeof numValue === 'number' && !isNaN(numValue)) {
@@ -889,13 +888,14 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
       textColor = "text-primary";
       icon = <ArrowUp className="h-3 w-3 inline-block ml-1" />;
     }
-    // Fix for TypeScript error - check if the properties exist before accessing them
-    if (metricData && 
-        'actualHC' in metricData && 
-        'requiredHC' in metricData && 
-        typeof metricData.actualHC === 'number' && 
-        typeof metricData.requiredHC === 'number') {
-      tooltipText = `${item.name} - ${periodName}\nOver/Under HC = Actual HC - Required HC\n${metricData.actualHC.toFixed(2)} - ${metricData.requiredHC.toFixed(2)} = ${numValue.toFixed(2)}`;
+    
+    const typedMetricData = metricData as { actualHC?: number | null, requiredHC?: number | null };
+    if (typedMetricData && 
+        'actualHC' in typedMetricData && 
+        'requiredHC' in typedMetricData && 
+        typeof typedMetricData.actualHC === 'number' && 
+        typeof typedMetricData.requiredHC === 'number') {
+      tooltipText = `${item.name} - ${periodName}\nOver/Under HC = Actual HC - Required HC\n${typedMetricData.actualHC.toFixed(2)} - ${typedMetricData.requiredHC.toFixed(2)} = ${numValue.toFixed(2)}`;
     }
   }
 
@@ -940,11 +940,11 @@ const MetricRow: React.FC<MetricRowProps> = React.memo(({ item, metricDef, level
       {periodHeaders.map((periodHeader) => {
         const metricForPeriod = item.periodicData[periodHeader];
         let cellTextColor = "text-foreground";
+        
         if (metricDef.key === "overUnderHC" && metricForPeriod) {
-            // Fix the type error by safely accessing the property
-            const overUnderValue = metricForPeriod ? (metricForPeriod as Record<string, any>)[metricDef.key] : null;
-            if (overUnderValue !== null && overUnderValue !== undefined) {
-                const value = Number(overUnderValue);
+            const typedMetricData = metricForPeriod as { overUnderHC?: number | null };
+            if (typedMetricData && 'overUnderHC' in typedMetricData && typeof typedMetricData.overUnderHC === 'number') {
+                const value = typedMetricData.overUnderHC;
                 if (value < 0) cellTextColor = "text-destructive";
                 else if (value > 0) cellTextColor = "text-primary";
             }
