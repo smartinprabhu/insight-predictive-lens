@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 import { Loader2, Zap, Download, History, Upload, Building2, Briefcase, Users, ChevronDown, Edit3, ArrowDown, ArrowUp, Minus, Calendar as CalendarIcon } from "lucide-react";
-
+import PlanDropdown from "./PlanDropdown";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { suggestLoBGroupings, SuggestLoBGroupingsOutput } from "@/ai/flows/suggest-lob-groupings";
@@ -61,7 +61,7 @@ export interface FilterOptions {
   teams: TeamName[];
 }
 
-export const ALL_WEEKS_HEADERS = Array.from({ length: 104 }, (_, i) => { // Approx 2 years
+export const ALL_WEEKS_HEADERS = Array.from({ length: 104 }, (_, i) => {
   const baseDate = new Date(2024, 0, 1); // Jan 1 2024 is a Monday
   const firstDayOfYear = new Date(baseDate.getFullYear(), 0, 1);
   const dayOfWeek = firstDayOfYear.getDay(); // getDay() returns 0 for Sun, 1 for Mon, ...
@@ -75,11 +75,19 @@ export const ALL_WEEKS_HEADERS = Array.from({ length: 104 }, (_, i) => { // Appr
 
   const endDate = new Date(new Date(startDate).setDate(startDate.getDate() + 6));
   const formatDatePart = (date: Date) => `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
-  return `Wk${i + 1}: ${formatDatePart(startDate)}-${formatDatePart(endDate)} (${startDate.getFullYear()})`;
+
+  // Calculate the correct year for the week
+  const year = startDate.getFullYear();
+  const weekNumber = getWeek(startDate, { weekStartsOn: 1 });
+
+  // Include the year in the label for week 1 of each year
+  const weekLabel = weekNumber === 1 ? `Wk${weekNumber} (${year})` : `Wk${weekNumber}`;
+
+  return `${weekLabel}: ${formatDatePart(startDate)}-${formatDatePart(endDate)} (${year})`;
 });
 
 export const ALL_MONTH_HEADERS = Array.from({ length: 24 }, (_, i) => { // 2 years
-  const year = 2024 + Math.floor(i / 12);
+  const year =  Math.floor(i / 12);
   const month = i % 12;
   const date = new Date(year, month, 1);
   return date.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -561,7 +569,6 @@ interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   onDateChange: (date: DateRange | undefined) => void
   className?: string
 }
-
 function DateRangePicker({ date, onDateChange, className }: DateRangePickerProps) {
   return (
     <div className={cn("grid gap-2", className)}>
@@ -623,7 +630,7 @@ function DateRangePicker({ date, onDateChange, className }: DateRangePickerProps
         </PopoverContent>
       </Popover>
     </div>
-  )
+  );
 }
 // --- END DateRangePicker COMPONENT ---
 
@@ -685,33 +692,17 @@ function HeaderSection({
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
           <h1 className="text-2xl font-semibold text-foreground">Capacity Insights</h1>
           <div className="flex flex-wrap items-center gap-2">
+           
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <History className="mr-2" /> View history
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>View historical data (not implemented)</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Upload className="mr-2" /> Upload allocation
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Upload allocation data (not implemented)</p></TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Download className="mr-2" /> Export CSV
+                  <Download className="mr-2" /> Export 
                 </Button>
               </TooltipTrigger>
               <TooltipContent><p>Export current view as CSV (not implemented)</p></TooltipContent>
             </Tooltip>
             <Button variant="default" size="sm" onClick={() => setIsAiDialogOpen(true)}>
-              <Zap className="mr-2" /> Suggest LoB Groupings
-            </Button>
+              <Zap className="mr-2" />Assumption Assister</Button>
           </div>
         </div>
 
@@ -760,50 +751,26 @@ function HeaderSection({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full lg:w-[200px] text-sm h-9 justify-between">
-                <div className="flex items-center truncate">
-                  <Users className="mr-2 opacity-70 flex-shrink-0" />
-                  <span className="truncate" title={teamDropdownLabel}>{teamDropdownLabel}</span>
-                </div>
-                <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-full md:w-[200px]">
-              <DropdownMenuLabel>Select Teams</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {actualTeams.map((team) => (
-                <DropdownMenuCheckboxItem
-                  key={team}
-                  checked={selectedTeams.includes(team)}
-                  onCheckedChange={(checked) => handleTeamSelectionChangeInternal(team, Boolean(checked))}
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  {team}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
 
-          <div className="flex items-center gap-2 border rounded-md p-1 bg-muted">
-            <Button
-              variant={selectedTimeInterval === "Week" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => onSelectTimeInterval("Week")}
-              className="h-7 px-3"
-            >
-              Week
-            </Button>
-            <Button
-              variant={selectedTimeInterval === "Month" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => onSelectTimeInterval("Month")}
-              className="h-7 px-3"
-            >
-              Month
-            </Button>
-          </div>
+<div className="flex items-center gap-2 border rounded-md p-1 bg-muted">
+  <Button
+    variant={selectedTimeInterval === "Week" ? "secondary" : "ghost"}
+    size="sm"
+    onClick={() => onSelectTimeInterval("Week")}
+    className={`h-7 px-3 ${selectedTimeInterval === "Week" ? "bg-blue-500 text-white" : ""}`}
+  >
+    Week
+  </Button>
+  <Button
+    variant={selectedTimeInterval === "Month" ? "secondary" : "ghost"}
+    size="sm"
+    onClick={() => onSelectTimeInterval("Month")}
+    className={`h-7 px-3 ${selectedTimeInterval === "Month" ? "bg-blue-500 text-white" : ""}`}
+  >
+    Month
+  </Button>
+</div>
+
           <DateRangePicker date={selectedDateRange} onDateChange={onSelectDateRange} />
         </div>
         <AiGroupingDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
@@ -1044,33 +1011,32 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
     return rows;
   }, [periodHeaders, teamMetricDefinitions, aggregatedMetricDefinitions, onTeamMetricChange]);
 
+  
   const renderTableItem = useCallback((item: CapacityDataRow): React.ReactNode[] => {
     const rows: React.ReactNode[] = [];
     const isExpanded = expandedItems[item.id] || false;
-    // An item is expandable if it's a BU/LOB with children, OR if it's a Team (to show/hide its metrics)
     const isExpandable = (item.children && item.children.length > 0) || item.itemType === 'Team';
 
     let rowSpecificBgClass = '';
     let buttonTextClass = 'text-foreground';
-    let itemZIndex = 20; // Default z-index for sticky first column cells
+    let itemZIndex = 20;
 
     if (item.itemType === 'BU') {
-      rowSpecificBgClass = 'bg-secondary';
-      buttonTextClass = 'text-secondary-foreground';
+      rowSpecificBgClass = 'bg-blue-100 dark:bg-blue-900';
+      buttonTextClass = 'text-blue-800 dark:text-blue-200';
       itemZIndex = 35;
     } else if (item.itemType === 'LOB') {
-      rowSpecificBgClass = 'bg-muted';
-      buttonTextClass = 'text-muted-foreground';
+      rowSpecificBgClass = 'bg-green-100 dark:bg-green-900';
+      buttonTextClass = 'text-green-800 dark:text-green-200';
       itemZIndex = 30;
     } else if (item.itemType === 'Team') {
-      rowSpecificBgClass = 'bg-muted/50'; // Slightly lighter for team headers
-      buttonTextClass = 'text-foreground';
+      rowSpecificBgClass = 'bg-yellow-100 dark:bg-yellow-900'; // Slightly lighter for BPO headers
+      buttonTextClass = 'text-yellow-800 dark:text-yellow-200';
       itemZIndex = 25;
     }
 
     const hoverClass = item.itemType !== 'BU' ? 'hover:bg-muted/70' : 'hover:bg-secondary/80';
 
-    // Render the main item row (BU name, LOB name, or Team name)
     rows.push(
       <TableRow
         key={`${item.id}-name`}
@@ -1079,24 +1045,21 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
         <TableCell
           className={cn(
             "p-0 sticky left-0 whitespace-nowrap",
-            rowSpecificBgClass || 'bg-card' // Ensure background for opacity with sticky
+            rowSpecificBgClass || 'bg-card dark:bg-card'
           )}
           style={{
             zIndex: itemZIndex,
-            paddingLeft: `${item.level * 1.5 + (isExpandable ? 0 : 0.5)}rem` // Adjust base padding slightly
+            paddingLeft: `${item.level * 1.5 + (isExpandable ? 0 : 0.5)}rem`
           }}
         >
           <button
             onClick={isExpandable ? () => toggleExpand(item.id) : undefined}
             disabled={!isExpandable}
             className={cn(
-              "py-3 px-2 font-semibold hover:no-underline w-full text-left flex items-center gap-2", // Added gap-2
+              "py-3 px-2 font-semibold hover:no-underline w-full text-left flex items-center gap-2",
               buttonTextClass
             )}
             aria-expanded={isExpandable ? isExpanded : undefined}
-            // style={{
-            //   paddingLeft: !isExpandable && item.level > 0 && isExpandable === false ? '1.5rem' : (isExpandable ? undefined : '0.5rem'),
-            // }}
           >
             {isExpandable && (
               <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
@@ -1104,41 +1067,32 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
             {item.name}
           </button>
         </TableCell>
-        {/* Placeholder cells for period columns in the name row to maintain alignment */}
         {periodHeaders.map((ph, idx) => (
           <TableCell
             key={`${item.id}-${ph}-nameplaceholder`}
             className={cn(
-              rowSpecificBgClass, // Match background
-              'py-3' // Match vertical padding of button
-            )}></TableCell>
+              rowSpecificBgClass,
+              'py-3'
+            )}
+          ></TableCell>
         ))}
       </TableRow>
     );
 
-    // If the item is expanded, render its content (metric rows or child items)
     if (isExpanded) {
       if (item.itemType === 'BU' || item.itemType === 'LOB') {
-        // For BUs and LOBs, first render their aggregated metrics
         const aggregatedMetricRows = renderCapacityItemContent(item);
         rows.push(...aggregatedMetricRows);
-        // Then, if they have children, render child items (LOBs for BU, Teams for LOB)
         if (item.children && item.children.length > 0) {
           item.children.forEach(child => {
             rows.push(...renderTableItem(child));
           });
         }
-      }
-      else if (item.itemType === 'Team') {
-        // For Teams, render their detailed assumption metrics
+      } else if (item.itemType === 'Team') {
         const teamMetricRows = renderCapacityItemContent(item);
         rows.push(...teamMetricRows);
       }
-    }
-    // If item is NOT expandable AND it's a BU or LOB (edge case, usually they are expandable if they exist)
-    // This logic might be redundant if non-expandable BUs/LOBs are filtered out or not generated
-    else if (!isExpandable && (item.itemType === 'BU' || item.itemType === 'LOB')) {
-      // Render its metrics directly if it's a non-expandable BU/LOB (e.g., an LOB with no teams filtered in)
+    } else if (!isExpandable && (item.itemType === 'BU' || item.itemType === 'LOB')) {
       const itemMetricRows = renderCapacityItemContent(item);
       rows.push(...itemMetricRows);
     }
@@ -1146,9 +1100,11 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
     return rows;
   }, [expandedItems, periodHeaders, toggleExpand, renderCapacityItemContent]);
 
+
+
   const getCategoryHeader = () => {
     // Could be dynamic based on grouping, but now it's always BU > LOB > Team
-    return 'BU / LoB / Team / Metric';
+    return 'BU / LoB / BPO / Metric';
   };
 
   return (
@@ -1156,41 +1112,41 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
       <div ref={scrollContainerRef} className="overflow-x-auto relative border border-border rounded-md shadow-md">
         <Table className="min-w-full">
           <TableHeader className="sticky top-0 z-40 bg-card">
-            <TableRow>
-              <TableHead className="sticky left-0 z-50 bg-card min-w-[320px] whitespace-nowrap px-4 py-2 align-middle">
-                {getCategoryHeader()}
-              </TableHead>
-              {periodHeaders.map((period, index) => {
-                // Assuming period format "WkX: MM/DD-MM/DD (YYYY)"
-                const parts = period.split(': ');
-                const weekLabelPart = parts[0].replace("Wk", "W"); // "W1", "W2", etc.
-                let dateRangePart = "";
-                if (parts.length > 1) {
-                  const dateAndYearPart = parts[1]; // "MM/DD-MM/DD (YYYY)"
-                  const match = dateAndYearPart.match(/^(\d{2}\/\d{2}-\d{2}\/\d{2})/); // Extracts "MM/DD-MM/DD"
-                  if (match) {
-                    dateRangePart = match[1];
-                  }
-                }
-                return (
-                  <TableHead
-                    key={period}
-                    // ref={el => { if (el) weekHeaderRefs.current[index] = el; }}
-                    className="text-right min-w-[100px] px-2 py-2 align-middle"
-                  >
-                    <div className="flex flex-col items-end">
-                      <span className="text-sm font-medium">{weekLabelPart}</span>
-                      {dateRangePart && (
-                        <span className="text-xs text-muted-foreground">
-                          ({dateRangePart})
-                        </span>
-                      )}
-                    </div>
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          </TableHeader>
+  <TableRow>
+    <TableHead className="sticky left-0 z-50 bg-card min-w-[320px] whitespace-nowrap px-4 py-2 align-middle">
+      {getCategoryHeader()}
+    </TableHead>
+    {periodHeaders.map((period, index) => {
+      // Assuming period format "WkX: MM/DD-MM/DD (YYYY)"
+      const parts = period.split(': ');
+      const weekLabelPart = parts[0].replace("Wk", "W"); // "W1", "W2", etc.
+      let dateRangePart = "";
+      if (parts.length > 1) {
+        const dateAndYearPart = parts[1]; // "MM/DD-MM/DD (YYYY)"
+        const match = dateAndYearPart.match(/^(\d{2}\/\d{2}-\d{2}\/\d{2})/); // Extracts "MM/DD-MM/DD"
+        if (match) {
+          dateRangePart = match[1];
+        }
+      }
+      return (
+        <TableHead
+          key={period}
+          className="text-right min-w-[100px] px-2 py-2 align-middle sticky top-0 bg-card"
+        >
+          <div className="flex flex-col items-end">
+            <span className="text-sm font-medium">{weekLabelPart}</span>
+            {dateRangePart && (
+              <span className="text-xs text-muted-foreground">
+                ({dateRangePart})
+              </span>
+            )}
+          </div>
+        </TableHead>
+      );
+    })}
+  </TableRow>
+</TableHeader>
+
           <TableBody>
             {data.length > 0 ? (
               data.flatMap(item => renderTableItem(item))
@@ -1217,7 +1173,7 @@ export default function PlanningTab() {
   const [rawCapacityDataSource, setRawCapacityDataSource] = useState<RawLoBCapacityEntry[]>(() => JSON.parse(JSON.stringify(initialMockRawCapacityData)));
 
   const [selectedBusinessUnit, setSelectedBusinessUnit] = useState<BusinessUnitName>("WFS");
-  const [selectedLineOfBusiness, setSelectedLineOfBusiness] = useState<string[]>(() => [...BUSINESS_UNIT_CONFIG["WFS"].lonsOfBusiness]);
+  const [selectedLineOfBusiness, setSelectedLineOfBusiness] = useState<string[]>(() => ["Inventory Management", "Help Desk"]); // Default selections
   const [selectedTeams, setSelectedTeams] = useState<TeamName[]>([...ALL_TEAM_NAMES]);
   const [selectedTimeInterval, setSelectedTimeInterval] = useState<TimeInterval>("Week");
   const [selectedDateRange, setSelectedDateRange] = React.useState<DateRange | undefined>(() => getDefaultDateRange("Week"));
@@ -1230,7 +1186,13 @@ export default function PlanningTab() {
 
   const [displayableCapacityData, setDisplayableCapacityData] = useState<CapacityDataRow[]>([]);
   const [displayedPeriodHeaders, setDisplayedPeriodHeaders] = useState<string[]>([]);
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+  // Initialize expandedItems with all BUs expanded by default
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
+    ALL_BUSINESS_UNITS.reduce((acc, bu) => ({ ...acc, [bu]: true }), {})
+  );
+
+
 
   // Handler for team metric changes from the table
   const handleTeamMetricChange = useCallback((

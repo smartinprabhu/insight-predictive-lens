@@ -571,14 +571,14 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                 <RefreshCw className="h-4 w-4" />
                 Refresh Dashboard
               </Button>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="sm"
                 onClick={handleNavigateToPlanningPage}
                 className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 Planning
-              </Button>
+              </Button> */}
               <ThemeToggle />
             </div>
           </div>
