@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { 
@@ -79,8 +80,8 @@ const OverUnderCellRenderer = (props: ICellRendererParams) => {
 
 const LabelCellRenderer = (props: ICellRendererParams) => {
   const { value, context } = props;
-  const metricKey = props.data.metricKey;
-  const metricInfo = context.metricExplanations[metricKey];
+  const metricKey = props.data?.metricKey;
+  const metricInfo = metricKey ? context.metricExplanations[metricKey] : null;
   
   if (!metricInfo) return <span>{value}</span>;
   
@@ -209,17 +210,18 @@ const PlanningGrid: React.FC<PlanningGridProps> = ({
         pinned: 'left',
         width: 150,
         cellRenderer: (params: ICellRendererParams) => {
-          if (params.data.isHeader) {
+          if (params.data?.isHeader) {
             return SectionHeaderRenderer(params);
           } else {
             return LabelCellRenderer(params);
           }
         },
         cellClass: (params: CellClassParams) => {
-          return params.data.isHeader 
+          return params.data?.isHeader 
             ? 'bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-100' 
             : 'sticky left-0 z-10 bg-white dark:bg-gray-900'; // Add bg color to make sticky work
-        }
+        },
+        headerClass: 'sticky-header bg-background dark:bg-gray-900'
       }
     ];
     
@@ -231,22 +233,22 @@ const PlanningGrid: React.FC<PlanningGridProps> = ({
           field: `week${index}`,
           width: 120,
           cellRenderer: (params: ICellRendererParams) => {
-            if (params.data.isHeader) return null;
-            if (params.data.isInput) {
+            if (params.data?.isHeader) return null;
+            if (params.data?.isInput) {
               return InputCellRenderer(params);
-            } else if (params.data.metricKey === 'ou') {
+            } else if (params.data?.metricKey === 'ou') {
               return OverUnderCellRenderer(params);
             }
             return params.value;
           },
           cellClass: (params: CellClassParams) => {
-            if (params.data.isHeader) return 'hidden';
+            if (params.data?.isHeader) return 'hidden';
             
-            if (params.data.metricKey === 'required') {
+            if (params.data?.metricKey === 'required') {
               return 'bg-muted dark:bg-muted font-medium';
             }
             
-            if (params.data.metricKey === 'ou') {
+            if (params.data?.metricKey === 'ou') {
               const value = params.value;
               return value < 0 
                 ? 'bg-red-50 dark:bg-red-950' 
@@ -256,7 +258,8 @@ const PlanningGrid: React.FC<PlanningGridProps> = ({
             }
             
             return '';
-          }
+          },
+          headerClass: 'sticky-header bg-background dark:bg-gray-900'
         });
       });
     }
@@ -287,7 +290,7 @@ const PlanningGrid: React.FC<PlanningGridProps> = ({
     <div className="ag-theme-alpine dark:ag-theme-alpine-dark w-full h-[500px]">
       <AgGridReact
         rowData={rowData}
-        columnDefs={columnDefs as any}
+        columnDefs={columnDefs as ColDef[]}
         defaultColDef={defaultColDef}
         context={gridContext}
         onGridReady={onGridReady}
