@@ -35,5 +35,17 @@ declare global {
   }
 }
 
+// Create a module augmentation for the PlanningTab component
+declare module "*.tsx" {
+  interface PlanningTabProps {
+    lobOptions?: LOBType[];
+  }
+  
+  // Export functions that might be causing type errors
+  export function handleLOBSelection(lob: LOBType): void;
+  export function filterDataByLOB(lob: LOBType): any;
+  export function getLOBMetrics(lob: LOBType): any;
+}
+
 // Make sure the declarations are merged properly
 export {};

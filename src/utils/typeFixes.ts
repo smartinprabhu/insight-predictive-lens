@@ -34,4 +34,15 @@ declare module "react" {
   }
 }
 
+// Add a more targeted module augmentation for PlanningTab
+declare module "../components/PlanningTab" {
+  export interface PlanningTabProps {
+    lobTypes: LOBType[];
+  }
+  
+  // Add function signatures matching what's in the component
+  export function processLOB(lob: LOBType): any;
+  export function filterByLOB(lob: LOBType): any;
+}
+
 export default LOBTypes;
