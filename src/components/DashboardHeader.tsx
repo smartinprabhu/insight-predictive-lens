@@ -5,7 +5,7 @@ import { ThemeToggle } from "./ThemeToggle";
 
 interface DashboardHeaderProps {
   title: string;
-  onLogout: () => void;
+  onLogout?: () => void;  // Make onLogout optional
   lastUpdated: string;
   forecastPeriod?: string | number;
   onRefresh?: () => void;
@@ -15,7 +15,7 @@ export const DashboardHeader = ({
   title = "Walmart Fulfillment Services ",
   lastUpdated,
   forecastPeriod,
-  onLogout,
+  onLogout = () => {}, // Add default empty function
   onRefresh
 }: DashboardHeaderProps) => {
   return (

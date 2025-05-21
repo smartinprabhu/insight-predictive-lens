@@ -559,6 +559,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                 title="Walmart Fulfillment Services"
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
                 forecastPeriod={`${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history`}
+                onLogout={handleLogout}
               />
             </div>
             <div className="flex items-center gap-2">
