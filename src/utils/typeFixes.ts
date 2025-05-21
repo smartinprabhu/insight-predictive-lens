@@ -25,4 +25,13 @@ export const LOBTypes: LOBType[] = [
 // Make the LOB types available globally
 window.LOBTypes = LOBTypes;
 
+// Create an ambient declaration to augment the existing type
+// This helps TypeScript understand that when these strings are used,
+// they should be treated as the appropriate type
+declare module "react" {
+  interface React {
+    LOBTypes: LOBType[];
+  }
+}
+
 export default LOBTypes;

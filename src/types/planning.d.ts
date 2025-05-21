@@ -26,4 +26,14 @@ declare global {
   interface Window {
     LOBTypes: LOBType[];
   }
+  
+  // Add a global namespace for LOB types
+  namespace NodeJS {
+    interface Global {
+      LOBTypes: LOBType[];
+    }
+  }
 }
+
+// Make sure the declarations are merged properly
+export {};
