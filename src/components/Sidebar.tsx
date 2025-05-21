@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   FileClock,
@@ -10,7 +9,9 @@ import {
   LogOut,
   Package,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  HelpCircle,
+  Settings,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import {
@@ -53,11 +54,11 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
             alt="Logo"
             className={`transition-all duration-300 ${
               isSidebarCollapsed ? 'w-8 h-8 mx-auto' : 'w-16 h-16 mx-auto'
-            } w-40 h-30 mb-0`}
+            } w-80 h-30 mb-0`}
           />
         </div>
         <SidebarGroup className="w-auto mt-0">
-          <SidebarGroupContent className="mt-0 ">
+          <SidebarGroupContent className="mt-0">
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButtonOriginal
@@ -99,6 +100,24 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButtonOriginal
+              tooltip="Help"
+              className="flex items-center gap-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+            >
+              <HelpCircle className="h-5 w-5" />
+              <span className="text-sm font-medium">Help</span>
+            </SidebarMenuButtonOriginal>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButtonOriginal
+              tooltip="Company Setting"
+              className="flex items-center gap-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+            >
+              <Settings className="h-5 w-5" />
+              <span className="text-sm font-medium">Company Setting</span>
+            </SidebarMenuButtonOriginal>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButtonOriginal
               tooltip="Logout"

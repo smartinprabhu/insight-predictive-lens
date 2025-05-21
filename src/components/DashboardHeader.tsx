@@ -1,10 +1,11 @@
 
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface DashboardHeaderProps {
   title: string;
+  onLogout: () => void;
   lastUpdated: string;
   forecastPeriod?: string | number;
   onRefresh?: () => void;
@@ -14,6 +15,7 @@ export const DashboardHeader = ({
   title = "Walmart Fulfillment Services ",
   lastUpdated,
   forecastPeriod,
+  onLogout,
   onRefresh
 }: DashboardHeaderProps) => {
   return (

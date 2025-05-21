@@ -1,5 +1,5 @@
 const apiBaseUrls = [
-  'http://localhost:5011',
+  // 'http://localhost:5011',
   'http://15.206.169.202:5011',
   'http://aptino-dev.zentere.com:5011'
 ];
