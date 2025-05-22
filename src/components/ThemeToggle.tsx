@@ -44,8 +44,8 @@ export const ThemeToggle = () => {
     
     // Remove all theme classes
     document.documentElement.classList.remove(
-      "light-default", "light-blue", "light-green",
-      "dark-default", "dark-purple", "dark-orange"
+      "light-default", "light-blue", "light-green", "light-purple", "light-orange",
+      "dark-default", "dark-blue", "dark-green", "dark-purple", "dark-orange"
     );
     
     // Apply new theme

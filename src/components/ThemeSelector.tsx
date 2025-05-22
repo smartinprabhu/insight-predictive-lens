@@ -38,8 +38,8 @@ const ThemeSelector = () => {
   const applyTheme = (mode: ThemeMode, color: ColorTheme) => {
     // Remove all theme classes first
     document.documentElement.classList.remove(
-      "light-default", "light-blue", "light-green",
-      "dark-default", "dark-purple", "dark-orange"
+      "light-default", "light-blue", "light-green", "light-purple", "light-orange",
+      "dark-default", "dark-blue", "dark-green", "dark-purple", "dark-orange"
     );
     
     // Determine if dark mode should be applied
@@ -135,18 +135,18 @@ const ThemeSelector = () => {
             <RadioGroup
               value={colorTheme}
               onValueChange={(value: ColorTheme) => handleColorThemeChange(value)}
-              className="grid grid-cols-4 gap-2"
+              className="grid grid-cols-5 gap-2"
             >
               {/* Default theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="default-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-14 h-14 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className={cn(
                       "w-full h-full rounded-full overflow-hidden flex flex-wrap",
-                      themeMode === 'dark' ? "bg-[#2c2c2c]" : "bg-white"
+                      themeMode === 'dark' ? "bg-[#1a1a1a]" : "bg-white"
                     )}>
                       <div className="w-1/2 h-1/2 bg-blue-600"></div>
                       <div className="w-1/2 h-1/2 bg-gray-300"></div>
@@ -171,7 +171,7 @@ const ThemeSelector = () => {
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="blue-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-14 h-14 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className="w-full h-full rounded-full overflow-hidden flex flex-wrap">
@@ -198,7 +198,7 @@ const ThemeSelector = () => {
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="green-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-14 h-14 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className="w-full h-full rounded-full overflow-hidden flex flex-wrap">
@@ -225,7 +225,7 @@ const ThemeSelector = () => {
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="purple-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-14 h-14 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className="w-full h-full rounded-full overflow-hidden flex flex-wrap">
@@ -252,7 +252,7 @@ const ThemeSelector = () => {
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="orange-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-14 h-14 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className="w-full h-full rounded-full overflow-hidden flex flex-wrap">

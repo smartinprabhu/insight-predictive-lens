@@ -1,11 +1,11 @@
 
-import { RefreshCcw, Settings } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeSelector from "./ThemeSelector";
 
 interface DashboardHeaderProps {
   title: string;
-  onLogout?: () => void;  // Make onLogout optional
+  onLogout?: () => void;
   lastUpdated: string;
   forecastPeriod?: string | number;
   onRefresh?: () => void;
