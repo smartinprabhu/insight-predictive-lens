@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui2/button";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@/components/ui2/select";
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -14,9 +14,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from "@/components/ui2/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { CalendarIcon, ChevronDown, Building2, Briefcase, Download, Zap } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui2/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AiGroupingDialog from "./AiGroupingDialog";
 import DateRangePicker from "./DateRangePicker";
 import { BusinessUnitName, TimeInterval, DateRange } from "./types";

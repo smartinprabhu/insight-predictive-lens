@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Input } from "@/components/ui2/input";
+import { Input } from "@/components/ui/input";
 import { Edit3, ArrowDown, ArrowUp, Minus } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui2/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CapacityDataRow, TeamPeriodicMetrics, AggregatedPeriodicMetrics, MetricDefinition, TimeInterval, TEAM_METRIC_ROW_DEFINITIONS, AGGREGATED_METRIC_ROW_DEFINITIONS, STANDARD_WEEKLY_WORK_MINUTES, STANDARD_MONTHLY_WORK_MINUTES } from "./types";
 
 interface MetricCellContentProps {

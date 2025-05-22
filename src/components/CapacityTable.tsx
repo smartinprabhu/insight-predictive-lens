@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui2/table";
-import { ChevronDown, Edit3 } from "lucide-react";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import MetricRow from "./MetricRow";
 import { CapacityDataRow, TimeInterval, TeamMetricDefinitions, AggregatedMetricDefinitions } from "./types";

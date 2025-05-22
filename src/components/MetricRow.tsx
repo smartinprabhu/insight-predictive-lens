@@ -1,6 +1,6 @@
 import React from "react";
-import { TableRow, TableCell } from "@/components/ui2/table";
 import { cn } from "@/lib/utils";
+import { TableRow, TableCell } from "@/components/ui/table";
 import MetricCellContent from "./MetricCellContent";
 import { CapacityDataRow, MetricDefinition, TimeInterval } from "./types";
 import { Edit3 } from "lucide-react";

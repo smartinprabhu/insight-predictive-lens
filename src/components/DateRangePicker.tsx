@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui2/button";
-import { Calendar } from "@/components/ui2/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui2/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
