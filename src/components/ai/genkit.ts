@@ -1,10 +1,7 @@
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 
-// Mock implementation for genkit
-export const ai = {
-  prompt: async (prompt: string, options?: any) => {
-    console.log('AI prompt:', prompt);
-    return {
-      text: () => "This is a mock response from the AI model.",
-    };
-  }
-};
+export const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});

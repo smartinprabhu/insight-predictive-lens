@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Settings, Home, FileText, BarChart, Info, LogOut, RefreshCw, Upload } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle";
+import ThemeSelector from "./ThemeSelector";
 import { DashboardHeader } from "./DashboardHeader";
 import CustomSidebar from "./Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -573,7 +573,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
 
               </Button>
 
-              <ThemeToggle />
+              <ThemeSelector />
             </div>
           </div>
 
