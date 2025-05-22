@@ -1,28 +1,64 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const ThemeToggle = () => {
-  const [theme, setTheme] = React.useState("light");
+  const [isDark, setIsDark] = React.useState(false);
 
-  React.useEffect(() => {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme) {
-      setTheme(storedTheme);
-      document.documentElement.classList.toggle("dark", storedTheme === "dark");
+  useEffect(() => {
+    // Check if dark mode is enabled from the current theme settings
+    const themeMode = localStorage.getItem("themeMode") || "system";
+    const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    // Set initial dark mode state
+    if (themeMode === "system") {
+      setIsDark(systemDarkMode);
+    } else {
+      setIsDark(themeMode === "dark");
     }
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    
+    return () => observer.disconnect();
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-    localStorage.setItem("theme", newTheme);
+    // Get current theme settings
+    const themeMode = localStorage.getItem("themeMode") || "system";
+    const colorTheme = localStorage.getItem("colorTheme") || "default";
+    
+    // Toggle between light and dark
+    const newThemeMode = isDark ? "light" : "dark";
+    
+    // Update localStorage
+    localStorage.setItem("themeMode", newThemeMode);
+    
+    // Remove all theme classes
+    document.documentElement.classList.remove(
+      "light-default", "light-blue", "light-green",
+      "dark-default", "dark-purple", "dark-orange"
+    );
+    
+    // Apply new theme
+    document.documentElement.classList.toggle("dark", !isDark);
+    document.documentElement.classList.add(`${newThemeMode}-${colorTheme}`);
+    
+    // Update state
+    setIsDark(!isDark);
   };
 
   return (
     <Button variant="ghost" size="icon" onClick={toggleTheme}>
-      {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </Button>
   );
 };

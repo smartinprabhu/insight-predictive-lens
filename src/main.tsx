@@ -6,6 +6,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
+import './styles/themes.css'
 
 // Add a runtime check to ensure LOB types are accessible
 // This can help TypeScript understand that these values are valid

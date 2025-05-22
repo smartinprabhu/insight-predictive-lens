@@ -1,7 +1,7 @@
 
 import { RefreshCcw, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "./ThemeToggle";
+import ThemeSelector from "./ThemeSelector";
 
 interface DashboardHeaderProps {
   title: string;
@@ -15,7 +15,6 @@ export const DashboardHeader = ({
   title = "Walmart Fulfillment Services ",
   lastUpdated,
   forecastPeriod,
-
   onRefresh
 }: DashboardHeaderProps) => {
   return (
@@ -34,8 +33,7 @@ export const DashboardHeader = ({
             <RefreshCcw className="h-4 w-4" />
           </Button>
         )}
-
-
+        <ThemeSelector />
       </div>
     </div>
   );

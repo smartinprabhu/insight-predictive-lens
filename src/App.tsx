@@ -9,17 +9,44 @@ import Login from "./pages/Login";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 // import PlanningPage from "./components/app/PlanningPage";
+import "./styles/themes.css";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Initialize dark mode based on user preference
+  // Initialize theme based on user preferences
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const themeMode = localStorage.getItem("themeMode") || "system";
+    const colorTheme = localStorage.getItem("colorTheme") || "default";
     
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      document.documentElement.classList.add("dark");
+    // Determine if dark mode should be applied
+    let isDark = false;
+    if (themeMode === "system") {
+      isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    } else {
+      isDark = themeMode === "dark";
+    }
+    
+    // Apply dark/light class
+    document.documentElement.classList.toggle("dark", isDark);
+    
+    // Apply specific theme
+    const themeClass = `${isDark ? "dark" : "light"}-${colorTheme}`;
+    document.documentElement.classList.add(themeClass);
+    
+    // Listen for system preference changes if in system mode
+    if (themeMode === "system") {
+      const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = (e: MediaQueryListEvent) => {
+        document.documentElement.classList.remove("light-default", "light-blue", "light-green", 
+          "dark-default", "dark-purple", "dark-orange");
+        document.documentElement.classList.toggle("dark", e.matches);
+        const newThemeClass = `${e.matches ? "dark" : "light"}-${colorTheme}`;
+        document.documentElement.classList.add(newThemeClass);
+      };
+      
+      darkModeMediaQuery.addEventListener("change", handleChange);
+      return () => darkModeMediaQuery.removeEventListener("change", handleChange);
     }
   }, []);
 
