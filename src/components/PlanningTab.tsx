@@ -953,7 +953,7 @@ function HeaderSection({
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-50 bg-background p-4 border-b border-border">
+      <header className="sticky top-0 z-50 bg-background p-4 border-b border-border rounded-tl-lg rounded-tr-lg">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
           <h1 className="text-2xl font-semibold text-foreground">Capacity Insights</h1>
           <div className="flex flex-wrap items-center gap-2">
@@ -1764,7 +1764,7 @@ const renderTableItem = useCallback((item: CapacityDataRow): React.ReactNode[] =
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div ref={tableBodyScrollRef} className="overflow-x-auto relative">
+      <div ref={tableBodyScrollRef} className="overflow-x-auto">
         <Table className="min-w-full">
           {/* TableHeader removed from here */}
           <TableBody>
@@ -2249,41 +2249,42 @@ const processDataForTable = useCallback(() => {
 
  const scrollContainerRef = useRef<HTMLDivElement>(null);
   return (
- <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground">
-      <HeaderSection
-        filterOptions={filterOptions}
-        selectedBusinessUnit={selectedBusinessUnit}
- onSelectBusinessUnit={handleBusinessUnitChange}
-        selectedLineOfBusiness={selectedLineOfBusiness}
-        onSelectLineOfBusiness={handleLOBChange}
+    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
+  <HeaderSection
+    filterOptions={filterOptions}
+    selectedBusinessUnit={selectedBusinessUnit}
+    onSelectBusinessUnit={handleBusinessUnitChange}
+    selectedLineOfBusiness={selectedLineOfBusiness}
+    onSelectLineOfBusiness={handleLOBChange}
+    selectedTimeInterval={selectedTimeInterval}
+    onSelectTimeInterval={handleTimeIntervalChange}
+    selectedDateRange={selectedDateRange}
+    onSelectDateRange={setSelectedDateRange}
+    allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
+    displayedPeriodHeaders={displayedPeriodHeaders}
+    activeHierarchyContext={activeHierarchyContext}
+    headerPeriodScrollerRef={headerPeriodScrollerRef}
+  />
+  <div className="overflow-x-auto">
+    <main className="flex-grow px-4 pb-4 overflow-auto">
+      <CapacityTable
+        data={displayableCapacityData}
+        periodHeaders={displayedPeriodHeaders}
+        expandedItems={expandedItems}
+        toggleExpand={toggleExpand}
+        teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
+        aggregatedMetricDefinitions={AGGREGATED_METRIC_ROW_DEFINITIONS}
+        onTeamMetricChange={handleTeamMetricChange}
+        onLobMetricChange={handleLobMetricChange}
+        editingCell={editingCell}
+        onSetEditingCell={handleSetEditingCell}
         selectedTimeInterval={selectedTimeInterval}
-        onSelectTimeInterval={handleTimeIntervalChange}
-        selectedDateRange={selectedDateRange}
-        onSelectDateRange={setSelectedDateRange}
-        allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
-        displayedPeriodHeaders={displayedPeriodHeaders}
-        activeHierarchyContext={activeHierarchyContext}
-        headerPeriodScrollerRef={headerPeriodScrollerRef}
+        onActiveHierarchyChange={handleActiveHierarchyChange}
+        tableBodyScrollRef={tableBodyScrollRef}
       />
-      <div ref={scrollContainerRef} className="overflow-x-auto">
-      <main className="flex-grow px-4 pb-4 overflow-auto">
-        <CapacityTable
-          data={displayableCapacityData}
-          periodHeaders={displayedPeriodHeaders}
-          expandedItems={expandedItems}
-          toggleExpand={toggleExpand}
-          teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
-          aggregatedMetricDefinitions={AGGREGATED_METRIC_ROW_DEFINITIONS}
-          onTeamMetricChange={handleTeamMetricChange}
-          onLobMetricChange={handleLobMetricChange}
-          editingCell={editingCell}
-          onSetEditingCell={handleSetEditingCell}
-          selectedTimeInterval={selectedTimeInterval}
-          onActiveHierarchyChange={handleActiveHierarchyChange}
-          tableBodyScrollRef={tableBodyScrollRef}
-        />
-      </main>
-      </div>
-    </div>
+    </main>
+  </div>
+</div>
+
   );
 }
