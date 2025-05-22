@@ -43,7 +43,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
   const [isWalmartWFSOpen, setIsWalmartWFSOpen] = React.useState(true);
 
   return (
-    <Sidebar collapsible="icon" className="bg-gray-100 dark:bg-gray-800">
+    <Sidebar collapsible="icon" className="bg-sidebar-background text-sidebar-foreground">
       <SidebarContent>
         <div className="flex flex-col items-center justify-center py-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between w-full p-2">
@@ -76,8 +76,8 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
                           onClick={() => setActiveTab(tab.id)}
                           className={`flex items-center gap-2 py-2 rounded-lg transition-colors duration-200 ${
                             activeTab === tab.id
-                              ? 'bg-gray-200 dark:bg-gray-600 text-primary font-bold'
-                              : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                              ? 'bg-primary text-primary-foreground font-bold'
+                              : 'hover:bg-accent hover:text-accent-foreground'
                           }`}
                         >
                           {tab.id === "businessPerformance" && <ChartNoAxesGantt className="sidebar-menu-icon" />}
@@ -103,7 +103,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
           <SidebarMenuItem>
             <SidebarMenuButtonOriginal
               tooltip="Help"
-              className="flex items-center gap-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+              className="flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200"
             >
               <HelpCircle className="h-5 w-5" />
               <span className="text-sm font-medium">Help</span>
@@ -112,7 +112,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
           <SidebarMenuItem>
             <SidebarMenuButtonOriginal
               tooltip="Company Setting"
-              className="flex items-center gap-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+              className="flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200"
             >
               <Settings className="h-5 w-5" />
               <span className="text-sm font-medium">Company Setting</span>
@@ -122,7 +122,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
             <SidebarMenuButtonOriginal
               tooltip="Logout"
               onClick={handleLogout}
-              className="flex items-center gap-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+              className="flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200"
             >
               <LogOut className="h-5 w-5" />
               <span className="text-sm font-medium">Logout</span>

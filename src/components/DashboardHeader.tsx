@@ -1,11 +1,11 @@
 
-import { RefreshCcw, Settings } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "./ThemeToggle";
+
 
 interface DashboardHeaderProps {
   title: string;
-  onLogout?: () => void;  // Make onLogout optional
+  onLogout?: () => void;
   lastUpdated: string;
   forecastPeriod?: string | number;
   onRefresh?: () => void;
@@ -15,13 +15,12 @@ export const DashboardHeader = ({
   title = "Walmart Fulfillment Services ",
   lastUpdated,
   forecastPeriod,
-  onLogout = () => {}, // Add default empty function
   onRefresh
 }: DashboardHeaderProps) => {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-border/30 dark:border-gray-700/50">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-border/30 dark:border-border/50">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent dark:from-white dark:to-gray-300">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
           {title}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -30,15 +29,19 @@ export const DashboardHeader = ({
       </div>
       <div className="flex items-center gap-2">
         {onRefresh && (
-          <Button variant="outline" size="icon" onClick={onRefresh}>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={onRefresh}
+            className="bg-background text-foreground border-border"
+          >
             <RefreshCcw className="h-4 w-4" />
           </Button>
         )}
-        <ThemeToggle />
-        <Button variant="outline" size="sm" onClick={onLogout}>
-          Logout
-        </Button>
+
       </div>
     </div>
   );
 };
+
+export default DashboardHeader;
