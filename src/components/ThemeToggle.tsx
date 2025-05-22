@@ -55,6 +55,12 @@ export const ThemeToggle = () => {
     document.documentElement.setAttribute("data-theme", !isDark ? "dark" : "light");
     document.documentElement.classList.add(`${newThemeMode}-${colorTheme}`);
     
+    // Apply to body as well for full coverage
+    document.body.classList.toggle("dark", !isDark);
+    document.body.setAttribute("data-theme", !isDark ? "dark" : "light");
+    document.body.className = document.body.className.replace(/light-\S+|dark-\S+/g, '').trim();
+    document.body.classList.add(`${newThemeMode}-${colorTheme}`);
+    
     // Update state
     setIsDark(!isDark);
 
@@ -64,6 +70,11 @@ export const ThemeToggle = () => {
       description: `Switched to ${newThemeMode} mode`,
       duration: 2000,
     });
+    
+    // Force UI refresh by triggering a small layout change
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
   };
 
   return (
