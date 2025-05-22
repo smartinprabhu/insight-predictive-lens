@@ -1,3 +1,4 @@
+
 /* Light Themes */
 .light-default {
   --background: #f8fafc;
@@ -17,9 +18,6 @@
   --destructive-foreground: #ffffff;
   --sidebar-background: #f8fafc;
   --sidebar-foreground: #1e293b;
-  
-  /* Force these colors to override any inline styles */
-  color-scheme: light;
 }
 
 .light-blue {
@@ -40,8 +38,6 @@
   --destructive-foreground: #ffffff;
   --sidebar-background: #E8EAF6;
   --sidebar-foreground: #303F9F;
-  
-  color-scheme: light;
 }
 
 .light-green {
@@ -62,8 +58,6 @@
   --destructive-foreground: #ffffff;
   --sidebar-background: #C8E6C9;
   --sidebar-foreground: #006064;
-
-  color-scheme: light;
 }
 
 .light-purple {
@@ -84,8 +78,6 @@
   --destructive-foreground: #ffffff;
   --sidebar-background: #D1C4E9;
   --sidebar-foreground: #4A148C;
-
-  color-scheme: light;
 }
 
 .light-orange {
@@ -106,8 +98,6 @@
   --destructive-foreground: #ffffff;
   --sidebar-background: #ffedd5;
   --sidebar-foreground: #9a3412;
-
-  color-scheme: light;
 }
 
 /* Dark Themes */
@@ -129,8 +119,6 @@
   --destructive-foreground: #f8fafc;
   --sidebar-background: #1e293b;
   --sidebar-foreground: #f8fafc;
-  
-  color-scheme: dark;
 }
 
 .dark-blue {
@@ -151,8 +139,6 @@
   --destructive-foreground: #f0f9ff;
   --sidebar-background: #283593;
   --sidebar-foreground: #A7C4FF;
-
-  color-scheme: dark;
 }
 
 .dark-green {
@@ -173,8 +159,6 @@
   --destructive-foreground: #f0fdf4;
   --sidebar-background: #00695C;
   --sidebar-foreground: #A7FFEB;
-
-  color-scheme: dark;
 }
 
 .dark-purple {
@@ -195,8 +179,6 @@
   --destructive-foreground: #faf5ff;
   --sidebar-background: #4527A0;
   --sidebar-foreground: #E1BEE7;
-
-  color-scheme: dark;
 }
 
 .dark-orange {
@@ -217,8 +199,6 @@
   --destructive-foreground: #fff7ed;
   --sidebar-background: #D84315;
   --sidebar-foreground: #FFCC80;
-
-  color-scheme: dark;
 }
 
 /* Apply theme variables */
@@ -246,8 +226,62 @@ button[class*="btn"]:hover,
   background-color: var(--secondary);
 }
 
-/* Ensure all shadcn components use theme colors */
-[data-theme="dark"],
+/* Ensure dropdown menus have proper background */
+.dropdown-menu {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border-color: var(--border);
+}
+
+/* Style sidebar according to theme */
+.sidebar {
+  background-color: var(--sidebar-background);
+  color: var(--sidebar-foreground);
+}
+
+/* Style active tab in sidebar */
+.sidebar-menu-sub-button[data-active="true"],
+.sidebar [data-active="true"],
+[data-sidebar="menu-button"][data-active="true"] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+[data-sidebar="menu-sub-button"][data-active="true"] {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Apply theme transitions */
+html, body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button, a, input, select, textarea {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Override shadcn UI components with theme variables */
+.dark [data-theme="dark"] {
+  --background: var(--background);
+  --foreground: var(--foreground);
+  --card: var(--card);
+  --card-foreground: var(--card-foreground);
+  --popover: var(--popover);
+  --popover-foreground: var(--popover-foreground);
+  --primary: var(--primary);
+  --primary-foreground: white;
+  --secondary: var(--secondary);
+  --secondary-foreground: white;
+  --muted: var(--muted);
+  --muted-foreground: var(--muted-foreground);
+  --accent: var(--accent);
+  --accent-foreground: var(--accent-foreground);
+  --destructive: var(--destructive);
+  --destructive-foreground: var(--destructive-foreground);
+  --border: var(--border);
+}
+
 [data-theme="light"] {
   --background: var(--background);
   --foreground: var(--foreground);
@@ -268,93 +302,61 @@ button[class*="btn"]:hover,
   --border: var(--border);
 }
 
-/* Style sidebar according to theme */
-aside, 
-.sidebar, 
-[data-sidebar] {
-  background-color: var(--sidebar-background) !important;
-  color: var(--sidebar-foreground) !important;
-  border-color: var(--border) !important;
-}
-
-/* Style active tab in sidebar */
-.sidebar-menu-sub-button[data-active="true"],
-.sidebar [data-active="true"],
-[data-sidebar="menu-button"][data-active="true"] {
-  background-color: var(--primary) !important;
-  color: white !important;
-}
-
-/* Apply theme transitions */
-html, body, * {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
 /* Headers styling */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--foreground) !important;
-}
-
-/* Force all buttons to respect theme */
-button {
-  background-color: var(--primary);
-  color: white;
-}
-
-button[class*="secondary"] {
-  background-color: var(--secondary);
-  color: white;
-}
-
-button[class*="outline"] {
-  background-color: transparent;
   color: var(--foreground);
-  border-color: var(--border);
 }
 
-/* Ensure all tabs use theme colors */
-[role="tablist"] [role="tab"][data-state="active"] {
-  background-color: var(--primary);
-  color: white;
-}
-
-/* Force all cards to use theme colors */
-[class*="card"] {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
-  border-color: var(--border) !important;
-}
-
-/* Additional styling for sidebar specifically */
-[data-sidebar="menu-button"]:hover {
-  background-color: var(--accent) !important;
-  color: var(--accent-foreground) !important;
-}
-
-/* Navigation styling */
-nav {
+/* Form controls */
+input, select, textarea {
   background-color: var(--background);
   color: var(--foreground);
   border-color: var(--border);
 }
 
-/* Table styling */
+/* Cards */
+.card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-color: var(--border);
+}
+
+/* Tables */
 table {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-color: var(--border);
 }
 
 table th {
-  background-color: var(--muted) !important;
-  color: var(--muted-foreground) !important;
+  background-color: var(--muted);
+  color: var(--muted-foreground);
 }
 
-/* Important fix for popup menus */
-.popover-content, 
-.dropdown-menu-content,
-.dialog-content {
-  background-color: var(--popover) !important;
-  color: var(--popover-foreground) !important;
-  border-color: var(--border) !important;
-  z-index: 9999 !important;
+/* Navigation and tabs */
+[role="tab"][data-state="active"] {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* Data grid / AG Grid customizations */
+.ag-theme-alpine, .ag-theme-alpine-dark {
+  --ag-background-color: var(--card);
+  --ag-foreground-color: var(--card-foreground);
+  --ag-border-color: var(--border);
+  --ag-header-background-color: var(--muted);
+  --ag-header-foreground-color: var(--muted-foreground);
+  --ag-odd-row-background-color: var(--accent);
+  --ag-row-hover-color: var(--muted);
+  --ag-selected-row-background-color: var(--primary);
+}
+
+/* Additional styling for sidebar specifically */
+[data-sidebar="menu-button"] {
+  color: var(--sidebar-foreground);
+}
+
+[data-sidebar="menu-button"]:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
 }

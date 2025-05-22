@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Define the types for theme mode and color theme
@@ -12,7 +11,6 @@ interface ThemeContextType {
   isDarkTheme: boolean;
   setThemeMode: (mode: ThemeMode) => void;
   setColorTheme: (color: ColorTheme) => void;
-  refreshUI: () => void;
 }
 
 // Create the context with a default value
@@ -23,16 +21,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [themeMode, setThemeMode] = useState<ThemeMode>("system");
   const [colorTheme, setColorTheme] = useState<ColorTheme>("default");
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(false);
-  const [refreshCount, setRefreshCount] = useState(0);
-
-  // Force UI refresh
-  const refreshUI = () => {
-    setRefreshCount(prev => prev + 1);
-    // Force layout recalculation
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-    }, 10);
-  };
 
   // Load theme preferences from localStorage on component mount
   useEffect(() => {
@@ -67,12 +55,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Apply specific theme
     const themeClass = `${isDark ? "dark" : "light"}-${color}`;
     document.documentElement.classList.add(themeClass);
-    
-    // Apply to body as well for full coverage
-    document.body.classList.toggle("dark", isDark);
-    document.body.setAttribute("data-theme", isDark ? "dark" : "light");
-    document.body.className = document.body.className.replace(/light-\S+|dark-\S+/g, '').trim();
-    document.body.classList.add(themeClass);
 
     // Save preferences
     localStorage.setItem("themeMode", mode);
@@ -80,9 +62,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Update the state
     setIsDarkTheme(isDark);
-    
-    // Force UI refresh
-    refreshUI();
   };
 
   // Handle theme mode change
@@ -103,16 +82,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   return (
-    <ThemeContext.Provider 
-      value={{ 
-        themeMode, 
-        colorTheme, 
-        isDarkTheme, 
-        setThemeMode: handleModeChange, 
-        setColorTheme: handleColorThemeChange,
-        refreshUI 
-      }}
-    >
+    <ThemeContext.Provider value={{ themeMode, colorTheme, isDarkTheme, setThemeMode: handleModeChange, setColorTheme: handleColorThemeChange }}>
       {children}
     </ThemeContext.Provider>
   );

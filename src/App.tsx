@@ -40,12 +40,6 @@ const App = () => {
     const themeClass = `${isDark ? "dark" : "light"}-${colorTheme}`;
     document.documentElement.classList.add(themeClass);
     
-    // Apply to the body as well for full coverage
-    document.body.classList.toggle("dark", isDark);
-    document.body.setAttribute("data-theme", isDark ? "dark" : "light");
-    document.body.className = document.body.className.replace(/light-\S+|dark-\S+/g, '').trim();
-    document.body.classList.add(themeClass);
-    
     // Listen for system preference changes if in system mode
     if (themeMode === "system") {
       const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -58,12 +52,6 @@ const App = () => {
         document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
         const newThemeClass = `${e.matches ? "dark" : "light"}-${colorTheme}`;
         document.documentElement.classList.add(newThemeClass);
-        
-        // Apply to body as well
-        document.body.classList.toggle("dark", e.matches);
-        document.body.setAttribute("data-theme", e.matches ? "dark" : "light");
-        document.body.className = document.body.className.replace(/light-\S+|dark-\S+/g, '').trim();
-        document.body.classList.add(newThemeClass);
       };
       
       darkModeMediaQuery.addEventListener("change", handleChange);
@@ -74,18 +62,16 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="app-container">
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/dashboard" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </div>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/dashboard" element={<Index />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
