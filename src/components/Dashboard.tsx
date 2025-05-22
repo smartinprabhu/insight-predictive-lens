@@ -559,7 +559,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                 title="Walmart Fulfillment Services"
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
                 forecastPeriod={`${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history`}
-                onLogout={handleLogout}
+
               />
             </div>
             <div className="flex items-center gap-2">
@@ -570,16 +570,9 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                 className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />
-                Refresh Dashboard
+
               </Button>
-              {/* <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNavigateToPlanningPage}
-                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                Planning
-              </Button> */}
+
               <ThemeToggle />
             </div>
           </div>

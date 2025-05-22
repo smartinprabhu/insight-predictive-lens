@@ -15,7 +15,7 @@ export const DashboardHeader = ({
   title = "Walmart Fulfillment Services ",
   lastUpdated,
   forecastPeriod,
-  onLogout = () => {}, // Add default empty function
+
   onRefresh
 }: DashboardHeaderProps) => {
   return (
@@ -34,10 +34,8 @@ export const DashboardHeader = ({
             <RefreshCcw className="h-4 w-4" />
           </Button>
         )}
-        <ThemeToggle />
-        <Button variant="outline" size="sm" onClick={onLogout}>
-          Logout
-        </Button>
+
+
       </div>
     </div>
   );

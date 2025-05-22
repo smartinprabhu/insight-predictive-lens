@@ -1,0 +1,64 @@
+/* Light Themes */
+.light-default {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #007bff;
+  --secondary: #6c757d;
+}
+
+.light-blue {
+  --background: #e6f2ff;
+  --foreground: #000000;
+  --primary: #3498db;
+  --secondary: #2ecc71;
+}
+
+.light-green {
+  --background: #e6ffec;
+  --foreground: #000000;
+  --primary: #2ecc71;
+  --secondary: #3498db;
+}
+
+/* Dark Themes */
+.dark-default {
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #007bff;
+  --secondary: #6c757d;
+}
+
+.dark-purple {
+  --background: #2c2c2c;
+  --foreground: #ffffff;
+  --primary: #8e44ad;
+  --secondary: #9b59b6;
+}
+
+.dark-orange {
+  --background: #3c3c3c;
+  --foreground: #ffffff;
+  --primary: #e67e22;
+  --secondary: #d35400;
+}
+
+/* Apply theme variables */
+:root {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+:root.dark {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Additional styles for components */
+.button {
+  background-color: var(--primary);
+  color: var(--foreground);
+}
+
+.button:hover {
+  background-color: var(--secondary);
+}
