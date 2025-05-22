@@ -34,6 +34,7 @@ const App = () => {
     
     // Apply dark/light class
     document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
     
     // Apply specific theme
     const themeClass = `${isDark ? "dark" : "light"}-${colorTheme}`;
@@ -48,6 +49,7 @@ const App = () => {
           "dark-default", "dark-blue", "dark-green", "dark-purple", "dark-orange"
         );
         document.documentElement.classList.toggle("dark", e.matches);
+        document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
         const newThemeClass = `${e.matches ? "dark" : "light"}-${colorTheme}`;
         document.documentElement.classList.add(newThemeClass);
       };

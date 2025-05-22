@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useToast } from "@/components/ui/use-toast";
 
 // Theme types
 type ThemeMode = "light" | "dark" | "system";
@@ -21,6 +22,7 @@ const ThemeSelector = () => {
   const [themeMode, setThemeMode] = useState<ThemeMode>("system");
   const [colorTheme, setColorTheme] = useState<ColorTheme>("default");
   const [open, setOpen] = useState(false);
+  const { toast } = useToast();
 
   // Load theme preferences from localStorage on component mount
   useEffect(() => {
@@ -53,6 +55,7 @@ const ThemeSelector = () => {
     
     // Apply dark/light class
     document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
     
     // Apply specific theme
     const themeClass = `${isDark ? "dark" : "light"}-${color}`;
@@ -67,28 +70,47 @@ const ThemeSelector = () => {
   const handleModeChange = (value: ThemeMode) => {
     setThemeMode(value);
     applyTheme(value, colorTheme);
+    toast({
+      title: "Theme Mode Updated",
+      description: `Theme changed to ${value === "system" ? "system preference" : value} mode`,
+      duration: 2000,
+    });
   };
 
   // Handle color theme change
   const handleColorThemeChange = (value: ColorTheme) => {
     setColorTheme(value);
     applyTheme(themeMode, value);
+    toast({
+      title: "Color Theme Updated",
+      description: `Color theme changed to ${value}`,
+      duration: 2000,
+    });
   };
+
+  // Display name for the current mode
+  const currentModeName = 
+    themeMode === "light" ? "Light" : 
+    themeMode === "dark" ? "Dark" : "System";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="w-10 h-10">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="w-10 h-10 bg-background border-border"
+        >
           {themeMode === "light" ? (
-            <Sun className="h-4 w-4" />
+            <Sun className="h-5 w-5 text-foreground" />
           ) : themeMode === "dark" ? (
-            <Moon className="h-4 w-4" />
+            <Moon className="h-5 w-5 text-foreground" />
           ) : (
-            <Monitor className="h-4 w-4" />
+            <Monitor className="h-5 w-5 text-foreground" />
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-4">
+      <PopoverContent className="w-80 p-4 bg-popover text-popover-foreground border-border">
         <div className="space-y-4">
           {/* Theme Mode Selector */}
           <div>
@@ -124,7 +146,7 @@ const ThemeSelector = () => {
                   themeMode === "system" && "bg-primary text-white"
                 )}
               >
-                <Monitor className="h-4 w-4" /> Device
+                <Monitor className="h-4 w-4" /> System
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
@@ -165,6 +187,7 @@ const ThemeSelector = () => {
                   value="default"
                   className="sr-only"
                 />
+                <span className="text-xs font-medium">Default</span>
               </div>
 
               {/* Blue theme */}
@@ -174,7 +197,10 @@ const ThemeSelector = () => {
                   className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
-                    <div className="w-full h-full rounded-full overflow-hidden flex flex-wrap">
+                    <div className={cn(
+                      "w-full h-full rounded-full overflow-hidden flex flex-wrap",
+                      themeMode === 'dark' ? "bg-[#0f172a]" : "bg-[#e6f2ff]"
+                    )}>
                       <div className="w-1/2 h-1/2 bg-blue-500"></div>
                       <div className="w-1/2 h-1/2 bg-blue-200"></div>
                       <div className="w-1/2 h-1/2 bg-blue-300"></div>
@@ -192,6 +218,7 @@ const ThemeSelector = () => {
                   value="blue"
                   className="sr-only"
                 />
+                <span className="text-xs font-medium">Blue</span>
               </div>
 
               {/* Green theme */}
@@ -201,7 +228,10 @@ const ThemeSelector = () => {
                   className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
-                    <div className="w-full h-full rounded-full overflow-hidden flex flex-wrap">
+                    <div className={cn(
+                      "w-full h-full rounded-full overflow-hidden flex flex-wrap",
+                      themeMode === 'dark' ? "bg-[#052e16]" : "bg-[#e6ffec]"
+                    )}>
                       <div className="w-1/2 h-1/2 bg-green-600"></div>
                       <div className="w-1/2 h-1/2 bg-green-200"></div>
                       <div className="w-1/2 h-1/2 bg-green-300"></div>
@@ -219,6 +249,7 @@ const ThemeSelector = () => {
                   value="green"
                   className="sr-only"
                 />
+                <span className="text-xs font-medium">Green</span>
               </div>
 
               {/* Purple theme */}
@@ -228,7 +259,10 @@ const ThemeSelector = () => {
                   className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
-                    <div className="w-full h-full rounded-full overflow-hidden flex flex-wrap">
+                    <div className={cn(
+                      "w-full h-full rounded-full overflow-hidden flex flex-wrap",
+                      themeMode === 'dark' ? "bg-[#2e1065]" : "bg-[#f5f3ff]"
+                    )}>
                       <div className="w-1/2 h-1/2 bg-purple-700"></div>
                       <div className="w-1/2 h-1/2 bg-purple-200"></div>
                       <div className="w-1/2 h-1/2 bg-purple-300"></div>
@@ -246,6 +280,7 @@ const ThemeSelector = () => {
                   value="purple"
                   className="sr-only"
                 />
+                <span className="text-xs font-medium">Purple</span>
               </div>
               
               {/* Orange theme */}
@@ -255,7 +290,10 @@ const ThemeSelector = () => {
                   className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
-                    <div className="w-full h-full rounded-full overflow-hidden flex flex-wrap">
+                    <div className={cn(
+                      "w-full h-full rounded-full overflow-hidden flex flex-wrap",
+                      themeMode === 'dark' ? "bg-[#431407]" : "bg-[#fff5eb]"
+                    )}>
                       <div className="w-1/2 h-1/2 bg-orange-600"></div>
                       <div className="w-1/2 h-1/2 bg-orange-200"></div>
                       <div className="w-1/2 h-1/2 bg-orange-300"></div>
@@ -273,8 +311,13 @@ const ThemeSelector = () => {
                   value="orange"
                   className="sr-only"
                 />
+                <span className="text-xs font-medium">Orange</span>
               </div>
             </RadioGroup>
+          </div>
+
+          <div className="pt-2 text-center text-sm text-muted-foreground">
+            Current theme: {currentModeName} {colorTheme.charAt(0).toUpperCase() + colorTheme.slice(1)}
           </div>
         </div>
       </PopoverContent>

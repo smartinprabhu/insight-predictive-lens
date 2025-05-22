@@ -5,12 +5,7 @@
 
 // Define our LOB types in the global window object
 // These are specifically to fix the PlanningTab.tsx error
-interface CustomWindow extends Window {
-  LOBTypes: string[];
-}
-
-// Make sure LOB types are available at runtime
-(window as CustomWindow).LOBTypes = [
+const LOB_TYPES = [
   "Customer Returns",
   "US Phone",
   "US Chat",
@@ -29,10 +24,13 @@ interface CustomWindow extends Window {
   "Walmart Import"
 ];
 
-// Export the type so TypeScript knows these are valid
-export type LOBType = typeof window.LOBTypes[number];
+// Make sure LOB types are available at runtime
+window.LOBTypes = LOB_TYPES;
 
-// Enhance the global windowTypes definition
+// Export the type so TypeScript knows these are valid
+export type LOBType = typeof LOB_TYPES[number];
+
+// Enhance the global window interface
 declare global {
   interface Window {
     LOBTypes: string[];
