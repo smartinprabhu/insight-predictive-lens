@@ -64,6 +64,12 @@ const ThemeSelector = () => {
     // Save preferences
     localStorage.setItem("themeMode", mode);
     localStorage.setItem("colorTheme", color);
+
+    // Force refresh of any UI components that might not update automatically
+    document.body.style.backgroundColor = '';
+    setTimeout(() => {
+      document.body.style.backgroundColor = '';
+    }, 10);
   };
 
   // Handle theme mode change
@@ -112,72 +118,78 @@ const ThemeSelector = () => {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-4 bg-popover text-popover-foreground border-border">
         <div className="space-y-4">
-          {/* Theme Mode Selector */}
+          {/* Theme Mode Selector - Matching reference image */}
           <div>
-            <div className="mb-2 font-medium">Theme Mode</div>
-            <ToggleGroup
-              type="single"
-              value={themeMode}
-              onValueChange={(value) => value && handleModeChange(value as ThemeMode)}
-              className="justify-start rounded-full bg-muted p-1 w-full"
-            >
-              <ToggleGroupItem
-                value="light"
-                className={cn(
-                  "flex items-center gap-2 rounded-full data-[state=on]:bg-primary data-[state=on]:text-white px-4",
-                  themeMode === "light" && "bg-primary text-white"
-                )}
+            <div className="mb-2 font-medium">Appearance</div>
+            <div className="w-full overflow-hidden rounded-full bg-muted p-1 flex">
+              <ToggleGroup
+                type="single"
+                value={themeMode}
+                onValueChange={(value) => value && handleModeChange(value as ThemeMode)}
+                className="flex justify-between rounded-full w-full"
               >
-                <Sun className="h-4 w-4" /> Light
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="dark"
-                className={cn(
-                  "flex items-center gap-2 rounded-full data-[state=on]:bg-primary data-[state=on]:text-white px-4",
-                  themeMode === "dark" && "bg-primary text-white"
-                )}
-              >
-                <Moon className="h-4 w-4" /> Dark
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="system"
-                className={cn(
-                  "flex items-center gap-2 rounded-full data-[state=on]:bg-primary data-[state=on]:text-white px-4",
-                  themeMode === "system" && "bg-primary text-white"
-                )}
-              >
-                <Monitor className="h-4 w-4" /> System
-              </ToggleGroupItem>
-            </ToggleGroup>
+                <ToggleGroupItem
+                  value="light"
+                  className={cn(
+                    "flex-1 items-center gap-2 rounded-full data-[state=on]:bg-primary data-[state=on]:text-white px-4 py-2",
+                    themeMode === "light" && "bg-primary text-white"
+                  )}
+                >
+                  <Sun className="h-4 w-4 mr-1" /> Light
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="dark"
+                  className={cn(
+                    "flex-1 items-center gap-2 rounded-full data-[state=on]:bg-primary data-[state=on]:text-white px-4 py-2",
+                    themeMode === "dark" && "bg-primary text-white"
+                  )}
+                >
+                  <Moon className="h-4 w-4 mr-1" /> Dark
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="system"
+                  className={cn(
+                    "flex-1 items-center gap-2 rounded-full data-[state=on]:bg-primary data-[state=on]:text-white px-4 py-2",
+                    themeMode === "system" && "bg-primary text-white"
+                  )}
+                >
+                  <Monitor className="h-4 w-4 mr-1" /> Device
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
           </div>
 
-          {/* Color Theme Selector */}
+          {/* Color Theme Selector - Grid of color options like reference image */}
           <div>
-            <div className="mb-2 font-medium">Color Theme</div>
+            <div className="mb-2 font-medium">Theme Colors</div>
             <RadioGroup
               value={colorTheme}
               onValueChange={(value: ColorTheme) => handleColorThemeChange(value)}
-              className="grid grid-cols-5 gap-2"
+              className="grid grid-cols-4 gap-3"
             >
               {/* Default theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="default-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
-                  <div className="w-full h-full p-1">
+                  <div className="w-full h-full p-1 relative">
                     <div className={cn(
                       "w-full h-full rounded-full overflow-hidden flex flex-wrap",
                       themeMode === 'dark' ? "bg-[#1a1a1a]" : "bg-white"
                     )}>
+                      {/* Upper left - blue */}
                       <div className="w-1/2 h-1/2 bg-blue-600"></div>
-                      <div className="w-1/2 h-1/2 bg-gray-300"></div>
+                      {/* Upper right - light blue */}
+                      <div className="w-1/2 h-1/2 bg-blue-200"></div>
+                      {/* Lower left - light gray */}
+                      <div className="w-1/2 h-1/2 bg-gray-200"></div>
+                      {/* Lower right - gray */}
                       <div className="w-1/2 h-1/2 bg-gray-400"></div>
-                      <div className="w-1/2 h-1/2 bg-gray-500"></div>
                     </div>
                     {colorTheme === "default" && (
-                      <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
-                        <CheckIcon className="h-3 w-3 text-white" />
+                      <div className="absolute top-1 left-1 bg-blue-600 rounded-full p-1">
+                        <CheckIcon className="h-4 w-4 text-white" />
                       </div>
                     )}
                   </div>
@@ -187,14 +199,13 @@ const ThemeSelector = () => {
                   value="default"
                   className="sr-only"
                 />
-                <span className="text-xs font-medium">Default</span>
               </div>
 
               {/* Blue theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="blue-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className={cn(
@@ -207,8 +218,8 @@ const ThemeSelector = () => {
                       <div className="w-1/2 h-1/2 bg-blue-400"></div>
                     </div>
                     {colorTheme === "blue" && (
-                      <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
-                        <CheckIcon className="h-3 w-3 text-white" />
+                      <div className="absolute top-1 left-1 bg-blue-600 rounded-full p-1">
+                        <CheckIcon className="h-4 w-4 text-white" />
                       </div>
                     )}
                   </div>
@@ -218,28 +229,27 @@ const ThemeSelector = () => {
                   value="blue"
                   className="sr-only"
                 />
-                <span className="text-xs font-medium">Blue</span>
               </div>
 
               {/* Green theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="green-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className={cn(
                       "w-full h-full rounded-full overflow-hidden flex flex-wrap",
                       themeMode === 'dark' ? "bg-[#052e16]" : "bg-[#e6ffec]"
                     )}>
-                      <div className="w-1/2 h-1/2 bg-green-600"></div>
+                      <div className="w-1/2 h-1/2 bg-green-700"></div>
                       <div className="w-1/2 h-1/2 bg-green-200"></div>
                       <div className="w-1/2 h-1/2 bg-green-300"></div>
-                      <div className="w-1/2 h-1/2 bg-green-400"></div>
+                      <div className="w-1/2 h-1/2 bg-green-500"></div>
                     </div>
                     {colorTheme === "green" && (
-                      <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
-                        <CheckIcon className="h-3 w-3 text-white" />
+                      <div className="absolute top-1 left-1 bg-green-600 rounded-full p-1">
+                        <CheckIcon className="h-4 w-4 text-white" />
                       </div>
                     )}
                   </div>
@@ -249,19 +259,18 @@ const ThemeSelector = () => {
                   value="green"
                   className="sr-only"
                 />
-                <span className="text-xs font-medium">Green</span>
               </div>
 
               {/* Purple theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="purple-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className={cn(
                       "w-full h-full rounded-full overflow-hidden flex flex-wrap",
-                      themeMode === 'dark' ? "bg-[#2e1065]" : "bg-[#f5f3ff]"
+                      themeMode === 'dark' ? "bg-[#4b0082]" : "bg-[#f5f3ff]"
                     )}>
                       <div className="w-1/2 h-1/2 bg-purple-700"></div>
                       <div className="w-1/2 h-1/2 bg-purple-200"></div>
@@ -269,8 +278,8 @@ const ThemeSelector = () => {
                       <div className="w-1/2 h-1/2 bg-purple-500"></div>
                     </div>
                     {colorTheme === "purple" && (
-                      <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
-                        <CheckIcon className="h-3 w-3 text-white" />
+                      <div className="absolute top-1 left-1 bg-purple-600 rounded-full p-1">
+                        <CheckIcon className="h-4 w-4 text-white" />
                       </div>
                     )}
                   </div>
@@ -280,14 +289,13 @@ const ThemeSelector = () => {
                   value="purple"
                   className="sr-only"
                 />
-                <span className="text-xs font-medium">Purple</span>
               </div>
               
               {/* Orange theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="orange-theme"
-                  className="cursor-pointer relative rounded-md overflow-hidden w-12 h-12 flex items-center justify-center bg-muted"
+                  className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
                     <div className={cn(
@@ -300,8 +308,8 @@ const ThemeSelector = () => {
                       <div className="w-1/2 h-1/2 bg-orange-400"></div>
                     </div>
                     {colorTheme === "orange" && (
-                      <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
-                        <CheckIcon className="h-3 w-3 text-white" />
+                      <div className="absolute top-1 left-1 bg-orange-600 rounded-full p-1">
+                        <CheckIcon className="h-4 w-4 text-white" />
                       </div>
                     )}
                   </div>
@@ -311,7 +319,6 @@ const ThemeSelector = () => {
                   value="orange"
                   className="sr-only"
                 />
-                <span className="text-xs font-medium">Orange</span>
               </div>
             </RadioGroup>
           </div>

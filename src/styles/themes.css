@@ -1,59 +1,59 @@
 
 /* Light Themes */
 .light-default {
-  --background: #ffffff;
-  --foreground: #000000;
-  --primary: #007bff;
-  --secondary: #6c757d;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --primary: #2563eb;
+  --secondary: #4b5563;
   --card: #ffffff;
-  --card-foreground: #000000;
-  --border: rgba(0, 0, 0, 0.1);
-  --muted: #f8f9fa;
-  --muted-foreground: #6c757d;
+  --card-foreground: #1e293b;
+  --border: rgba(15, 23, 42, 0.1);
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
   --accent: #f1f5f9;
   --accent-foreground: #1e293b;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #1e293b;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --sidebar-background: #f8f9fa;
-  --sidebar-foreground: #333333;
+  --sidebar-background: #f8fafc;
+  --sidebar-foreground: #1e293b;
 }
 
 .light-blue {
-  --background: #e6f2ff;
-  --foreground: #000000;
-  --primary: #3498db;
-  --secondary: #2ecc71;
+  --background: #eff6ff;
+  --foreground: #0f172a;
+  --primary: #3b82f6;
+  --secondary: #60a5fa;
   --card: #ffffff;
-  --card-foreground: #000000;
-  --border: rgba(52, 152, 219, 0.2);
-  --muted: #f0f9ff;
-  --muted-foreground: #3498db;
-  --accent: #e0f2fe;
-  --accent-foreground: #0284c7;
+  --card-foreground: #1e293b;
+  --border: rgba(59, 130, 246, 0.2);
+  --muted: #dbeafe;
+  --muted-foreground: #2563eb;
+  --accent: #bfdbfe;
+  --accent-foreground: #1e40af;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #1e293b;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --sidebar-background: #e0f2fe;
-  --sidebar-foreground: #0c4a6e;
+  --sidebar-background: #dbeafe;
+  --sidebar-foreground: #1e40af;
 }
 
 .light-green {
-  --background: #e6ffec;
-  --foreground: #000000;
-  --primary: #2ecc71;
-  --secondary: #3498db;
+  --background: #f0fdf4;
+  --foreground: #0f172a;
+  --primary: #22c55e;
+  --secondary: #4ade80;
   --card: #ffffff;
-  --card-foreground: #000000;
-  --border: rgba(46, 204, 113, 0.2);
-  --muted: #f0fdf4;
-  --muted-foreground: #22c55e;
-  --accent: #dcfce7;
-  --accent-foreground: #16a34a;
+  --card-foreground: #1e293b;
+  --border: rgba(34, 197, 94, 0.2);
+  --muted: #dcfce7;
+  --muted-foreground: #16a34a;
+  --accent: #bbf7d0;
+  --accent-foreground: #166534;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #1e293b;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --sidebar-background: #dcfce7;
@@ -61,142 +61,142 @@
 }
 
 .light-purple {
-  --background: #f5f3ff;
-  --foreground: #000000;
-  --primary: #8e44ad;
-  --secondary: #9b59b6;
+  --background: #faf5ff;
+  --foreground: #0f172a;
+  --primary: #a855f7;
+  --secondary: #c084fc;
   --card: #ffffff;
-  --card-foreground: #000000;
-  --border: rgba(142, 68, 173, 0.2);
-  --muted: #ede9fe;
-  --muted-foreground: #8b5cf6;
-  --accent: #f3e8ff;
-  --accent-foreground: #9333ea;
+  --card-foreground: #1e293b;
+  --border: rgba(168, 85, 247, 0.2);
+  --muted: #f3e8ff;
+  --muted-foreground: #9333ea;
+  --accent: #e9d5ff;
+  --accent-foreground: #6b21a8;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #1e293b;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --sidebar-background: #f3e8ff;
-  --sidebar-foreground: #581c87;
+  --sidebar-foreground: #6b21a8;
 }
 
 .light-orange {
-  --background: #fff5eb;
-  --foreground: #000000;
-  --primary: #e67e22;
-  --secondary: #f39c12;
+  --background: #fff7ed;
+  --foreground: #0f172a;
+  --primary: #f97316;
+  --secondary: #fb923c;
   --card: #ffffff;
-  --card-foreground: #000000;
-  --border: rgba(230, 126, 34, 0.2);
-  --muted: #fef3c7;
-  --muted-foreground: #d97706;
-  --accent: #ffedd5;
-  --accent-foreground: #c2410c;
+  --card-foreground: #1e293b;
+  --border: rgba(249, 115, 22, 0.2);
+  --muted: #ffedd5;
+  --muted-foreground: #ea580c;
+  --accent: #fed7aa;
+  --accent-foreground: #9a3412;
   --popover: #ffffff;
-  --popover-foreground: #000000;
+  --popover-foreground: #1e293b;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --sidebar-background: #ffedd5;
-  --sidebar-foreground: #7c2d12;
+  --sidebar-foreground: #9a3412;
 }
 
 /* Dark Themes */
 .dark-default {
-  --background: #121212;
-  --foreground: #ffffff;
+  --background: #0f172a;
+  --foreground: #f8fafc;
   --primary: #3b82f6;
-  --secondary: #6c757d;
-  --card: #1e1e1e;
-  --card-foreground: #ffffff;
+  --secondary: #60a5fa;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
   --border: rgba(255, 255, 255, 0.1);
-  --muted: #2a2a2a;
-  --muted-foreground: #a3a3a3;
-  --accent: #2a2a2a;
-  --accent-foreground: #ffffff;
-  --popover: #1e1e1e;
-  --popover-foreground: #ffffff;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #334155;
+  --accent-foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --sidebar-background: #1e1e1e;
-  --sidebar-foreground: #e2e8f0;
+  --destructive-foreground: #f8fafc;
+  --sidebar-background: #1e293b;
+  --sidebar-foreground: #f8fafc;
 }
 
 .dark-blue {
-  --background: #0f172a;
-  --foreground: #ffffff;
+  --background: #0c1e36;
+  --foreground: #f0f9ff;
   --primary: #60a5fa;
-  --secondary: #38bdf8;
-  --card: #1e293b;
-  --card-foreground: #ffffff;
-  --border: rgba(52, 152, 219, 0.2);
-  --muted: #263449;
-  --muted-foreground: #93c5fd;
-  --accent: #334155;
-  --accent-foreground: #bfdbfe;
-  --popover: #1e293b;
-  --popover-foreground: #ffffff;
+  --secondary: #93c5fd;
+  --card: #172554;
+  --card-foreground: #f0f9ff;
+  --border: rgba(96, 165, 250, 0.2);
+  --muted: #172554;
+  --muted-foreground: #bfdbfe;
+  --accent: #1e3a8a;
+  --accent-foreground: #e0f2fe;
+  --popover: #172554;
+  --popover-foreground: #f0f9ff;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --sidebar-background: #1e293b;
+  --destructive-foreground: #f0f9ff;
+  --sidebar-background: #172554;
   --sidebar-foreground: #bfdbfe;
 }
 
 .dark-green {
   --background: #052e16;
-  --foreground: #ffffff;
+  --foreground: #f0fdf4;
   --primary: #4ade80;
-  --secondary: #34d399;
+  --secondary: #86efac;
   --card: #064e3b;
-  --card-foreground: #ffffff;
-  --border: rgba(46, 204, 113, 0.2);
+  --card-foreground: #f0fdf4;
+  --border: rgba(74, 222, 128, 0.2);
   --muted: #064e3b;
-  --muted-foreground: #86efac;
-  --accent: #065f46;
-  --accent-foreground: #bbf7d0;
+  --muted-foreground: #bbf7d0;
+  --accent: #047857;
+  --accent-foreground: #d1fae5;
   --popover: #064e3b;
-  --popover-foreground: #ffffff;
+  --popover-foreground: #f0fdf4;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  --destructive-foreground: #f0fdf4;
   --sidebar-background: #064e3b;
   --sidebar-foreground: #bbf7d0;
 }
 
 .dark-purple {
-  --background: #2e1065;
-  --foreground: #ffffff;
-  --primary: #a78bfa;
-  --secondary: #c084fc;
-  --card: #4c1d95;
-  --card-foreground: #ffffff;
-  --border: rgba(155, 89, 182, 0.2);
-  --muted: #4c1d95;
-  --muted-foreground: #c084fc;
-  --accent: #6d28d9;
-  --accent-foreground: #e9d5ff;
-  --popover: #4c1d95;
-  --popover-foreground: #ffffff;
+  --background: #4b0082;
+  --foreground: #faf5ff;
+  --primary: #c084fc;
+  --secondary: #d8b4fe;
+  --card: #6b21a8;
+  --card-foreground: #faf5ff;
+  --border: rgba(192, 132, 252, 0.2);
+  --muted: #581c87;
+  --muted-foreground: #e9d5ff;
+  --accent: #7e22ce;
+  --accent-foreground: #f3e8ff;
+  --popover: #581c87;
+  --popover-foreground: #faf5ff;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --sidebar-background: #4c1d95;
+  --destructive-foreground: #faf5ff;
+  --sidebar-background: #581c87;
   --sidebar-foreground: #e9d5ff;
 }
 
 .dark-orange {
   --background: #431407;
-  --foreground: #ffffff;
+  --foreground: #fff7ed;
   --primary: #fb923c;
   --secondary: #fdba74;
   --card: #7c2d12;
-  --card-foreground: #ffffff;
-  --border: rgba(230, 126, 34, 0.2);
+  --card-foreground: #fff7ed;
+  --border: rgba(251, 146, 60, 0.2);
   --muted: #7c2d12;
-  --muted-foreground: #fdba74;
+  --muted-foreground: #fed7aa;
   --accent: #9a3412;
   --accent-foreground: #ffedd5;
   --popover: #7c2d12;
-  --popover-foreground: #ffffff;
+  --popover-foreground: #fff7ed;
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  --destructive-foreground: #fff7ed;
   --sidebar-background: #7c2d12;
   --sidebar-foreground: #fed7aa;
 }
@@ -213,12 +213,16 @@
 }
 
 /* Apply theme to UI components */
-.button {
+.button, 
+button[class*="btn"],
+.btn {
   background-color: var(--primary);
-  color: var(--foreground);
+  color: white;
 }
 
-.button:hover {
+.button:hover,
+button[class*="btn"]:hover,
+.btn:hover {
   background-color: var(--secondary);
 }
 
@@ -233,6 +237,19 @@
 .sidebar {
   background-color: var(--sidebar-background);
   color: var(--sidebar-foreground);
+}
+
+/* Style active tab in sidebar */
+.sidebar-menu-sub-button[data-active="true"],
+.sidebar [data-active="true"],
+[data-sidebar="menu-button"][data-active="true"] {
+  background-color: var(--primary) !important;
+  color: white !important;
+}
+
+[data-sidebar="menu-sub-button"][data-active="true"] {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
 }
 
 /* Apply theme transitions */
@@ -253,9 +270,9 @@ button, a, input, select, textarea {
   --popover: var(--popover);
   --popover-foreground: var(--popover-foreground);
   --primary: var(--primary);
-  --primary-foreground: #ffffff;
+  --primary-foreground: white;
   --secondary: var(--secondary);
-  --secondary-foreground: #ffffff;
+  --secondary-foreground: white;
   --muted: var(--muted);
   --muted-foreground: var(--muted-foreground);
   --accent: var(--accent);
@@ -273,9 +290,9 @@ button, a, input, select, textarea {
   --popover: var(--popover);
   --popover-foreground: var(--popover-foreground);
   --primary: var(--primary);
-  --primary-foreground: #ffffff;
+  --primary-foreground: white;
   --secondary: var(--secondary);
-  --secondary-foreground: #ffffff;
+  --secondary-foreground: white;
   --muted: var(--muted);
   --muted-foreground: var(--muted-foreground);
   --accent: var(--accent);
@@ -283,4 +300,63 @@ button, a, input, select, textarea {
   --destructive: var(--destructive);
   --destructive-foreground: var(--destructive-foreground);
   --border: var(--border);
+}
+
+/* Headers styling */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--foreground);
+}
+
+/* Form controls */
+input, select, textarea {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+/* Cards */
+.card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-color: var(--border);
+}
+
+/* Tables */
+table {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-color: var(--border);
+}
+
+table th {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+/* Navigation and tabs */
+[role="tab"][data-state="active"] {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* Data grid / AG Grid customizations */
+.ag-theme-alpine, .ag-theme-alpine-dark {
+  --ag-background-color: var(--card);
+  --ag-foreground-color: var(--card-foreground);
+  --ag-border-color: var(--border);
+  --ag-header-background-color: var(--muted);
+  --ag-header-foreground-color: var(--muted-foreground);
+  --ag-odd-row-background-color: var(--accent);
+  --ag-row-hover-color: var(--muted);
+  --ag-selected-row-background-color: var(--primary);
+}
+
+/* Additional styling for sidebar specifically */
+[data-sidebar="menu-button"] {
+  color: var(--sidebar-foreground);
+}
+
+[data-sidebar="menu-button"]:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
 }
