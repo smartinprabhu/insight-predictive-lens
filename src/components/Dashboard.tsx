@@ -557,7 +557,8 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           isSidebarCollapsed={isSidebarCollapsed}
         />
 
-        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 mb-12 space-y-4 bg-gray-50 dark:bg-gray-900">
+
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-0 sticky top-4 z-10">
               <DashboardHeader
@@ -866,7 +867,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
             </div>
           )}
 
-          <footer className="fixed bottom-0 left-0 w-full py-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
+          <footer className="fixed bottom-[-3.5px] left-0 w-full py-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
             <p>© 2025 Zentere. All rights reserved.</p>
           </footer>
         </div>
@@ -874,3 +875,4 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     </SidebarProvider>
   );
 };
+ <footer className="fixed bottom-[-3.5px]  left-0 w-full py-8 border-t border-gray-200 dark:border-none text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900"></footer>
