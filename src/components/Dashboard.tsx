@@ -557,14 +557,12 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           isSidebarCollapsed={isSidebarCollapsed}
         />
 
-        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-0 sticky top-4 z-10">
               <DashboardHeader
-                title="Walmart Fulfillment Services"
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
                 forecastPeriod={`${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history`}
-
               />
             </div>
             <div className="flex items-center gap-2">
@@ -607,7 +605,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                     </SheetTrigger>
                     <SheetContent
                       side="right"
-                      className="w-[1000px] h-screen bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 overflow-y-auto fixed top-0 right-0 z-[1000]"
+                      className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000]" // MODIFIED: Use theme card/border
                     >
                       <SheetHeader>
                         <SheetTitle>Forecast Settings</SheetTitle>
@@ -874,3 +872,6 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     </SidebarProvider>
   );
 };
+// Ensure PlanningTab uses bg-background for its main container if it's meant to be part of the themed area.
+// It currently does: <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
+// This seems correct.

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from "react"; // Removed useEffect
 import { CheckIcon, Moon, Sun, Monitor } from "lucide-react";
 import {
   Popover,
@@ -11,12 +11,16 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useToast } from "@/components/ui/use-toast";
-import { useTheme, ThemeMode, ColorTheme } from "../components/ThemeContext"; // Corrected import path
+import { useTheme, ThemeMode, ColorTheme } from "../components/ThemeContext"; // Import useTheme and types from context
 
 const ThemeSelector = () => {
   const { themeMode, colorTheme, setThemeMode, setColorTheme } = useTheme(); // Use context
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+
+  // Removed local state for themeMode and colorTheme
+  // Removed useEffect for loading from localStorage - handled by ThemeContext
+  // Removed applyTheme function - handled by ThemeContext
 
   // Handle theme mode change
   const handleModeChange = (value: ThemeMode) => {
@@ -30,7 +34,8 @@ const ThemeSelector = () => {
 
   // Handle color theme change
   const handleColorThemeChange = (value: ColorTheme) => {
-    setColorTheme(value); // Use context function
+    setColorTheme(value);
+    applyTheme(themeMode, value);
     toast({
       title: "Color Theme Updated",
       description: `Color theme changed to ${value}`,
@@ -108,7 +113,7 @@ const ThemeSelector = () => {
             <div className="mb-2 font-medium">Theme Colors</div>
             <RadioGroup
               value={colorTheme}
-              onValueChange={(value) => handleColorThemeChange(value as ColorTheme)}
+              onValueChange={(value: ColorTheme) => handleColorThemeChange(value)}
               className="grid grid-cols-4 gap-3"
             >
               {/* First theme - Blue */}
