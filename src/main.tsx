@@ -1,4 +1,3 @@
-
 // Import our type fixes first
 import './utils/typeFixes';
 
@@ -7,6 +6,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import './styles/themes.css'
+import { ThemeProvider } from './components/ThemeContext'; // Import ThemeProvider
 
 // Add a runtime check to ensure LOB types are accessible
 // This can help TypeScript understand that these values are valid
@@ -16,6 +16,8 @@ if (process.env.NODE_ENV === 'development') {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider> {/* Wrap App with ThemeProvider */}
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 )

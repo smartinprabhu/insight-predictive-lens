@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 // Define the types for theme mode and color theme
 type ThemeMode = "light" | "dark" | "system";
-type ColorTheme = "default" | "blue" | "green" | "purple" | "orange";
+type ColorTheme = "default" | "blue" | "green" | "purple" | "orange" | "teal"; // Added "teal"
 
 // Define the context type
 interface ThemeContextType {
@@ -18,69 +18,76 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 // Theme provider component
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
-  const [colorTheme, setColorTheme] = useState<ColorTheme>("default");
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    return (localStorage.getItem("themeMode") as ThemeMode) || "system";
+  });
+  const [colorTheme, setColorTheme] = useState<ColorTheme>(() => {
+    return (localStorage.getItem("colorTheme") as ColorTheme) || "default";
+  });
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(false);
 
-  // Load theme preferences from localStorage on component mount
-  useEffect(() => {
-    const savedThemeMode = localStorage.getItem("themeMode") as ThemeMode;
-    const savedColorTheme = localStorage.getItem("colorTheme") as ColorTheme;
-
-    if (savedThemeMode) setThemeMode(savedThemeMode);
-    if (savedColorTheme) setColorTheme(savedColorTheme);
-  }, []);
-
   // Apply theme based on mode and color
-  const applyTheme = (mode: ThemeMode, color: ColorTheme) => {
+  const applyTheme = useCallback(() => {
     // Remove all theme classes first
     document.documentElement.classList.remove(
-      "light-default", "light-blue", "light-green", "light-purple", "light-orange",
-      "dark-default", "dark-blue", "dark-green", "dark-purple", "dark-orange"
+      "light-default", "light-blue", "light-green", "light-purple", "light-orange", "light-teal",
+      "dark-default", "dark-blue", "dark-green", "dark-purple", "dark-orange", "dark-teal"
     );
 
-    // Determine if dark mode should be applied
-    let isDark = false;
+    let currentThemeMode = themeMode;
+    let currentIsDark = false;
 
-    if (mode === "system") {
-      isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (currentThemeMode === "system") {
+      currentIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     } else {
-      isDark = mode === "dark";
+      currentIsDark = currentThemeMode === "dark";
     }
 
     // Apply dark/light class
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+    document.documentElement.classList.toggle("dark", currentIsDark);
+    document.documentElement.setAttribute("data-theme", currentIsDark ? "dark" : "light");
 
     // Apply specific theme
-    const themeClass = `${isDark ? "dark" : "light"}-${color}`;
+    const themeClass = `${currentIsDark ? "dark" : "light"}-${colorTheme}`;
     document.documentElement.classList.add(themeClass);
 
     // Save preferences
-    localStorage.setItem("themeMode", mode);
-    localStorage.setItem("colorTheme", color);
+    localStorage.setItem("themeMode", themeMode); // Use state themeMode directly
+    localStorage.setItem("colorTheme", colorTheme); // Use state colorTheme directly
 
     // Update the state
-    setIsDarkTheme(isDark);
-  };
+    setIsDarkTheme(currentIsDark);
+  }, [themeMode, colorTheme]); // Dependencies for useCallback
+
+  // Effect to apply theme when mode or color changes
+  useEffect(() => {
+    applyTheme();
+  }, [applyTheme]); // applyTheme is memoized and includes themeMode, colorTheme
+
+  // Effect to listen for system theme changes
+  useEffect(() => {
+    if (themeMode === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = () => {
+        applyTheme(); // Re-apply theme based on new system preference
+      };
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+  }, [themeMode, applyTheme]); // Dependency on themeMode and applyTheme
 
   // Handle theme mode change
   const handleModeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
-    applyTheme(mode, colorTheme);
+    // applyTheme will be called by the useEffect hook due to themeMode change
   };
 
   // Handle color theme change
   const handleColorThemeChange = (color: ColorTheme) => {
     setColorTheme(color);
-    applyTheme(themeMode, color);
+    // applyTheme will be called by the useEffect hook due to colorTheme change
   };
-
-  // Apply the initial theme
-  useEffect(() => {
-    applyTheme(themeMode, colorTheme);
-  }, []);
-
+  
   return (
     <ThemeContext.Provider value={{ themeMode, colorTheme, isDarkTheme, setThemeMode: handleModeChange, setColorTheme: handleColorThemeChange }}>
       {children}

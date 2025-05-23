@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react"; // Removed useEffect
 import { CheckIcon, Moon, Sun, Monitor } from "lucide-react";
 import {
   Popover,
@@ -11,81 +11,43 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useToast } from "@/components/ui/use-toast";
+import { useTheme } from "./ThemeContext"; // Import useTheme
 
-// Theme types
+// Theme types (can be removed if not used locally, but good for reference)
 type ThemeMode = "light" | "dark" | "system";
 type ColorTheme = "default" | "blue" | "teal" | "green" | "purple" | "orange";
 
 const ThemeSelector = () => {
-  // State for theme mode and color theme
-  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
-  const [colorTheme, setColorTheme] = useState<ColorTheme>("default");
+  // Use theme context
+  const { 
+    themeMode, 
+    colorTheme, 
+    setThemeMode, 
+    setColorTheme 
+    // isDarkTheme can be used if needed for UI logic, but not directly for theme application
+  } = useTheme(); 
+  
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  // Load theme preferences from localStorage on component mount
-  useEffect(() => {
-    const savedThemeMode = localStorage.getItem("themeMode") as ThemeMode;
-    const savedColorTheme = localStorage.getItem("colorTheme") as ColorTheme;
+  // Removed useEffect for loading from localStorage (handled by context)
+  // Removed applyTheme function (handled by context)
 
-    if (savedThemeMode) setThemeMode(savedThemeMode);
-    if (savedColorTheme) setColorTheme(savedColorTheme);
-
-    // Set initial theme based on saved preferences
-    applyTheme(savedThemeMode || "system", savedColorTheme || "default");
-  }, []);
-
-  // Apply theme based on mode and color
-  const applyTheme = (mode: ThemeMode, color: ColorTheme) => {
-    // Remove all theme classes first
-    document.documentElement.classList.remove(
-      "light-default", "light-blue", "light-teal", "light-green", "light-purple", "light-orange",
-      "dark-default", "dark-blue", "dark-teal", "dark-green", "dark-purple", "dark-orange"
-    );
-
-    // Determine if dark mode should be applied
-    let isDark = false;
-
-    if (mode === "system") {
-      isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    } else {
-      isDark = mode === "dark";
-    }
-
-    // Apply dark/light class
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-
-    // Apply specific theme
-    const themeClass = `${isDark ? "dark" : "light"}-${color}`;
-    document.documentElement.classList.add(themeClass);
-
-    // Save preferences
-    localStorage.setItem("themeMode", mode);
-    localStorage.setItem("colorTheme", color);
-
-    // Force refresh of any UI components that might not update automatically
-    document.body.style.backgroundColor = '';
-    setTimeout(() => {
-      document.body.style.backgroundColor = '';
-    }, 10);
-  };
-
-  // Handle theme mode change
+  // Handle theme mode change using context
   const handleModeChange = (value: ThemeMode) => {
-    setThemeMode(value);
-    applyTheme(value, colorTheme);
-    toast({
-      title: "Theme Mode Updated",
-      description: `Theme changed to ${value === "system" ? "system preference" : value} mode`,
-      duration: 2000,
-    });
+    if (value) { // Ensure value is not empty if ToggleGroup allows deselecting
+      setThemeMode(value);
+      toast({
+        title: "Theme Mode Updated",
+        description: `Theme changed to ${value === "system" ? "system preference" : value} mode`,
+        duration: 2000,
+      });
+    }
   };
 
-  // Handle color theme change
+  // Handle color theme change using context
   const handleColorThemeChange = (value: ColorTheme) => {
     setColorTheme(value);
-    applyTheme(themeMode, value);
     toast({
       title: "Color Theme Updated",
       description: `Color theme changed to ${value}`,
@@ -93,7 +55,7 @@ const ThemeSelector = () => {
     });
   };
 
-  // Display name for the current mode
+  // Display name for the current mode (uses themeMode from context)
   const currentModeName =
     themeMode === "light" ? "Light" :
     themeMode === "dark" ? "Dark" : "System";
@@ -117,13 +79,13 @@ const ThemeSelector = () => {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-4 bg-popover text-popover-foreground border-border">
         <div className="space-y-4">
-          {/* Theme Mode Selector - Matching reference image */}
+          {/* Theme Mode Selector */}
           <div>
             <div className="mb-2 font-medium">Appearance</div>
             <div className="w-full overflow-hidden rounded-full bg-muted p-1 flex">
               <ToggleGroup
                 type="single"
-                value={themeMode}
+                value={themeMode} // Uses themeMode from context
                 onValueChange={(value) => value && handleModeChange(value as ThemeMode)}
                 className="flex justify-between rounded-full w-full"
               >
@@ -158,44 +120,49 @@ const ThemeSelector = () => {
             </div>
           </div>
 
-          {/* Color Theme Selector - Grid of color options like reference image */}
+          {/* Color Theme Selector */}
           <div>
             <div className="mb-2 font-medium">Theme Colors</div>
             <RadioGroup
-              value={colorTheme}
+              value={colorTheme} // Uses colorTheme from context
               onValueChange={(value: ColorTheme) => handleColorThemeChange(value)}
               className="grid grid-cols-4 gap-3"
             >
-              {/* First theme - Blue */}
+              {/* Default theme (example, adjust as needed) */}
+              <div className="flex flex-col items-center gap-1">
+                <Label
+                  htmlFor="default-theme"
+                  className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
+                >
+                  <div className="w-full h-full p-1 relative">
+                    <div className={cn("w-full h-full rounded-full overflow-hidden flex flex-wrap")}>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-gray-900" : "bg-gray-50")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-gray-800" : "bg-gray-100")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-gray-200" : "bg-gray-600")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-gray-100" : "bg-gray-200")}></div>
+                    </div>
+                    {colorTheme === "default" && (
+                      <div className="absolute top-1 left-1 bg-primary rounded-full p-1">
+                        <CheckIcon className="h-4 w-4 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </Label>
+                <RadioGroupItem id="default-theme" value="default" className="sr-only" />
+              </div>
+              
+              {/* Blue theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="blue-theme"
                   className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1 relative">
-                    <div className={cn(
-                      "w-full h-full rounded-full overflow-hidden flex flex-wrap"
-                    )}>
-                      {/* Upper left - light color */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-blue-900" : "bg-blue-50"
-                      )}></div>
-                      {/* Upper right - lighter color */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-blue-800" : "bg-blue-100"
-                      )}></div>
-                      {/* Lower left - dark color */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-blue-200" : "bg-blue-600"
-                      )}></div>
-                      {/* Lower right - darker color */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-blue-100" : "bg-blue-200"
-                      )}></div>
+                    <div className={cn("w-full h-full rounded-full overflow-hidden flex flex-wrap")}>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-blue-900" : "bg-blue-50")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-blue-800" : "bg-blue-100")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-blue-200" : "bg-blue-600")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-blue-100" : "bg-blue-200")}></div>
                     </div>
                     {colorTheme === "blue" && (
                       <div className="absolute top-1 left-1 bg-blue-600 rounded-full p-1">
@@ -204,43 +171,21 @@ const ThemeSelector = () => {
                     )}
                   </div>
                 </Label>
-                <RadioGroupItem
-                  id="blue-theme"
-                  value="blue"
-                  className="sr-only"
-                />
+                <RadioGroupItem id="blue-theme" value="blue" className="sr-only" />
               </div>
 
-              {/* Second theme - Teal */}
+              {/* Teal theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="teal-theme"
                   className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
-                    <div className={cn(
-                      "w-full h-full rounded-full overflow-hidden flex flex-wrap"
-                    )}>
-                      {/* Upper left - light teal */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-teal-900" : "bg-teal-50"
-                      )}></div>
-                      {/* Upper right - lighter teal */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-teal-800" : "bg-teal-100"
-                      )}></div>
-                      {/* Lower left - dark teal */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-teal-200" : "bg-teal-600"
-                      )}></div>
-                      {/* Lower right - darker teal */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-teal-100" : "bg-teal-200"
-                      )}></div>
+                    <div className={cn("w-full h-full rounded-full overflow-hidden flex flex-wrap")}>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-teal-900" : "bg-teal-50")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-teal-800" : "bg-teal-100")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-teal-200" : "bg-teal-600")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-teal-100" : "bg-teal-200")}></div>
                     </div>
                     {colorTheme === "teal" && (
                       <div className="absolute top-1 left-1 bg-teal-600 rounded-full p-1">
@@ -249,43 +194,21 @@ const ThemeSelector = () => {
                     )}
                   </div>
                 </Label>
-                <RadioGroupItem
-                  id="teal-theme"
-                  value="teal"
-                  className="sr-only"
-                />
+                <RadioGroupItem id="teal-theme" value="teal" className="sr-only" />
               </div>
 
-              {/* Third theme - Green */}
+              {/* Green theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="green-theme"
                   className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
-                    <div className={cn(
-                      "w-full h-full rounded-full overflow-hidden flex flex-wrap"
-                    )}>
-                      {/* Upper left - light green */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-green-900" : "bg-green-50"
-                      )}></div>
-                      {/* Upper right - lighter green */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-green-800" : "bg-green-100"
-                      )}></div>
-                      {/* Lower left - dark green */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-green-200" : "bg-green-600"
-                      )}></div>
-                      {/* Lower right - darker green */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-green-100" : "bg-green-200"
-                      )}></div>
+                    <div className={cn("w-full h-full rounded-full overflow-hidden flex flex-wrap")}>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-green-900" : "bg-green-50")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-green-800" : "bg-green-100")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-green-200" : "bg-green-600")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-green-100" : "bg-green-200")}></div>
                     </div>
                     {colorTheme === "green" && (
                       <div className="absolute top-1 left-1 bg-green-600 rounded-full p-1">
@@ -294,43 +217,21 @@ const ThemeSelector = () => {
                     )}
                   </div>
                 </Label>
-                <RadioGroupItem
-                  id="green-theme"
-                  value="green"
-                  className="sr-only"
-                />
+                <RadioGroupItem id="green-theme" value="green" className="sr-only" />
               </div>
 
-              {/* Fourth theme - Purple */}
+              {/* Purple theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="purple-theme"
                   className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
-                    <div className={cn(
-                      "w-full h-full rounded-full overflow-hidden flex flex-wrap"
-                    )}>
-                      {/* Upper left - light purple */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-purple-900" : "bg-purple-50"
-                      )}></div>
-                      {/* Upper right - lighter purple */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-purple-800" : "bg-purple-100"
-                      )}></div>
-                      {/* Lower left - dark purple */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-purple-200" : "bg-purple-600"
-                      )}></div>
-                      {/* Lower right - darker purple */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-purple-100" : "bg-purple-200"
-                      )}></div>
+                    <div className={cn("w-full h-full rounded-full overflow-hidden flex flex-wrap")}>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-purple-900" : "bg-purple-50")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-purple-800" : "bg-purple-100")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-purple-200" : "bg-purple-600")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-purple-100" : "bg-purple-200")}></div>
                     </div>
                     {colorTheme === "purple" && (
                       <div className="absolute top-1 left-1 bg-purple-600 rounded-full p-1">
@@ -339,43 +240,21 @@ const ThemeSelector = () => {
                     )}
                   </div>
                 </Label>
-                <RadioGroupItem
-                  id="purple-theme"
-                  value="purple"
-                  className="sr-only"
-                />
+                <RadioGroupItem id="purple-theme" value="purple" className="sr-only" />
               </div>
 
-              {/* Fifth theme - Orange */}
+              {/* Orange theme */}
               <div className="flex flex-col items-center gap-1">
                 <Label
                   htmlFor="orange-theme"
                   className="cursor-pointer relative rounded-lg overflow-hidden w-16 h-16 flex items-center justify-center bg-muted"
                 >
                   <div className="w-full h-full p-1">
-                    <div className={cn(
-                      "w-full h-full rounded-full overflow-hidden flex flex-wrap"
-                    )}>
-                      {/* Upper left - light orange */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-orange-900" : "bg-orange-50"
-                      )}></div>
-                      {/* Upper right - lighter orange */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-orange-800" : "bg-orange-100"
-                      )}></div>
-                      {/* Lower left - dark orange */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-orange-200" : "bg-orange-600"
-                      )}></div>
-                      {/* Lower right - darker orange */}
-                      <div className={cn(
-                        "w-1/2 h-1/2",
-                        themeMode === 'dark' ? "bg-orange-100" : "bg-orange-200"
-                      )}></div>
+                    <div className={cn("w-full h-full rounded-full overflow-hidden flex flex-wrap")}>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-orange-900" : "bg-orange-50")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-orange-800" : "bg-orange-100")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-orange-200" : "bg-orange-600")}></div>
+                      <div className={cn("w-1/2 h-1/2", themeMode === 'dark' ? "bg-orange-100" : "bg-orange-200")}></div>
                     </div>
                     {colorTheme === "orange" && (
                       <div className="absolute top-1 left-1 bg-orange-600 rounded-full p-1">
@@ -384,11 +263,7 @@ const ThemeSelector = () => {
                     )}
                   </div>
                 </Label>
-                <RadioGroupItem
-                  id="orange-theme"
-                  value="orange"
-                  className="sr-only"
-                />
+                <RadioGroupItem id="orange-theme" value="orange" className="sr-only" />
               </div>
             </RadioGroup>
           </div>

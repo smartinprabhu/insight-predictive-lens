@@ -33,7 +33,7 @@ import {
 
 } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { Button } from "@/components/ui2/button";
+import { Button } from "@/components/ui/button";
 
 import {  ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -46,18 +46,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui2/dialog";
-import { Input } from "@/components/ui2/input";
-import { Textarea } from "@/components/ui2/textarea";
-import { Label } from "@/components/ui2/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui2/card";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui2/select";
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -66,19 +66,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui2/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui2/tooltip";
-import { Calendar } from "@/components/ui2/calendar";
+} from "@/components/ui/tooltip";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui2/popover";
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -86,7 +86,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui2/table";
+} from "@/components/ui/table";
 
 import { Loader2, Zap, Download, Building2, Briefcase, ChevronDown, Edit3, ArrowDown, ArrowUp, Minus, Calendar as CalendarIcon, Users, ChevronsUpDown, ArrowLeft, ArrowRight } from "lucide-react";
 
@@ -1428,9 +1428,9 @@ interface MetricRowProps {
 
 const MetricRow: React.FC<MetricRowProps> = React.memo(({ item, metricDef, level, periodHeaders, onTeamMetricChange, onLobMetricChange, editingCell, onSetEditingCell, selectedTimeInterval }) => {
   return (
-    <TableRow className="hover:bg-muted/50">
+    <TableRow className="hover:bg-accent/50"> {/* Consistent hover */}
       <TableCell
-        className="sticky left-0 z-20 bg-card font-normal text-foreground whitespace-nowrap py-2 pr-4 w-[200px]"
+        className="sticky left-0 z-20 bg-card font-normal text-foreground whitespace-nowrap py-2 pr-4" /* Removed w-[200px] */
       >
         <div
           style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
@@ -1593,10 +1593,10 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
       const assumptionsKey = `${item.id}_Assumptions`;
       const areAssumptionsExpanded = expandedItems[assumptionsKey] || false;
       rows.push(
-        <TableRow key={assumptionsKey + "-header"} className="hover:bg-muted/60">
+        <TableRow key={assumptionsKey + "-header"} className="hover:bg-accent/50"> {/* Consistent hover */}
           <TableCell
             className="sticky left-0 z-20 bg-card font-semibold text-foreground whitespace-nowrap py-2 cursor-pointer"
-            style={{ paddingLeft: `${(item.level + 1) * 1.5 + 0.5}rem`, paddingRight: '1rem' }}
+            style={{ paddingLeft: `${(item.level + 1) * 1.5 + 0.5}rem`, paddingRight: '1rem' }} // Added paddingLeft style
             onClick={() => toggleExpand(assumptionsKey)}
           >
             <div className="flex items-center gap-2">
@@ -1614,10 +1614,10 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
       const hcAdjustmentsKey = `${item.id}_HCAdjustments`;
       const areHcAdjustmentsExpanded = expandedItems[hcAdjustmentsKey] || false;
       rows.push(
-        <TableRow key={hcAdjustmentsKey + "-header"} className="hover:bg-muted/60">
+        <TableRow key={hcAdjustmentsKey + "-header"} className="hover:bg-accent/50"> {/* Consistent hover */}
           <TableCell
             className="sticky left-0 z-20 bg-card font-semibold text-foreground whitespace-nowrap py-2 cursor-pointer"
-            style={{ paddingLeft: `${(item.level + 1) * 1.5 + 0.5}rem`, paddingRight: '1rem' }}
+            style={{ paddingLeft: `${(item.level + 1) * 1.5 + 0.5}rem`, paddingRight: '1rem' }} // Added paddingLeft style
             onClick={() => toggleExpand(hcAdjustmentsKey)}
           >
             <div className="flex items-center gap-2">
@@ -1711,8 +1711,8 @@ const renderTableItem = useCallback((item: CapacityDataRow): React.ReactNode[] =
         )}
         style={{
           zIndex: itemZIndex,
-          width: '400px',
-          minWidth: '335px',
+          width: '320px', // Standardized width
+          minWidth: '320px', // Standardized min-width
           paddingLeft: `${Math.min(item.level, 5) * 1.5 + 0.5}rem`,
           paddingRight: '1rem'
         }}
@@ -2265,8 +2265,9 @@ const processDataForTable = useCallback(() => {
     activeHierarchyContext={activeHierarchyContext}
     headerPeriodScrollerRef={headerPeriodScrollerRef}
   />
-  <div className="overflow-x-auto">
-    <main className="flex-grow px-4 pb-4 overflow-auto">
+  {/* The div below used to have overflow-x-auto, which was removed as CapacityTable handles its own horizontal scroll */}
+  <div className="flex-grow overflow-y-auto"> {/* Changed to allow content to grow and scroll vertically */}
+    <main className="px-4 pb-4"> {/* Removed flex-grow and overflow-auto as parent div now handles it */}
       <CapacityTable
         data={displayableCapacityData}
         periodHeaders={displayedPeriodHeaders}
