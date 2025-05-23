@@ -4,76 +4,36 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+// Removed useEffect as it's no longer needed for theme management here
 import Login from "./pages/Login";
 import Index from "./pages/Index";
+import { ThemeProvider } from "@/components/ThemeContext"; // Import ThemeProvider
 import NotFound from "./pages/NotFound";
 import "./styles/themes.css";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Initialize theme based on user preferences
-  useEffect(() => {
-    const themeMode = localStorage.getItem("themeMode") || "system";
-    const colorTheme = localStorage.getItem("colorTheme") || "default";
-    
-    // Determine if dark mode should be applied
-    let isDark = false;
-    if (themeMode === "system") {
-      isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    } else {
-      isDark = themeMode === "dark";
-    }
-    
-    // Remove any existing theme classes
-    document.documentElement.classList.remove(
-      "light-default", "light-blue", "light-green", "light-purple", "light-orange",
-      "dark-default", "dark-blue", "dark-green", "dark-purple", "dark-orange"
-    );
-    
-    // Apply dark/light class
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-    
-    // Apply specific theme
-    const themeClass = `${isDark ? "dark" : "light"}-${colorTheme}`;
-    document.documentElement.classList.add(themeClass);
-    
-    // Listen for system preference changes if in system mode
-    if (themeMode === "system") {
-      const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      const handleChange = (e: MediaQueryListEvent) => {
-        document.documentElement.classList.remove(
-          "light-default", "light-blue", "light-green", "light-purple", "light-orange",
-          "dark-default", "dark-blue", "dark-green", "dark-purple", "dark-orange"
-        );
-        document.documentElement.classList.toggle("dark", e.matches);
-        document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
-        const newThemeClass = `${e.matches ? "dark" : "light"}-${colorTheme}`;
-        document.documentElement.classList.add(newThemeClass);
-      };
-      
-      darkModeMediaQuery.addEventListener("change", handleChange);
-      return () => darkModeMediaQuery.removeEventListener("change", handleChange);
-    }
-  }, []);
+  // The useEffect hook for manual theme management has been removed.
+  // ThemeProvider will now handle theme initialization and updates.
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/dashboard" element={<Index />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 

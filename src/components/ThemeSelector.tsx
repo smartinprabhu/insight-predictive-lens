@@ -34,8 +34,8 @@ const ThemeSelector = () => {
 
   // Handle color theme change
   const handleColorThemeChange = (value: ColorTheme) => {
-    setColorTheme(value);
-    applyTheme(themeMode, value);
+    setColorTheme(value); // setColorTheme from context will trigger useEffect in ThemeContext to apply theme
+    // applyTheme(themeMode, value); // This line should be removed as ThemeContext now handles applying the theme
     toast({
       title: "Color Theme Updated",
       description: `Color theme changed to ${value}`,
