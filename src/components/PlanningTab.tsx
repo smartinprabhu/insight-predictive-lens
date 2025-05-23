@@ -93,7 +93,7 @@ import { Loader2, Zap, Download, Building2, Briefcase, ChevronDown, Edit3, Arrow
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { suggestLoBGroupings, SuggestLoBGroupingsOutput } from "@/ai/flows/suggest-lob-groupings";
-import ThemeSelector from "./ThemeSelector";
+import ThemeSelector from "./ThemeSelector"; // Ensure this import is present
 
 import {
 
@@ -1430,7 +1430,7 @@ const MetricRow: React.FC<MetricRowProps> = React.memo(({ item, metricDef, level
   return (
     <TableRow className="hover:bg-accent/50"> {/* Consistent hover */}
       <TableCell
-        className="sticky left-0 z-20 bg-card font-normal text-foreground whitespace-nowrap py-2 pr-4" /* Removed w-[200px] */
+        className="sticky left-0 z-20 bg-card font-normal text-foreground whitespace-nowrap py-2 pr-4 border-r border-border/60" // Added right border
       >
         <div
           style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
@@ -1593,10 +1593,10 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
       const assumptionsKey = `${item.id}_Assumptions`;
       const areAssumptionsExpanded = expandedItems[assumptionsKey] || false;
       rows.push(
-        <TableRow key={assumptionsKey + "-header"} className="hover:bg-accent/50"> {/* Consistent hover */}
+        <TableRow key={assumptionsKey + "-header"} className="hover:bg-accent/50 border-t border-border/60"> {/* Added top border */}
           <TableCell
-            className="sticky left-0 z-20 bg-card font-semibold text-foreground whitespace-nowrap py-2 cursor-pointer"
-            style={{ paddingLeft: `${(item.level + 1) * 1.5 + 0.5}rem`, paddingRight: '1rem' }} // Added paddingLeft style
+            className="sticky left-0 z-20 bg-card font-semibold text-foreground whitespace-nowrap py-2 cursor-pointer border-r border-border/60"
+            style={{ paddingLeft: `${(item.level + 1) * 1.5 + 0.5}rem`, paddingRight: '1rem' }}
             onClick={() => toggleExpand(assumptionsKey)}
           >
             <div className="flex items-center gap-2">
@@ -1614,10 +1614,10 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
       const hcAdjustmentsKey = `${item.id}_HCAdjustments`;
       const areHcAdjustmentsExpanded = expandedItems[hcAdjustmentsKey] || false;
       rows.push(
-        <TableRow key={hcAdjustmentsKey + "-header"} className="hover:bg-accent/50"> {/* Consistent hover */}
+        <TableRow key={hcAdjustmentsKey + "-header"} className="hover:bg-accent/50 border-t border-border/60"> {/* Added top border */}
           <TableCell
-            className="sticky left-0 z-20 bg-card font-semibold text-foreground whitespace-nowrap py-2 cursor-pointer"
-            style={{ paddingLeft: `${(item.level + 1) * 1.5 + 0.5}rem`, paddingRight: '1rem' }} // Added paddingLeft style
+            className="sticky left-0 z-20 bg-card font-semibold text-foreground whitespace-nowrap py-2 cursor-pointer border-r border-border/60"
+            style={{ paddingLeft: `${(item.level + 1) * 1.5 + 0.5}rem`, paddingRight: '1rem' }}
             onClick={() => toggleExpand(hcAdjustmentsKey)}
           >
             <div className="flex items-center gap-2">
@@ -1706,7 +1706,7 @@ const renderTableItem = useCallback((item: CapacityDataRow): React.ReactNode[] =
     >
       <TableCell
         className={cn(
-          "p-0 sticky left-0 whitespace-nowrap",
+          "p-0 sticky left-0 whitespace-nowrap border-r border-border/60", // Added right border
           rowSpecificBgClass || 'bg-card'
         )}
         style={{
@@ -2248,6 +2248,14 @@ const processDataForTable = useCallback(() => {
   }, []);
 
  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Placeholder refresh handler for PlanningTab
+  const handleRefresh = () => {
+    console.log("Refresh clicked in PlanningTab");
+    // Potentially, this could trigger a toast or a more specific data refresh action for the planning tab
+    // For now, a console log is sufficient as a placeholder.
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
   <HeaderSection
@@ -2264,6 +2272,8 @@ const processDataForTable = useCallback(() => {
     displayedPeriodHeaders={displayedPeriodHeaders}
     activeHierarchyContext={activeHierarchyContext}
     headerPeriodScrollerRef={headerPeriodScrollerRef}
+    onRefresh={handleRefresh} // Pass the refresh handler
+    themeSelector={<ThemeSelector />} // Pass the ThemeSelector component
   />
   {/* The div below used to have overflow-x-auto, which was removed as CapacityTable handles its own horizontal scroll */}
   <div className="flex-grow overflow-y-auto"> {/* Changed to allow content to grow and scroll vertically */}

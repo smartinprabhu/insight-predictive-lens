@@ -261,46 +261,18 @@ button, a, input, select, textarea {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-/* Override shadcn UI components with theme variables */
-.dark [data-theme="dark"] {
-  --background: var(--background);
-  --foreground: var(--foreground);
-  --card: var(--card);
-  --card-foreground: var(--card-foreground);
-  --popover: var(--popover);
-  --popover-foreground: var(--popover-foreground);
-  --primary: var(--primary);
-  --primary-foreground: white;
-  --secondary: var(--secondary);
-  --secondary-foreground: white;
-  --muted: var(--muted);
-  --muted-foreground: var(--muted-foreground);
-  --accent: var(--accent);
-  --accent-foreground: var(--accent-foreground);
-  --destructive: var(--destructive);
-  --destructive-foreground: var(--destructive-foreground);
-  --border: var(--border);
-}
-
-[data-theme="light"] {
-  --background: var(--background);
-  --foreground: var(--foreground);
-  --card: var(--card);
-  --card-foreground: var(--card-foreground);
-  --popover: var(--popover);
-  --popover-foreground: var(--popover-foreground);
-  --primary: var(--primary);
-  --primary-foreground: white;
-  --secondary: var(--secondary);
-  --secondary-foreground: white;
-  --muted: var(--muted);
-  --muted-foreground: var(--muted-foreground);
-  --accent: var(--accent);
-  --accent-foreground: var(--accent-foreground);
-  --destructive: var(--destructive);
-  --destructive-foreground: var(--destructive-foreground);
-  --border: var(--border);
-}
+/*
+  The .dark [data-theme="dark"] and [data-theme="light"] blocks were removed.
+  These were causing issues by re-declaring variables like --background: var(--background);
+  which could interfere with the specific theme classes (e.g., .light-blue)
+  applied to document.documentElement by ThemeContext.tsx.
+  The theme-specific classes (e.g., .light-default, .dark-orange) are now the
+  definitive source for CSS variable values.
+  ShadCN components and other elements will consume these variables correctly
+  without the need for these intermediate [data-theme] blocks, as Tailwind's :root
+  variable definitions (from globals.css or tailwind.config.js if using the plugin)
+  are what ShadCN components use, and those are derived from these theme classes.
+*/
 
 /* Headers styling */
 h1, h2, h3, h4, h5, h6 {

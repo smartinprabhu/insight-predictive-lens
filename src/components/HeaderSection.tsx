@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { CalendarIcon, ChevronDown, Building2, Briefcase, Download, Zap } from "lucide-react";
+import { CalendarIcon, ChevronDown, Building2, Briefcase, Download, Zap, RefreshCw } from "lucide-react"; // Added RefreshCw
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AiGroupingDialog from "./AiGroupingDialog";
 import DateRangePicker from "./DateRangePicker";
@@ -35,6 +35,8 @@ interface HeaderSectionProps {
   displayedPeriodHeaders: string[];
   activeHierarchyContext: string;
   headerPeriodScrollerRef: React.RefObject<HTMLDivElement>;
+  onRefresh?: () => void; // New optional prop
+  themeSelector?: React.ReactNode; // New optional prop
 }
 
 export default function HeaderSection({
@@ -51,6 +53,8 @@ export default function HeaderSection({
   displayedPeriodHeaders,
   activeHierarchyContext,
   headerPeriodScrollerRef,
+  onRefresh,
+  themeSelector,
 }: HeaderSectionProps) {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
@@ -77,19 +81,30 @@ export default function HeaderSection({
     <TooltipProvider>
       <header className="sticky top-0 z-50 bg-background p-4 border-b border-border">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground">Capacity Insights</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground">Walmart Fulfillment Service | Capacity Insights</h1>
           <div className="flex flex-wrap items-center gap-2">
+            {onRefresh && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={onRefresh}>
+                    <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>Refresh data</p></TooltipContent>
+              </Tooltip>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Download className="mr-2" /> Export
+                  <Download className="mr-2 h-4 w-4" /> Export
                 </Button>
               </TooltipTrigger>
               <TooltipContent><p>Export current view as CSV (not implemented)</p></TooltipContent>
             </Tooltip>
             <Button variant="default" size="sm" onClick={() => setIsAiDialogOpen(true)}>
-              <Zap className="mr-2" /> Assumptions Assister
+              <Zap className="mr-2 h-4 w-4" /> Assumptions Assister
             </Button>
+            {themeSelector && <div className="ml-2">{themeSelector}</div>}
           </div>
         </div>
 
