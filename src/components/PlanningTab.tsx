@@ -1535,6 +1535,32 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
 }) => {
   const itemNameRowRefs = useRef<Map<string, HTMLTableRowElement | null>>(new Map());
 
+  // Define renderTeamMetrics here
+  const renderTeamMetrics = useCallback((
+    item: CapacityDataRow, 
+    category: MetricDefinition['category'], 
+    baseLevel: number
+  ): React.ReactNode[] => {
+    return TEAM_METRIC_ROW_DEFINITIONS
+      .filter(def => def.category === category)
+      .map(metricDef => ( // Removed index and arr as they are not used for now
+        <MetricRow
+          key={`${item.id}-${metricDef.key}-${category}`} // Ensure unique key
+          item={item}
+          metricDef={metricDef}
+          level={baseLevel} // This should be the level for the metric row itself
+          periodHeaders={periodHeaders}
+          onTeamMetricChange={onTeamMetricChange}
+          onLobMetricChange={onLobMetricChange}
+          editingCell={editingCell}
+          onSetEditingCell={onSetEditingCell}
+          selectedTimeInterval={selectedTimeInterval}
+          // Props for subCategory styling are NOT passed here as MetricRow does not yet accept them
+          // based on the last successful file read.
+        />
+      ));
+  }, [periodHeaders, onTeamMetricChange, onLobMetricChange, editingCell, onSetEditingCell, selectedTimeInterval]);
+
   useEffect(() => {
     const observerCallback: IntersectionObserverCallback = (entries) => {
       const visibleEntries = entries.filter(entry => entry.isIntersecting);
@@ -1598,16 +1624,18 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
 
     if (item.itemType === 'Team') {
       // PrimaryHC Metrics for Team
-      TEAM_METRIC_ROW_DEFINITIONS
-        .filter(def => def.category === 'PrimaryHC')
-        .forEach(metricDef => rows.push(
-          <MetricRow
-            key={`${item.id}-${metricDef.key}-primary`}
-            item={item} metricDef={metricDef} level={item.level + 1} periodHeaders={periodHeaders}
-            onTeamMetricChange={onTeamMetricChange} onLobMetricChange={onLobMetricChange}
-            editingCell={editingCell} onSetEditingCell={onSetEditingCell} selectedTimeInterval={selectedTimeInterval}
-          />
-        ));
+      // TEAM_METRIC_ROW_DEFINITIONS
+      //   .filter(def => def.category === 'PrimaryHC')
+      //   .forEach(metricDef => rows.push(
+      //     <MetricRow
+      //       key={`${item.id}-${metricDef.key}-primary`}
+      //       item={item} metricDef={metricDef} level={item.level + 1} periodHeaders={periodHeaders}
+      //       onTeamMetricChange={onTeamMetricChange} onLobMetricChange={onLobMetricChange}
+      //       editingCell={editingCell} onSetEditingCell={onSetEditingCell} selectedTimeInterval={selectedTimeInterval}
+      //     />
+      //   ));
+      // Temporarily comment out: rows.push(...renderTeamMetrics(item, 'PrimaryHC', item.level + 1));
+
 
       const assumptionsKey = `${item.id}_Assumptions`;
       rows.push(
@@ -1626,20 +1654,21 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
         </TableRow>
       );
       if (isAssumptionsExpanded) {
-        const assumptionMetricDefs = TEAM_METRIC_ROW_DEFINITIONS.filter(def => def.category === 'Assumption');
-        assumptionMetricDefs.forEach((metricDef, index) => {
-          rows.push(
-            <MetricRow
-              key={`${item.id}-${metricDef.key}-assumption`}
-              item={item} metricDef={metricDef} level={item.level + 2} periodHeaders={periodHeaders}
-              onTeamMetricChange={onTeamMetricChange} onLobMetricChange={onLobMetricChange}
-              editingCell={editingCell} onSetEditingCell={onSetEditingCell} selectedTimeInterval={selectedTimeInterval}
-              rowVariant="subCategory"
-              isFirstInSubGroup={index === 0}
-              isLastInSubGroup={index === assumptionMetricDefs.length - 1}
-            />
-          );
-        });
+        // const assumptionMetricDefs = TEAM_METRIC_ROW_DEFINITIONS.filter(def => def.category === 'Assumption');
+        // assumptionMetricDefs.forEach((metricDef, index) => {
+        //   rows.push(
+        //     <MetricRow
+        //       key={`${item.id}-${metricDef.key}-assumption`}
+        //       item={item} metricDef={metricDef} level={item.level + 2} periodHeaders={periodHeaders}
+        //       onTeamMetricChange={onTeamMetricChange} onLobMetricChange={onLobMetricChange}
+        //       editingCell={editingCell} onSetEditingCell={onSetEditingCell} selectedTimeInterval={selectedTimeInterval}
+        //       rowVariant="subCategory"
+        //       isFirstInSubGroup={index === 0}
+        //       isLastInSubGroup={index === assumptionMetricDefs.length - 1}
+        //     />
+        //   );
+        // });
+        // Temporarily comment out: rows.push(...renderTeamMetrics(item, 'Assumption', item.level + 2));
       }
 
       const hcAdjustmentsKey = `${item.id}_HCAdjustments`;
@@ -1659,20 +1688,21 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
         </TableRow>
       );
       if (isHcAdjustmentsExpanded) {
-        const adjustmentMetricDefs = TEAM_METRIC_ROW_DEFINITIONS.filter(def => def.category === 'HCAdjustment');
-        adjustmentMetricDefs.forEach((metricDef, index) => {
-          rows.push(
-            <MetricRow
-              key={`${item.id}-${metricDef.key}-adjustment`}
-              item={item} metricDef={metricDef} level={item.level + 2} periodHeaders={periodHeaders}
-              onTeamMetricChange={onTeamMetricChange} onLobMetricChange={onLobMetricChange}
-              editingCell={editingCell} onSetEditingCell={onSetEditingCell} selectedTimeInterval={selectedTimeInterval}
-              rowVariant="subCategory"
-              isFirstInSubGroup={index === 0}
-              isLastInSubGroup={index === adjustmentMetricDefs.length - 1}
-            />
-          );
-        });
+        // const adjustmentMetricDefs = TEAM_METRIC_ROW_DEFINITIONS.filter(def => def.category === 'HCAdjustment');
+        // adjustmentMetricDefs.forEach((metricDef, index) => {
+        //   rows.push(
+        //     <MetricRow
+        //       key={`${item.id}-${metricDef.key}-adjustment`}
+        //       item={item} metricDef={metricDef} level={item.level + 2} periodHeaders={periodHeaders}
+        //       onTeamMetricChange={onTeamMetricChange} onLobMetricChange={onLobMetricChange}
+        //       editingCell={editingCell} onSetEditingCell={onSetEditingCell} selectedTimeInterval={selectedTimeInterval}
+        //       rowVariant="subCategory"
+        //       isFirstInSubGroup={index === 0}
+        //       isLastInSubGroup={index === adjustmentMetricDefs.length - 1}
+        //     />
+        //   );
+        // });
+        // Temporarily comment out: rows.push(...renderTeamMetrics(item, 'HCAdjustment', item.level + 2));
       }
 
     } else { // BU or LOB
@@ -1700,7 +1730,8 @@ const CapacityTableComponent: React.FC<CapacityTableProps> = ({
       });
     }
     return rows;
-  }, [periodHeaders, expandedItems, toggleExpand, onTeamMetricChange, onLobMetricChange, editingCell, onSetEditingCell, selectedTimeInterval, renderTeamMetrics]);
+  }, [periodHeaders, expandedItems, toggleExpand, onTeamMetricChange, onLobMetricChange, editingCell, onSetEditingCell, selectedTimeInterval]); // Removed renderTeamMetrics
+
 const renderTableItem = useCallback((item: CapacityDataRow): React.ReactNode[] => {
   const rows: React.ReactNode[] = [];
   const isExpanded = expandedItems[item.id] || false;
