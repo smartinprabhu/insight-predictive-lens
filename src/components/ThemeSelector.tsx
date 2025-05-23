@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { CheckIcon, Moon, Sun, Monitor } from "lucide-react";
 import {
   Popover,
@@ -11,70 +11,16 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useToast } from "@/components/ui/use-toast";
-
-// Theme types
-type ThemeMode = "light" | "dark" | "system";
-type ColorTheme = "default" | "blue" | "teal" | "green" | "purple" | "orange";
+import { useTheme, ThemeMode, ColorTheme } from "../components/ThemeContext"; // Corrected import path
 
 const ThemeSelector = () => {
-  // State for theme mode and color theme
-  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
-  const [colorTheme, setColorTheme] = useState<ColorTheme>("default");
+  const { themeMode, colorTheme, setThemeMode, setColorTheme } = useTheme(); // Use context
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  // Load theme preferences from localStorage on component mount
-  useEffect(() => {
-    const savedThemeMode = localStorage.getItem("themeMode") as ThemeMode;
-    const savedColorTheme = localStorage.getItem("colorTheme") as ColorTheme;
-
-    if (savedThemeMode) setThemeMode(savedThemeMode);
-    if (savedColorTheme) setColorTheme(savedColorTheme);
-
-    // Set initial theme based on saved preferences
-    applyTheme(savedThemeMode || "system", savedColorTheme || "default");
-  }, []);
-
-  // Apply theme based on mode and color
-  const applyTheme = (mode: ThemeMode, color: ColorTheme) => {
-    // Remove all theme classes first
-    document.documentElement.classList.remove(
-      "light-default", "light-blue", "light-teal", "light-green", "light-purple", "light-orange",
-      "dark-default", "dark-blue", "dark-teal", "dark-green", "dark-purple", "dark-orange"
-    );
-
-    // Determine if dark mode should be applied
-    let isDark = false;
-
-    if (mode === "system") {
-      isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    } else {
-      isDark = mode === "dark";
-    }
-
-    // Apply dark/light class
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-
-    // Apply specific theme
-    const themeClass = `${isDark ? "dark" : "light"}-${color}`;
-    document.documentElement.classList.add(themeClass);
-
-    // Save preferences
-    localStorage.setItem("themeMode", mode);
-    localStorage.setItem("colorTheme", color);
-
-    // Force refresh of any UI components that might not update automatically
-    document.body.style.backgroundColor = '';
-    setTimeout(() => {
-      document.body.style.backgroundColor = '';
-    }, 10);
-  };
-
   // Handle theme mode change
   const handleModeChange = (value: ThemeMode) => {
-    setThemeMode(value);
-    applyTheme(value, colorTheme);
+    setThemeMode(value); // Use context function
     toast({
       title: "Theme Mode Updated",
       description: `Theme changed to ${value === "system" ? "system preference" : value} mode`,
@@ -84,8 +30,7 @@ const ThemeSelector = () => {
 
   // Handle color theme change
   const handleColorThemeChange = (value: ColorTheme) => {
-    setColorTheme(value);
-    applyTheme(themeMode, value);
+    setColorTheme(value); // Use context function
     toast({
       title: "Color Theme Updated",
       description: `Color theme changed to ${value}`,
@@ -163,7 +108,7 @@ const ThemeSelector = () => {
             <div className="mb-2 font-medium">Theme Colors</div>
             <RadioGroup
               value={colorTheme}
-              onValueChange={(value: ColorTheme) => handleColorThemeChange(value)}
+              onValueChange={(value) => handleColorThemeChange(value as ColorTheme)}
               className="grid grid-cols-4 gap-3"
             >
               {/* First theme - Blue */}

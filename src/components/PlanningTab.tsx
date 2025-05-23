@@ -955,7 +955,7 @@ function HeaderSection({
     <TooltipProvider>
       <header className="sticky top-0 z-50 bg-background p-4 border-b border-border rounded-tl-lg rounded-tr-lg">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-          <h1 className="text-2xl font-semibold text-foreground">Capacity Insights</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Walmart Fulfillment Service | | Capacity Insights</h1>
           <div className="flex flex-wrap items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
