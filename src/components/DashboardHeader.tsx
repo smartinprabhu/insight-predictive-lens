@@ -1,7 +1,5 @@
-
 import { RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 
 interface DashboardHeaderProps {
   title: string;
@@ -12,14 +10,17 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader = ({
-  title = "Walmart Fulfillment Services ",
+  title = "Walmart Fulfillment Services",
   lastUpdated,
   forecastPeriod,
   onRefresh
 }: DashboardHeaderProps) => {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-border/30 dark:border-border/50">
-      <div>
+    <div 
+      className="sticky top-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-border/30 dark:border-border/50 bg-background z-10 overflow-y-auto w-full mx-auto"
+      style={{ maxWidth: '1200px' }} // Adjust the value as needed
+    >
+      <div className="flex-grow">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
           {title}
         </h1>
@@ -38,7 +39,6 @@ export const DashboardHeader = ({
             <RefreshCcw className="h-4 w-4" />
           </Button>
         )}
-
       </div>
     </div>
   );
