@@ -12,7 +12,7 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader = ({
-  title = "", // Changed default title to empty string
+  title = "Walmart Fulfillment Services ",
   lastUpdated,
   forecastPeriod,
   onRefresh
@@ -20,11 +20,9 @@ export const DashboardHeader = ({
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-border/30 dark:border-border/50">
       <div>
-        {title && ( // Conditionally render title only if provided
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-            {title}
-          </h1>
-        )}
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          {title}
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Last updated: {lastUpdated} • {forecastPeriod}
         </p>
