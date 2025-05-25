@@ -14,7 +14,7 @@ import {
   Settings,
   Menu, // Replaced MoreVertical with Menu
 } from "lucide-react";
-// import { ThemeToggle } from "./ThemeToggle"; // ThemeToggle not used in this component
+import ThemeSelector from "./ThemeSelector"; // Import ThemeSelector
 import {
   Sidebar,
   SidebarContent,
@@ -44,11 +44,11 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
 
   return (
     <Sidebar 
-      className={`bg-sidebar-background text-sidebar-foreground transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}
+      className={`bg-sidebar-background text-sidebar-foreground transition-all duration-200 ease-in-out ${isSidebarCollapsed ? 'w-20' : 'w-64'}`} // Duration changed to 200ms
     >
       <SidebarContent>
         {/* Header: Toggle button and Logo */}
-        <div className={`flex items-center py-4 border-b border-gray-200 dark:border-gray-700 ${isSidebarCollapsed ? 'px-2 justify-start' : 'px-2 justify-start'}`}> 
+        <div className={`flex items-center py-4 border-b border-sidebar-border ${isSidebarCollapsed ? 'px-2 justify-start' : 'px-2 justify-start'}`}> {/* Modified border color */}
           {/* Keep justify-start for collapsed to align hamburger to left, px-2 for padding */}
           <button
             onClick={toggleSidebar}
@@ -61,7 +61,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
             <img
               src="/image.svg"
               alt="Logo"
-              className="w-16 h-auto ml-2 transition-all duration-300" // Using w-16, h-auto for proportion
+              className="w-16 h-auto ml-2 transition-all duration-200" // Duration changed to 200ms
             />
           )}
            {/* Small logo when collapsed - removed to match Gmail's leaner collapsed look */}
@@ -91,23 +91,29 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
               <SidebarMenuItem>
                 <SidebarMenuButtonOriginal
                   onClick={() => setIsWalmartWFSOpen(!isWalmartWFSOpen)}
-                  className={`flex items-center gap-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  className={`flex items-center rounded-lg transition-colors duration-200 ease-in-out
+                    ${isSidebarCollapsed 
+                      ? 'justify-center h-10 w-14 mx-auto hover:bg-accent hover:text-accent-foreground' 
+                      : 'gap-2 py-2 hover:bg-accent hover:text-accent-foreground' // Modified hover for expanded state
+                    }
+                  `}
                   tooltip={isSidebarCollapsed ? "Walmart Fulfillment services" : undefined}
                 >
                   {isWalmartWFSOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                  {!isSidebarCollapsed && <span className="text-sm font-medium">Walmart Fulfillment services</span>}
+                  <span className={`text-sm font-medium transition-[opacity,max-width] duration-200 ease-in-out overflow-hidden ${isSidebarCollapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-xs'}`}>Walmart Fulfillment services</span>
                 </SidebarMenuButtonOriginal>
                 {isWalmartWFSOpen && (
-                  <SidebarMenuSub className={`${isSidebarCollapsed ? 'pl-0' : 'pl-0'}`}> {/* Adjusted padding for collapse */}
+                  <SidebarMenuSub className={`${isSidebarCollapsed ? 'space-y-1 mt-1' : 'pl-7'}`}> {/* Keep pl-7 for expanded, space-y for collapsed */}
                     {tabs.map((tab) => (
                       <SidebarMenuSubItem key={tab.id}>
                         <SidebarMenuSubButton
                           onClick={() => setActiveTab(tab.id)}
-                          className={`flex items-center gap-2 py-2 rounded-lg transition-colors duration-200 ${isSidebarCollapsed ? 'justify-center' : ''} ${
-                            activeTab === tab.id
-                              ? 'bg-primary text-primary-foreground font-bold'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
+                          className={`flex items-center rounded-lg transition-colors duration-200 ease-in-out
+                            ${isSidebarCollapsed 
+                              ? `justify-center h-10 w-14 mx-auto ${activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`
+                              : `gap-2 py-2 ${activeTab === tab.id ? 'bg-primary text-primary-foreground font-bold' : 'hover:bg-accent hover:text-accent-foreground'}`
+                            }
+                          `}
                           tooltip={isSidebarCollapsed ? tab.name.replace("Dashboards", "Pages").replace("Metrics", "Page") : undefined}
                         >
                           {tab.id === "businessPerformance" && <ChartNoAxesGantt className="sidebar-menu-icon" />}
@@ -117,7 +123,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
                           {tab.id === "insights" && <Lightbulb className="sidebar-menu-icon" />}
                           {tab.id === "planning" && <NotebookPen className="sidebar-menu-icon" />}
                           {tab.id === "uploadData" && <CloudUpload className="sidebar-menu-icon" />}
-                          {!isSidebarCollapsed && <span className="text-sm font-medium">{tab.name.replace("Dashboards", "Pages").replace("Metrics", "Page")}</span>}
+                          <span className={`text-sm font-medium transition-[opacity,max-width] duration-200 ease-in-out overflow-hidden ${isSidebarCollapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-xs'}`}>{tab.name.replace("Dashboards", "Pages").replace("Metrics", "Page")}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
@@ -133,30 +139,60 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
           <SidebarMenuItem>
             <SidebarMenuButtonOriginal
               tooltip="Help"
-              className={`flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center rounded-lg transition-colors duration-200 ease-in-out
+                ${isSidebarCollapsed 
+                  ? 'justify-center h-10 w-14 mx-auto hover:bg-accent hover:text-accent-foreground' 
+                  : 'gap-2 py-2 hover:bg-accent hover:text-accent-foreground'
+                }
+              `}
             >
               <HelpCircle className="h-5 w-5" />
-              {!isSidebarCollapsed && <span className="text-sm font-medium">Help</span>}
+              <span className={`text-sm font-medium transition-[opacity,max-width] duration-200 ease-in-out overflow-hidden ${isSidebarCollapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-xs'}`}>Help</span>
             </SidebarMenuButtonOriginal>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButtonOriginal
               tooltip="Company Setting"
-              className={`flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center rounded-lg transition-colors duration-200 ease-in-out
+                ${isSidebarCollapsed 
+                  ? 'justify-center h-10 w-14 mx-auto hover:bg-accent hover:text-accent-foreground' 
+                  : 'gap-2 py-2 hover:bg-accent hover:text-accent-foreground'
+                }
+              `}
             >
               <Settings className="h-5 w-5" />
-              {!isSidebarCollapsed && <span className="text-sm font-medium">Company Setting</span>}
+              <span className={`text-sm font-medium transition-[opacity,max-width] duration-200 ease-in-out overflow-hidden ${isSidebarCollapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-xs'}`}>Company Setting</span>
             </SidebarMenuButtonOriginal>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButtonOriginal
               tooltip="Logout"
               onClick={handleLogout}
-              className={`flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center rounded-lg transition-colors duration-200 ease-in-out
+                ${isSidebarCollapsed 
+                  ? 'justify-center h-10 w-14 mx-auto hover:bg-accent hover:text-accent-foreground' 
+                  : 'gap-2 py-2 hover:bg-accent hover:text-accent-foreground'
+                }
+              `}
             >
               <LogOut className="h-5 w-5" />
-              {!isSidebarCollapsed && <span className="text-sm font-medium">Logout</span>}
+              <span className={`text-sm font-medium transition-[opacity,max-width] duration-200 ease-in-out overflow-hidden ${isSidebarCollapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-xs'}`}>Logout</span>
             </SidebarMenuButtonOriginal>
+          </SidebarMenuItem>
+          {/* Theme Selector Integration */}
+          <SidebarMenuItem 
+            className={`${isSidebarCollapsed ? 'flex justify-center w-full' : ''}`} // Center the content of LI when collapsed
+          >
+            <div className={`flex items-center transition-colors duration-200 ease-in-out rounded-lg
+                ${isSidebarCollapsed 
+                  ? 'justify-center h-10 w-14 mx-auto hover:bg-accent group' 
+                  : 'justify-between w-full px-2 py-2' // Expanded state specific classes
+                }
+              `}
+            >
+              <span className={`text-sm font-medium transition-[opacity,max-width] duration-200 ease-in-out overflow-hidden ${isSidebarCollapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-xs'}`}>Theme</span>
+              <ThemeSelector />
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

@@ -1,7 +1,6 @@
 
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, RefreshCw } from "lucide-react"; // Added RefreshCw
 import { Button } from "@/components/ui/button";
-
 
 interface DashboardHeaderProps {
   title: string;
@@ -29,17 +28,32 @@ export const DashboardHeader = ({
         </p>
       </div>
       <div className="flex items-center gap-2">
-        {onRefresh && (
+        {/* This is the existing refresh button, using RefreshCcw */}
+        {onRefresh && ( 
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={onRefresh}
+            onClick={onRefresh} // Assumes this onRefresh is for the DashboardHeader's specific data
             className="bg-background text-foreground border-border"
+            aria-label="Refresh header data"
           >
             <RefreshCcw className="h-4 w-4" />
           </Button>
         )}
-
+        {/* Added page-level refresh button, using RefreshCw */}
+        {/* Assuming the same onRefresh handler from Dashboard.tsx is passed for this specific button */}
+        {/* If a different handler is needed, a new prop like onPageRefresh would be better. */}
+        {onRefresh && ( 
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={onRefresh} // Re-using onRefresh prop for the page-level refresh action
+            className="bg-background text-foreground border-border"
+            aria-label="Refresh page content"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
