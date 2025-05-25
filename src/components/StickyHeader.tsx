@@ -1,10 +1,10 @@
 
+import React from "react";
 import { RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import EnhancedThemeSelector from "./EnhancedThemeSelector";
 import { cn } from "@/lib/utils";
 
-interface DashboardHeaderProps {
+interface StickyHeaderProps {
   title: string;
   onLogout?: () => void;
   lastUpdated: string;
@@ -13,13 +13,13 @@ interface DashboardHeaderProps {
   className?: string;
 }
 
-export const DashboardHeader = ({
+export const StickyHeader: React.FC<StickyHeaderProps> = ({
   title = "Walmart Fulfillment Services",
   lastUpdated,
   forecastPeriod,
   onRefresh,
   className
-}: DashboardHeaderProps) => {
+}) => {
   return (
     <div className={cn(
       "sticky top-0 z-40 w-full backdrop-blur-md bg-background/80 border-b border-border/50",
@@ -48,7 +48,6 @@ export const DashboardHeader = ({
           </div>
           
           <div className="flex items-center gap-3">
-            <EnhancedThemeSelector />
             {onRefresh && (
               <Button 
                 variant="outline" 
@@ -71,4 +70,4 @@ export const DashboardHeader = ({
   );
 };
 
-export default DashboardHeader;
+export default StickyHeader;
