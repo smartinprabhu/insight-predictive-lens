@@ -13,13 +13,15 @@ import {
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuItem
 } from "@/components/ui/dropdown-menu";
 import { CalendarIcon, ChevronDown, Building2, Briefcase, Download, Zap } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AiGroupingDialog from "./AiGroupingDialog";
 import DateRangePicker from "./DateRangePicker";
-import { BusinessUnitName, TimeInterval, DateRange } from "./types";
+import { BusinessUnitName, TimeInterval } from "./types";
+import { DateRange } from "../types/shared";
 
 interface HeaderSectionProps {
   filterOptions: { businessUnits: BusinessUnitName[]; linesOfBusiness: string[] };

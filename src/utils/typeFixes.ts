@@ -6,10 +6,6 @@ declare global {
   interface Window {
     LOBTypes: string[];
   }
-  
-  // Make DateRange globally available
-  type DateRange = import('../types/shared').DateRange;
-  type LOBType = import('../types/shared').LOBType;
 }
 
 // Initialize LOB types on window

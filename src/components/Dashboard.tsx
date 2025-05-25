@@ -497,14 +497,14 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
             <div className="text-center text-gray-500 py-10">No insights data available</div>
           )
         );
-      // case "planning":
-      //   return <PlanningTab />;
-      // default:
-      //   return apiResponse ? (
-      //     <ActualDataTab data={apiResponse} aggregationType={aggregationType} />
-      //   ) : (
-      //     <div>No data available</div>
-      //   );
+      case "planning":
+        return <PlanningTab />;
+      default:
+        return apiResponse ? (
+          <ActualDataTab data={apiResponse} aggregationType={aggregationType} />
+        ) : (
+          <div>No data available</div>
+        );
     }
   };
 
@@ -546,6 +546,10 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     navigate("/planning");
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden">
@@ -555,12 +559,14 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           setOpenModal={setIsDrawerOpen}
           handleLogout={handleLogout}
           isSidebarCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
         />
 
-        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-0 sticky top-4 z-10">
               <DashboardHeader
+                title="Walmart Fulfillment Services"
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
                 forecastPeriod={`${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history`}
               />
@@ -573,7 +579,6 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                 className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />
-
               </Button>
 
               <ThemeSelector />
@@ -605,7 +610,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                     </SheetTrigger>
                     <SheetContent
                       side="right"
-                      className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000]" // MODIFIED: Use theme card/border
+                      className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000]"
                     >
                       <SheetHeader>
                         <SheetTitle>Forecast Settings</SheetTitle>
@@ -872,6 +877,3 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     </SidebarProvider>
   );
 };
-// Ensure PlanningTab uses bg-background for its main container if it's meant to be part of the themed area.
-// It currently does: <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
-// This seems correct.
