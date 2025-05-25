@@ -18,7 +18,8 @@ export const DashboardHeader = ({
   onRefresh
 }: DashboardHeaderProps) => {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-border/30 dark:border-border/50">
+    <div className="sticky top-0 z-50 bg-background flex flex-col md:flex-row justify-between items-start md:items-center gap-4 py-4 border-b border-border/30 dark:border-border/50">
+      {/* Added sticky, top-0, z-50, bg-background. Changed pb-4 to py-4 for consistent padding when sticky. */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
           {title}

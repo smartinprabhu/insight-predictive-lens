@@ -1,345 +1,407 @@
-
-/* Light Themes */
-.light-default {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --primary: #2563eb;
-  --secondary: #4b5563;
-  --card: #ffffff;
-  --card-foreground: #1e293b;
-  --border: rgba(15, 23, 42, 0.1);
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #1e293b;
-  --popover: #ffffff;
-  --popover-foreground: #1e293b;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --sidebar-background: #f8fafc;
-  --sidebar-foreground: #1e293b;
+/* Base variables - typically in :root or globals.css, added here for completeness if not elsewhere */
+:root {
+  --radius: 0.5rem; /* Example radius */
 }
 
-.light-blue {
-  --background: #E3F2FD;
-  --foreground: #1A237E;
-  --primary: #3F51B5;
-  --secondary: #5C6BC0;
-  --card: #FFFFFF;
-  --card-foreground: #1A237E;
-  --border: rgba(63, 81, 181, 0.2);
-  --muted: #E8EAF6;
-  --muted-foreground: #3F51B5;
-  --accent: #D1C4E9;
-  --accent-foreground: #303F9F;
-  --popover: #FFFFFF;
-  --popover-foreground: #1A237E;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+/* Light Mode Theme Definitions */
+
+/* Default Theme (Light) */
+.light.theme-default {
+  --background: #f8fafc; /* Light gray */
+  --foreground: #0f172a; /* Dark slate */
+  --primary: #2563eb; /* Blue */
+  --primary-foreground: #ffffff; /* White */
+  --secondary: #4b5563; /* Cool gray */
+  --secondary-foreground: #ffffff; /* White */
+  --card: #ffffff; /* White */
+  --card-foreground: #0f172a; /* Dark slate */
+  --popover: #ffffff; /* White */
+  --popover-foreground: #0f172a; /* Dark slate */
+  --border: #e2e8f0; /* Light gray border */
+  --input: #e2e8f0; /* Light gray input */
+  --ring: #2563eb; /* Blue ring */
+  --muted: #f1f5f9; /* Lighter gray */
+  --muted-foreground: #64748b; /* Slate gray */
+  --accent: #f1f5f9; /* Lighter gray accent */
+  --accent-foreground: #0f172a; /* Dark slate */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #ffffff; /* White */
+
+  --sidebar-background: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #2563eb;
+}
+
+/* Blue Theme (Light) */
+.light.theme-blue {
+  --background: #E3F2FD; /* Light Blue */
+  --foreground: #1A237E; /* Dark Blue */
+  --primary: #3F51B5; /* Indigo */
+  --primary-foreground: #ffffff; /* White */
+  --secondary: #5C6BC0; /* Lighter Indigo */
+  --secondary-foreground: #ffffff; /* White */
+  --card: #FFFFFF; /* White */
+  --card-foreground: #1A237E; /* Dark Blue */
+  --popover: #FFFFFF; /* White */
+  --popover-foreground: #1A237E; /* Dark Blue */
+  --border: #9FA8DA; /* Indigo accent */
+  --input: #9FA8DA; /* Indigo accent */
+  --ring: #3F51B5; /* Indigo */
+  --muted: #E8EAF6; /* Light Indigo */
+  --muted-foreground: #3F51B5; /* Indigo */
+  --accent: #D1C4E9; /* Lavender */
+  --accent-foreground: #303F9F; /* Darker Indigo */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #ffffff; /* White */
+
   --sidebar-background: #E8EAF6;
   --sidebar-foreground: #303F9F;
+  --sidebar-primary: #3F51B5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #D1C4E9;
+  --sidebar-accent-foreground: #303F9F;
+  --sidebar-border: #9FA8DA;
+  --sidebar-ring: #3F51B5;
 }
 
-.light-teal {
-  --background: #E0F2F1; /* Light Teal Background */
-  --foreground: #004D40; /* Dark Teal Foreground */
-  --primary: #00796B;    /* Teal Primary */
-  --secondary: #00897B;  /* Based on light-green */
-  --card: #FFFFFF;
-  --card-foreground: #004D40;
-  --border: rgba(0, 121, 107, 0.2); 
-  --muted: #B2DFDB;      
-  --muted-foreground: #00695C; 
-  --accent: #A7FFEB;      
-  --accent-foreground: #004D40; 
-  --popover: #FFFFFF;
-  --popover-foreground: #004D40;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --sidebar-background: #B2DFDB; 
-  --sidebar-foreground: #004D40; 
+/* Teal Theme (Light) */
+.light.theme-teal {
+  --background: #E0F2F1; /* Light Teal */
+  --foreground: #004D40; /* Dark Teal */
+  --primary: #00796B; /* Teal */
+  --primary-foreground: #ffffff; /* White */
+  --secondary: #00897B; /* Lighter Teal */
+  --secondary-foreground: #ffffff; /* White */
+  --card: #FFFFFF; /* White */
+  --card-foreground: #004D40; /* Dark Teal */
+  --popover: #FFFFFF; /* White */
+  --popover-foreground: #004D40; /* Dark Teal */
+  --border: #4DB6AC; /* Teal accent */
+  --input: #4DB6AC; /* Teal accent */
+  --ring: #00796B; /* Teal */
+  --muted: #B2DFDB; /* Lighter Teal */
+  --muted-foreground: #00695C; /* Darker Teal */
+  --accent: #A7FFEB; /* Very Light Teal */
+  --accent-foreground: #004D40; /* Dark Teal */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #ffffff; /* White */
+
+  --sidebar-background: #B2DFDB;
+  --sidebar-foreground: #004D40;
+  --sidebar-primary: #00796B;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #A7FFEB;
+  --sidebar-accent-foreground: #004D40;
+  --sidebar-border: #4DB6AC;
+  --sidebar-ring: #00796B;
 }
 
-.light-green {
-  --background: #E8F5E9;
-  --foreground: #004D40;
-  --primary: #00796B;
-  --secondary: #26A69A;
-  --card: #FFFFFF;
-  --card-foreground: #004D40;
-  --border: rgba(0, 121, 107, 0.2);
-  --muted: #C8E6C9;
-  --muted-foreground: #00796B;
-  --accent: #B2DFDB;
-  --accent-foreground: #006064;
-  --popover: #FFFFFF;
-  --popover-foreground: #004D40;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+/* Green Theme (Light) */
+.light.theme-green {
+  --background: #E8F5E9; /* Light Green */
+  --foreground: #1B5E20; /* Dark Green */
+  --primary: #388E3C; /* Green */
+  --primary-foreground: #ffffff; /* White */
+  --secondary: #4CAF50; /* Lighter Green */
+  --secondary-foreground: #ffffff; /* White */
+  --card: #FFFFFF; /* White */
+  --card-foreground: #1B5E20; /* Dark Green */
+  --popover: #FFFFFF; /* White */
+  --popover-foreground: #1B5E20; /* Dark Green */
+  --border: #A5D6A7; /* Green accent */
+  --input: #A5D6A7; /* Green accent */
+  --ring: #388E3C; /* Green */
+  --muted: #C8E6C9; /* Lighter Green */
+  --muted-foreground: #2E7D32; /* Darker Green */
+  --accent: #B2DFDB; /* Light Tealish Green (from original) */
+  --accent-foreground: #006064; /* Dark Cyan (from original) */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #ffffff; /* White */
+
   --sidebar-background: #C8E6C9;
-  --sidebar-foreground: #006064;
+  --sidebar-foreground: #1B5E20;
+  --sidebar-primary: #388E3C;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #B2DFDB;
+  --sidebar-accent-foreground: #006064;
+  --sidebar-border: #A5D6A7;
+  --sidebar-ring: #388E3C;
 }
 
-.light-purple {
-  --background: #EDE7F6;
-  --foreground: #311B92;
-  --primary: #512DA8;
-  --secondary: #673AB7;
-  --card: #FFFFFF;
-  --card-foreground: #311B92;
-  --border: rgba(81, 45, 168, 0.2);
-  --muted: #D1C4E9;
-  --muted-foreground: #512DA8;
-  --accent: #B39DDB;
-  --accent-foreground: #4A148C;
-  --popover: #FFFFFF;
-  --popover-foreground: #311B92;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+/* Purple Theme (Light) */
+.light.theme-purple {
+  --background: #EDE7F6; /* Light Purple */
+  --foreground: #311B92; /* Dark Purple */
+  --primary: #512DA8; /* Purple */
+  --primary-foreground: #ffffff; /* White */
+  --secondary: #673AB7; /* Lighter Purple */
+  --secondary-foreground: #ffffff; /* White */
+  --card: #FFFFFF; /* White */
+  --card-foreground: #311B92; /* Dark Purple */
+  --popover: #FFFFFF; /* White */
+  --popover-foreground: #311B92; /* Dark Purple */
+  --border: #B39DDB; /* Purple accent */
+  --input: #B39DDB; /* Purple accent */
+  --ring: #512DA8; /* Purple */
+  --muted: #D1C4E9; /* Lighter Purple */
+  --muted-foreground: #512DA8; /* Purple */
+  --accent: #B39DDB; /* Lighter Purple accent */
+  --accent-foreground: #4A148C; /* Darker Purple */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #ffffff; /* White */
+
   --sidebar-background: #D1C4E9;
   --sidebar-foreground: #4A148C;
+  --sidebar-primary: #512DA8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #B39DDB;
+  --sidebar-accent-foreground: #4A148C;
+  --sidebar-border: #B39DDB;
+  --sidebar-ring: #512DA8;
 }
 
-.light-orange {
-  --background: #fff7ed;
-  --foreground: #0f172a;
-  --primary: #f97316;
-  --secondary: #fb923c;
-  --card: #ffffff;
-  --card-foreground: #1e293b;
-  --border: rgba(249, 115, 22, 0.2);
-  --muted: #ffedd5;
-  --muted-foreground: #ea580c;
-  --accent: #fed7aa;
-  --accent-foreground: #9a3412;
-  --popover: #ffffff;
-  --popover-foreground: #1e293b;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --sidebar-background: #ffedd5;
-  --sidebar-foreground: #9a3412;
+/* Orange Theme (Light) */
+.light.theme-orange {
+  --background: #FFF3E0; /* Light Orange */
+  --foreground: #E65100; /* Dark Orange */
+  --primary: #F57C00; /* Orange */
+  --primary-foreground: #ffffff; /* White */
+  --secondary: #FF9800; /* Lighter Orange */
+  --secondary-foreground: #000000; /* Black text for lighter orange */
+  --card: #FFFFFF; /* White */
+  --card-foreground: #E65100; /* Dark Orange */
+  --popover: #FFFFFF; /* White */
+  --popover-foreground: #E65100; /* Dark Orange */
+  --border: #FFCC80; /* Orange accent */
+  --input: #FFCC80; /* Orange accent */
+  --ring: #F57C00; /* Orange */
+  --muted: #FFE0B2; /* Lighter Orange */
+  --muted-foreground: #E65100; /* Dark Orange */
+  --accent: #FFB74D; /* Lighter Orange accent */
+  --accent-foreground: #BF360C; /* Darker Orange */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #ffffff; /* White */
+
+  --sidebar-background: #FFE0B2;
+  --sidebar-foreground: #BF360C;
+  --sidebar-primary: #F57C00;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #FFB74D;
+  --sidebar-accent-foreground: #BF360C;
+  --sidebar-border: #FFCC80;
+  --sidebar-ring: #F57C00;
 }
 
-/* Dark Themes */
-.dark-default {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --primary: #3b82f6;
-  --secondary: #60a5fa;
-  --card: #1e293b;
-  --card-foreground: #f8fafc;
-  --border: rgba(255, 255, 255, 0.1);
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #334155;
-  --accent-foreground: #f8fafc;
-  --popover: #1e293b;
-  --popover-foreground: #f8fafc;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
+
+/* Dark Mode Theme Definitions */
+
+/* Default Theme (Dark) */
+.dark.theme-default {
+  --background: #0f172a; /* Dark Slate */
+  --foreground: #f8fafc; /* Light Gray */
+  --primary: #3b82f6; /* Bright Blue */
+  --primary-foreground: #ffffff; /* White */
+  --secondary: #60a5fa; /* Lighter Blue */
+  --secondary-foreground: #0f172a; /* Dark Slate */
+  --card: #1e293b; /* Darker Slate */
+  --card-foreground: #f8fafc; /* Light Gray */
+  --popover: #1e293b; /* Darker Slate */
+  --popover-foreground: #f8fafc; /* Light Gray */
+  --border: #334155; /* Slate Gray Border */
+  --input: #334155; /* Slate Gray Input */
+  --ring: #3b82f6; /* Bright Blue Ring */
+  --muted: #1e293b; /* Darker Slate */
+  --muted-foreground: #94a3b8; /* Gray */
+  --accent: #334155; /* Slate Gray Accent */
+  --accent-foreground: #f8fafc; /* Light Gray */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #f8fafc; /* Light Gray */
+
   --sidebar-background: #1e293b;
   --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #334155;
+  --sidebar-ring: #3b82f6;
 }
 
-.dark-blue {
-  --background: #1A237E;
-  --foreground: #A7C4FF;
-  --primary: #3F51B5;
-  --secondary: #7986CB;
-  --card: #283593;
-  --card-foreground: #A7C4FF;
-  --border: rgba(63, 81, 181, 0.2);
-  --muted: #283593;
-  --muted-foreground: #A7C4FF;
-  --accent: #303F9F;
-  --accent-foreground: #A7C4FF;
-  --popover: #283593;
-  --popover-foreground: #A7C4FF;
-  --destructive: #ef4444;
-  --destructive-foreground: #f0f9ff;
+/* Blue Theme (Dark) */
+.dark.theme-blue {
+  --background: #1A237E; /* Very Dark Blue */
+  --foreground: #E3F2FD; /* Light Blue */
+  --primary: #5C6BC0; /* Indigo */
+  --primary-foreground: #ffffff; /* White */
+  --secondary: #7986CB; /* Lighter Indigo */
+  --secondary-foreground: #E8EAF6; /* Very Light Blue/Almost White */
+  --card: #283593; /* Dark Indigo */
+  --card-foreground: #E3F2FD; /* Light Blue */
+  --popover: #283593; /* Dark Indigo */
+  --popover-foreground: #E3F2FD; /* Light Blue */
+  --border: #3F51B5; /* Indigo Border */
+  --input: #3F51B5; /* Indigo Input */
+  --ring: #5C6BC0; /* Indigo Ring */
+  --muted: #303F9F; /* Darker Indigo */
+  --muted-foreground: #C5CAE9; /* Light Lavender */
+  --accent: #3F51B5; /* Indigo Accent */
+  --accent-foreground: #E3F2FD; /* Light Blue */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #E3F2FD; /* Light Blue */
+
   --sidebar-background: #283593;
-  --sidebar-foreground: #A7C4FF;
+  --sidebar-foreground: #E3F2FD;
+  --sidebar-primary: #5C6BC0;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3F51B5;
+  --sidebar-accent-foreground: #E3F2FD;
+  --sidebar-border: #3F51B5;
+  --sidebar-ring: #5C6BC0;
 }
 
-.dark-green {
-  --background: #004D40;
-  --foreground: #A7FFEB;
-  --primary: #00796B;
-  --secondary: #4DB6AC;
-  --card: #00695C;
-  --card-foreground: #A7FFEB;
-  --border: rgba(0, 121, 107, 0.2);
-  --muted: #00695C;
-  --muted-foreground: #A7FFEB;
-  --accent: #006064;
-  --accent-foreground: #A7FFEB;
-  --popover: #00695C;
-  --popover-foreground: #A7FFEB;
-  --destructive: #ef4444;
-  --destructive-foreground: #f0fdf4;
-  --sidebar-background: #00695C;
-  --sidebar-foreground: #A7FFEB;
+/* Teal Theme (Dark) */
+.dark.theme-teal {
+  --background: #004D40; /* Very Dark Teal */
+  --foreground: #E0F2F1; /* Light Teal */
+  --primary: #00796B; /* Teal */
+  --primary-foreground: #E0F2F1; /* Light Teal */
+  --secondary: #26A69A; /* Lighter Teal */
+  --secondary-foreground: #B2DFDB; /* Very Light Teal */
+  --card: #00695C; /* Dark Teal */
+  --card-foreground: #E0F2F1; /* Light Teal */
+  --popover: #00695C; /* Dark Teal */
+  --popover-foreground: #E0F2F1; /* Light Teal */
+  --border: #00897B; /* Teal Border */
+  --input: #00897B; /* Teal Input */
+  --ring: #00796B; /* Teal Ring */
+  --muted: #005A4F; /* Darker Teal */
+  --muted-foreground: #80CBC4; /* Light Teal Accent */
+  --accent: #00897B; /* Teal Accent */
+  --accent-foreground: #E0F2F1; /* Light Teal */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #E0F2F1; /* Light Teal */
+
+  --sidebar-background: #005A4F;
+  --sidebar-foreground: #E0F2F1;
+  --sidebar-primary: #00796B;
+  --sidebar-primary-foreground: #E0F2F1;
+  --sidebar-accent: #00897B;
+  --sidebar-accent-foreground: #E0F2F1;
+  --sidebar-border: #00897B;
+  --sidebar-ring: #00796B;
 }
 
-.dark-teal {
-  --background: #004D40; /* Dark Teal Background */
-  --foreground: #A7FFEB; /* Light Teal Foreground */
-  --primary: #00796B;    /* Teal Primary */
-  --secondary: #26A69A;  /* Based on dark-green */
-  --card: #00695C;      
-  --card-foreground: #A7FFEB;
-  --border: rgba(0, 121, 107, 0.3); 
-  --muted: #005A4F;      
-  --muted-foreground: #80CBC4; 
-  --accent: #00897B;      
-  --accent-foreground: #E0F2F1; 
-  --popover: #00695C;
-  --popover-foreground: #A7FFEB;
-  --destructive: #ef4444;
-  --destructive-foreground: #f0fdf4; 
-  --sidebar-background: #005A4F; 
-  --sidebar-foreground: #A7FFEB; 
+/* Green Theme (Dark) */
+.dark.theme-green {
+  --background: #1B5E20; /* Very Dark Green */
+  --foreground: #E8F5E9; /* Light Green */
+  --primary: #388E3C; /* Green */
+  --primary-foreground: #E8F5E9; /* Light Green */
+  --secondary: #4CAF50; /* Lighter Green */
+  --secondary-foreground: #C8E6C9; /* Very Light Green */
+  --card: #2E7D32; /* Dark Green */
+  --card-foreground: #E8F5E9; /* Light Green */
+  --popover: #2E7D32; /* Dark Green */
+  --popover-foreground: #E8F5E9; /* Light Green */
+  --border: #4CAF50; /* Green Border */
+  --input: #4CAF50; /* Green Input */
+  --ring: #388E3C; /* Green Ring */
+  --muted: #2E7D32; /* Darker Green */
+  --muted-foreground: #A5D6A7; /* Light Green Accent */
+  --accent: #006064; /* Dark Cyan (from original dark-green) */
+  --accent-foreground: #A7FFEB; /* Light Teal (from original dark-green) */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #E8F5E9; /* Light Green */
+
+  --sidebar-background: #2E7D32;
+  --sidebar-foreground: #E8F5E9;
+  --sidebar-primary: #388E3C;
+  --sidebar-primary-foreground: #E8F5E9;
+  --sidebar-accent: #006064;
+  --sidebar-accent-foreground: #A7FFEB;
+  --sidebar-border: #4CAF50;
+  --sidebar-ring: #388E3C;
 }
 
-.dark-purple {
-  --background: #311B92;
-  --foreground: #E1BEE7;
-  --primary: #512DA8;
-  --secondary: #7E57C2;
-  --card: #4527A0;
-  --card-foreground: #E1BEE7;
-  --border: rgba(81, 45, 168, 0.2);
-  --muted: #4527A0;
-  --muted-foreground: #E1BEE7;
-  --accent: #4A148C;
-  --accent-foreground: #E1BEE7;
-  --popover: #4527A0;
-  --popover-foreground: #E1BEE7;
-  --destructive: #ef4444;
-  --destructive-foreground: #faf5ff;
+/* Purple Theme (Dark) */
+.dark.theme-purple {
+  --background: #311B92; /* Very Dark Purple */
+  --foreground: #EDE7F6; /* Light Purple */
+  --primary: #512DA8; /* Purple */
+  --primary-foreground: #EDE7F6; /* Light Purple */
+  --secondary: #673AB7; /* Lighter Purple */
+  --secondary-foreground: #D1C4E9; /* Very Light Purple */
+  --card: #4527A0; /* Dark Purple */
+  --card-foreground: #EDE7F6; /* Light Purple */
+  --popover: #4527A0; /* Dark Purple */
+  --popover-foreground: #EDE7F6; /* Light Purple */
+  --border: #673AB7; /* Purple Border */
+  --input: #673AB7; /* Purple Input */
+  --ring: #512DA8; /* Purple Ring */
+  --muted: #4A148C; /* Darker Purple */
+  --muted-foreground: #CE93D8; /* Light Purple Accent */
+  --accent: #4A148C; /* Darker Purple Accent */
+  --accent-foreground: #E1BEE7; /* Light Purple (from original) */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #EDE7F6; /* Light Purple */
+
   --sidebar-background: #4527A0;
-  --sidebar-foreground: #E1BEE7;
+  --sidebar-foreground: #EDE7F6;
+  --sidebar-primary: #512DA8;
+  --sidebar-primary-foreground: #EDE7F6;
+  --sidebar-accent: #4A148C;
+  --sidebar-accent-foreground: #E1BEE7;
+  --sidebar-border: #673AB7;
+  --sidebar-ring: #512DA8;
 }
 
-.dark-orange {
-  --background: #E65100;
-  --foreground: #FFCC80;
-  --primary: #EF6C00;
-  --secondary: #FF9800;
-  --card: #D84315;
-  --card-foreground: #FFCC80;
-  --border: rgba(239, 108, 0, 0.2);
-  --muted: #D84315;
-  --muted-foreground: #FFCC80;
-  --accent: #BF360C;
-  --accent-foreground: #FFCC80;
-  --popover: #D84315;
-  --popover-foreground: #FFCC80;
-  --destructive: #ef4444;
-  --destructive-foreground: #fff7ed;
+/* Orange Theme (Dark) */
+.dark.theme-orange {
+  --background: #E65100; /* Dark Orange */
+  --foreground: #FFF3E0; /* Light Orange */
+  --primary: #F57C00; /* Orange */
+  --primary-foreground: #FFF3E0; /* Light Orange */
+  --secondary: #FF9800; /* Lighter Orange */
+  --secondary-foreground: #FFE0B2; /* Very Light Orange */
+  --card: #D84315; /* Darker Orange */
+  --card-foreground: #FFF3E0; /* Light Orange */
+  --popover: #D84315; /* Darker Orange */
+  --popover-foreground: #FFF3E0; /* Light Orange */
+  --border: #FF9800; /* Orange Border */
+  --input: #FF9800; /* Orange Input */
+  --ring: #F57C00; /* Orange Ring */
+  --muted: #BF360C; /* Darkest Orange */
+  --muted-foreground: #FFCC80; /* Light Orange Accent */
+  --accent: #BF360C; /* Darkest Orange Accent */
+  --accent-foreground: #FFCC80; /* Light Orange (from original) */
+  --destructive: #ef4444; /* Red */
+  --destructive-foreground: #FFF3E0; /* Light Orange */
+
   --sidebar-background: #D84315;
-  --sidebar-foreground: #FFCC80;
+  --sidebar-foreground: #FFF3E0;
+  --sidebar-primary: #F57C00;
+  --sidebar-primary-foreground: #FFF3E0;
+  --sidebar-accent: #BF360C;
+  --sidebar-accent-foreground: #FFCC80;
+  --sidebar-border: #FF9800;
+  --sidebar-ring: #F57C00;
 }
 
-/* Apply theme variables */
-:root {
-  background-color: var(--background);
-  color: var(--foreground);
-}
 
-:root.dark {
-  background-color: var(--background);
-  color: var(--foreground);
-}
+/* General Styling (using CSS variables) */
 
-/* Apply theme to UI components */
-.button, 
-button[class*="btn"],
-.btn {
-  background-color: var(--primary);
-  color: white;
-}
-
-.button:hover,
-button[class*="btn"]:hover,
-.btn:hover {
-  background-color: var(--secondary);
-}
-
-/* Ensure dropdown menus have proper background */
-.dropdown-menu {
-  background-color: var(--popover);
-  color: var(--popover-foreground);
-  border-color: var(--border);
-}
-
-/* Style sidebar according to theme */
-.sidebar {
-  background-color: var(--sidebar-background);
-  color: var(--sidebar-foreground);
-}
-
-/* Style active tab in sidebar */
-.sidebar-menu-sub-button[data-active="true"],
-.sidebar [data-active="true"],
-[data-sidebar="menu-button"][data-active="true"] {
-  background-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
-}
-
-[data-sidebar="menu-sub-button"][data-active="true"] {
-  background-color: var(--accent) !important;
-  color: var(--accent-foreground) !important;
-}
-
-/* Apply theme transitions */
+/* Apply theme transitions for smooth changes */
 html, body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-button, a, input, select, textarea {
+button, a, input, select, textarea, div[role="button"] { /* Added div[role="button"] for components acting as buttons */
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-/* Override shadcn UI components with theme variables */
-.dark [data-theme="dark"] {
-  --background: var(--background);
-  --foreground: var(--foreground);
-  --card: var(--card);
-  --card-foreground: var(--card-foreground);
-  --popover: var(--popover);
-  --popover-foreground: var(--popover-foreground);
-  --primary: var(--primary);
-  --primary-foreground: white;
-  --secondary: var(--secondary);
-  --secondary-foreground: white;
-  --muted: var(--muted);
-  --muted-foreground: var(--muted-foreground);
-  --accent: var(--accent);
-  --accent-foreground: var(--accent-foreground);
-  --destructive: var(--destructive);
-  --destructive-foreground: var(--destructive-foreground);
-  --border: var(--border);
-}
-
-[data-theme="light"] {
-  --background: var(--background);
-  --foreground: var(--foreground);
-  --card: var(--card);
-  --card-foreground: var(--card-foreground);
-  --popover: var(--popover);
-  --popover-foreground: var(--popover-foreground);
-  --primary: var(--primary);
-  --primary-foreground: white;
-  --secondary: var(--secondary);
-  --secondary-foreground: white;
-  --muted: var(--muted);
-  --muted-foreground: var(--muted-foreground);
-  --accent: var(--accent);
-  --accent-foreground: var(--accent-foreground);
-  --destructive: var(--destructive);
-  --destructive-foreground: var(--destructive-foreground);
-  --border: var(--border);
 }
 
 /* Headers styling */
@@ -349,34 +411,83 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Form controls */
 input, select, textarea {
-  background-color: var(--background);
+  background-color: var(--background); /* Or var(--input-background) if specific */
   color: var(--foreground);
-  border-color: var(--border);
+  border-color: var(--input); /* Uses --input as border color for inputs */
+  border-width: 1px; /* Default border width */
+}
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-color: var(--ring); /* Change border to ring color on focus */
 }
 
-/* Cards */
-.card {
+
+/* Cards (using Tailwind's 'card' component variables) */
+/* .card class is typically handled by Tailwind using its variables. */
+/* If manual styling is needed: */
+/*
+.custom-card-style {
   background-color: var(--card);
   color: var(--card-foreground);
   border-color: var(--border);
+  border-radius: var(--radius);
 }
+*/
 
 /* Tables */
 table {
-  background-color: var(--card);
-  color: var(--card-foreground);
-  border-color: var(--border);
+  width: 100%; /* Standard table width */
+  border-collapse: collapse; /* Standard border collapse */
 }
-
+table th, table td {
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+  text-align: left;
+}
 table th {
   background-color: var(--muted);
   color: var(--muted-foreground);
 }
+table tbody tr:nth-child(odd) {
+  /* Optional: zebra striping for tables if not using accent for rows */
+  /* background-color: var(--accent); */ 
+}
 
-/* Navigation and tabs */
-[role="tab"][data-state="active"] {
-  background-color: var(--primary);
-  color: white;
+
+/* Ensure dropdown menus (popovers) have proper background */
+/* Tailwind's 'popover' component uses these variables */
+/*
+.custom-dropdown-menu {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+*/
+
+/* Style sidebar according to theme (using Tailwind's 'sidebar' custom colors) */
+/* This is if you have a specific .sidebar class not directly using Tailwind classes for background/color */
+/*
+.sidebar {
+  background-color: var(--sidebar-background);
+  color: var(--sidebar-foreground);
+  border-right: 1px solid var(--sidebar-border);
+}
+*/
+
+/* Style active tab in sidebar (example, depends on actual class names) */
+/* These are examples from the original file, ensure they match component props/classes */
+.sidebar-menu-sub-button[data-active="true"],
+.sidebar [data-active="true"],
+[data-sidebar="menu-button"][data-active="true"] {
+  background-color: var(--sidebar-primary) !important;
+  color: var(--sidebar-primary-foreground) !important;
+}
+
+[data-sidebar="menu-sub-button"][data-active="true"] {
+  background-color: var(--sidebar-accent) !important;
+  color: var(--sidebar-accent-foreground) !important;
 }
 
 /* Data grid / AG Grid customizations */
@@ -386,17 +497,44 @@ table th {
   --ag-border-color: var(--border);
   --ag-header-background-color: var(--muted);
   --ag-header-foreground-color: var(--muted-foreground);
-  --ag-odd-row-background-color: var(--accent);
-  --ag-row-hover-color: var(--muted);
-  --ag-selected-row-background-color: var(--primary);
+  --ag-odd-row-background-color: var(--accent); /* Or transparent if not desired */
+  --ag-row-hover-color: var(--muted); /* Or a slightly different shade of accent */
+  --ag-selected-row-background-color: var(--primary) !important; /* Ensure selection is visible */
+  --ag-selected-row-foreground-color: var(--primary-foreground) !important;
 }
 
-/* Additional styling for sidebar specifically */
+/* Additional styling for sidebar specifically (example, depends on actual class names) */
 [data-sidebar="menu-button"] {
   color: var(--sidebar-foreground);
 }
 
 [data-sidebar="menu-button"]:hover {
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+}
+
+/* Ensure buttons use theme variables - if not using Tailwind @apply for all button styles */
+/* Tailwind's 'button' component should pick these up if 'primary', 'secondary' etc. are defined in tailwind.config.js */
+/*
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.btn-destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-outline:hover {
   background-color: var(--accent);
   color: var(--accent-foreground);
 }
+*/
