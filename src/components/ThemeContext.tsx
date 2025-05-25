@@ -2,7 +2,55 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ThemeMode, ColorTheme } from '../types/shared';
 
-// Define the context type
+// Define comprehensive theme colors
+const themeColors = {
+  default: {
+    light: {
+      primary: "hsl(222.2 84% 4.9%)",
+      secondary: "hsl(210 40% 96%)",
+      accent: "hsl(210 40% 96%)",
+      background: "hsl(0 0% 100%)",
+      foreground: "hsl(222.2 84% 4.9%)",
+      muted: "hsl(210 40% 96%)",
+      border: "hsl(214.3 31.8% 91.4%)",
+      card: "hsl(0 0% 100%)",
+    },
+    dark: {
+      primary: "hsl(210 40% 98%)",
+      secondary: "hsl(222.2 84% 4.9%)",
+      accent: "hsl(217.2 32.6% 17.5%)",
+      background: "hsl(222.2 84% 4.9%)",
+      foreground: "hsl(210 40% 98%)",
+      muted: "hsl(217.2 32.6% 17.5%)",
+      border: "hsl(217.2 32.6% 17.5%)",
+      card: "hsl(222.2 84% 4.9%)",
+    }
+  },
+  blue: {
+    light: {
+      primary: "hsl(221.2 83.2% 53.3%)",
+      secondary: "hsl(210 40% 96%)",
+      accent: "hsl(210 40% 96%)",
+      background: "hsl(0 0% 100%)",
+      foreground: "hsl(222.2 84% 4.9%)",
+      muted: "hsl(210 40% 96%)",
+      border: "hsl(214.3 31.8% 91.4%)",
+      card: "hsl(0 0% 100%)",
+    },
+    dark: {
+      primary: "hsl(217.2 91.2% 59.8%)",
+      secondary: "hsl(222.2 84% 4.9%)",
+      accent: "hsl(217.2 32.6% 17.5%)",
+      background: "hsl(222.2 84% 4.9%)",
+      foreground: "hsl(210 40% 98%)",
+      muted: "hsl(217.2 32.6% 17.5%)",
+      border: "hsl(217.2 32.6% 17.5%)",
+      card: "hsl(222.2 84% 4.9%)",
+    }
+  },
+  // Add other theme colors...
+};
+
 interface ThemeContextType {
   themeMode: ThemeMode;
   colorTheme: ColorTheme;
@@ -11,10 +59,8 @@ interface ThemeContextType {
   setColorTheme: (color: ColorTheme) => void;
 }
 
-// Create the context with a default value
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-// Theme provider component
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     return (localStorage.getItem("themeMode") as ThemeMode | null) || "system";
@@ -31,15 +77,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return initialMode === "dark";
   });
 
-  // Effect to apply theme and listen for system changes
+  // Apply theme CSS variables
+  const applyThemeVariables = (mode: "light" | "dark", theme: ColorTheme) => {
+    const colors = themeColors[theme] || themeColors.default;
+    const themeColors_current = colors[mode];
+    
+    const root = document.documentElement;
+    
+    // Apply CSS custom properties
+    Object.entries(themeColors_current).forEach(([key, value]) => {
+      root.style.setProperty(`--${key}`, value);
+    });
+  };
+
   useEffect(() => {
     const applyTheme = () => {
-      // Remove all existing theme classes
-      document.documentElement.classList.remove(
-        "light-default", "light-blue", "light-teal", "light-green", "light-purple", "light-orange",
-        "dark-default", "dark-blue", "dark-teal", "dark-green", "dark-purple", "dark-orange"
-      );
-
       let isDark = false;
       if (themeMode === "system") {
         isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -47,13 +99,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isDark = themeMode === "dark";
       }
 
-      // Apply the dark class and data-theme attribute
+      // Apply dark class
       document.documentElement.classList.toggle("dark", isDark);
       document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
 
-      // Apply the specific theme class
-      const themeClass = `${isDark ? "dark" : "light"}-${colorTheme}`;
-      document.documentElement.classList.add(themeClass);
+      // Apply theme variables
+      applyThemeVariables(isDark ? "dark" : "light", colorTheme);
 
       // Store in localStorage
       localStorage.setItem("themeMode", themeMode);
@@ -97,7 +148,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
-// Custom hook to use the theme context
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
@@ -106,5 +156,4 @@ export const useTheme = () => {
   return context;
 };
 
-// Export types for use in other components
 export type { ThemeMode, ColorTheme };

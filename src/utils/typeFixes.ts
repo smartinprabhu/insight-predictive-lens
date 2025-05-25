@@ -1,6 +1,6 @@
 
 // Global type fixes
-import type { DateRange, LOBType } from '../types/shared';
+import type { DateRange } from '../types/shared';
 
 declare global {
   interface Window {
