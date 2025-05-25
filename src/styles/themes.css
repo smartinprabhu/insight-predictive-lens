@@ -1,0 +1,402 @@
+
+/* Light Themes */
+.light-default {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --primary: #2563eb;
+  --secondary: #4b5563;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --border: rgba(15, 23, 42, 0.1);
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --sidebar-background: #f8fafc;
+  --sidebar-foreground: #1e293b;
+}
+
+.light-blue {
+  --background: #E3F2FD;
+  --foreground: #1A237E;
+  --primary: #3F51B5;
+  --secondary: #5C6BC0;
+  --card: #FFFFFF;
+  --card-foreground: #1A237E;
+  --border: rgba(63, 81, 181, 0.2);
+  --muted: #E8EAF6;
+  --muted-foreground: #3F51B5;
+  --accent: #D1C4E9;
+  --accent-foreground: #303F9F;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A237E;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --sidebar-background: #E8EAF6;
+  --sidebar-foreground: #303F9F;
+}
+
+.light-teal {
+  --background: #E0F2F1; /* Light Teal Background */
+  --foreground: #004D40; /* Dark Teal Foreground */
+  --primary: #00796B;    /* Teal Primary */
+  --secondary: #00897B;  /* Based on light-green */
+  --card: #FFFFFF;
+  --card-foreground: #004D40;
+  --border: rgba(0, 121, 107, 0.2); 
+  --muted: #B2DFDB;      
+  --muted-foreground: #00695C; 
+  --accent: #A7FFEB;      
+  --accent-foreground: #004D40; 
+  --popover: #FFFFFF;
+  --popover-foreground: #004D40;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --sidebar-background: #B2DFDB; 
+  --sidebar-foreground: #004D40; 
+}
+
+.light-green {
+  --background: #E8F5E9;
+  --foreground: #004D40;
+  --primary: #00796B;
+  --secondary: #26A69A;
+  --card: #FFFFFF;
+  --card-foreground: #004D40;
+  --border: rgba(0, 121, 107, 0.2);
+  --muted: #C8E6C9;
+  --muted-foreground: #00796B;
+  --accent: #B2DFDB;
+  --accent-foreground: #006064;
+  --popover: #FFFFFF;
+  --popover-foreground: #004D40;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --sidebar-background: #C8E6C9;
+  --sidebar-foreground: #006064;
+}
+
+.light-purple {
+  --background: #EDE7F6;
+  --foreground: #311B92;
+  --primary: #512DA8;
+  --secondary: #673AB7;
+  --card: #FFFFFF;
+  --card-foreground: #311B92;
+  --border: rgba(81, 45, 168, 0.2);
+  --muted: #D1C4E9;
+  --muted-foreground: #512DA8;
+  --accent: #B39DDB;
+  --accent-foreground: #4A148C;
+  --popover: #FFFFFF;
+  --popover-foreground: #311B92;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --sidebar-background: #D1C4E9;
+  --sidebar-foreground: #4A148C;
+}
+
+.light-orange {
+  --background: #fff7ed;
+  --foreground: #0f172a;
+  --primary: #f97316;
+  --secondary: #fb923c;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --border: rgba(249, 115, 22, 0.2);
+  --muted: #ffedd5;
+  --muted-foreground: #ea580c;
+  --accent: #fed7aa;
+  --accent-foreground: #9a3412;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --sidebar-background: #ffedd5;
+  --sidebar-foreground: #9a3412;
+}
+
+/* Dark Themes */
+.dark-default {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --primary: #3b82f6;
+  --secondary: #60a5fa;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --border: rgba(255, 255, 255, 0.1);
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #334155;
+  --accent-foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+  --destructive: #ef4444;
+  --destructive-foreground: #f8fafc;
+  --sidebar-background: #1e293b;
+  --sidebar-foreground: #f8fafc;
+}
+
+.dark-blue {
+  --background: #1A237E;
+  --foreground: #A7C4FF;
+  --primary: #3F51B5;
+  --secondary: #7986CB;
+  --card: #283593;
+  --card-foreground: #A7C4FF;
+  --border: rgba(63, 81, 181, 0.2);
+  --muted: #283593;
+  --muted-foreground: #A7C4FF;
+  --accent: #303F9F;
+  --accent-foreground: #A7C4FF;
+  --popover: #283593;
+  --popover-foreground: #A7C4FF;
+  --destructive: #ef4444;
+  --destructive-foreground: #f0f9ff;
+  --sidebar-background: #283593;
+  --sidebar-foreground: #A7C4FF;
+}
+
+.dark-green {
+  --background: #004D40;
+  --foreground: #A7FFEB;
+  --primary: #00796B;
+  --secondary: #4DB6AC;
+  --card: #00695C;
+  --card-foreground: #A7FFEB;
+  --border: rgba(0, 121, 107, 0.2);
+  --muted: #00695C;
+  --muted-foreground: #A7FFEB;
+  --accent: #006064;
+  --accent-foreground: #A7FFEB;
+  --popover: #00695C;
+  --popover-foreground: #A7FFEB;
+  --destructive: #ef4444;
+  --destructive-foreground: #f0fdf4;
+  --sidebar-background: #00695C;
+  --sidebar-foreground: #A7FFEB;
+}
+
+.dark-teal {
+  --background: #004D40; /* Dark Teal Background */
+  --foreground: #A7FFEB; /* Light Teal Foreground */
+  --primary: #00796B;    /* Teal Primary */
+  --secondary: #26A69A;  /* Based on dark-green */
+  --card: #00695C;      
+  --card-foreground: #A7FFEB;
+  --border: rgba(0, 121, 107, 0.3); 
+  --muted: #005A4F;      
+  --muted-foreground: #80CBC4; 
+  --accent: #00897B;      
+  --accent-foreground: #E0F2F1; 
+  --popover: #00695C;
+  --popover-foreground: #A7FFEB;
+  --destructive: #ef4444;
+  --destructive-foreground: #f0fdf4; 
+  --sidebar-background: #005A4F; 
+  --sidebar-foreground: #A7FFEB; 
+}
+
+.dark-purple {
+  --background: #311B92;
+  --foreground: #E1BEE7;
+  --primary: #512DA8;
+  --secondary: #7E57C2;
+  --card: #4527A0;
+  --card-foreground: #E1BEE7;
+  --border: rgba(81, 45, 168, 0.2);
+  --muted: #4527A0;
+  --muted-foreground: #E1BEE7;
+  --accent: #4A148C;
+  --accent-foreground: #E1BEE7;
+  --popover: #4527A0;
+  --popover-foreground: #E1BEE7;
+  --destructive: #ef4444;
+  --destructive-foreground: #faf5ff;
+  --sidebar-background: #4527A0;
+  --sidebar-foreground: #E1BEE7;
+}
+
+.dark-orange {
+  --background: #E65100;
+  --foreground: #FFCC80;
+  --primary: #EF6C00;
+  --secondary: #FF9800;
+  --card: #D84315;
+  --card-foreground: #FFCC80;
+  --border: rgba(239, 108, 0, 0.2);
+  --muted: #D84315;
+  --muted-foreground: #FFCC80;
+  --accent: #BF360C;
+  --accent-foreground: #FFCC80;
+  --popover: #D84315;
+  --popover-foreground: #FFCC80;
+  --destructive: #ef4444;
+  --destructive-foreground: #fff7ed;
+  --sidebar-background: #D84315;
+  --sidebar-foreground: #FFCC80;
+}
+
+/* Apply theme variables */
+:root {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+:root.dark {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Apply theme to UI components */
+.button, 
+button[class*="btn"],
+.btn {
+  background-color: var(--primary);
+  color: white;
+}
+
+.button:hover,
+button[class*="btn"]:hover,
+.btn:hover {
+  background-color: var(--secondary);
+}
+
+/* Ensure dropdown menus have proper background */
+.dropdown-menu {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border-color: var(--border);
+}
+
+/* Style sidebar according to theme */
+.sidebar {
+  background-color: var(--sidebar-background);
+  color: var(--sidebar-foreground);
+}
+
+/* Style active tab in sidebar */
+.sidebar-menu-sub-button[data-active="true"],
+.sidebar [data-active="true"],
+[data-sidebar="menu-button"][data-active="true"] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+[data-sidebar="menu-sub-button"][data-active="true"] {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Apply theme transitions */
+html, body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button, a, input, select, textarea {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Override shadcn UI components with theme variables */
+.dark [data-theme="dark"] {
+  --background: var(--background);
+  --foreground: var(--foreground);
+  --card: var(--card);
+  --card-foreground: var(--card-foreground);
+  --popover: var(--popover);
+  --popover-foreground: var(--popover-foreground);
+  --primary: var(--primary);
+  --primary-foreground: white;
+  --secondary: var(--secondary);
+  --secondary-foreground: white;
+  --muted: var(--muted);
+  --muted-foreground: var(--muted-foreground);
+  --accent: var(--accent);
+  --accent-foreground: var(--accent-foreground);
+  --destructive: var(--destructive);
+  --destructive-foreground: var(--destructive-foreground);
+  --border: var(--border);
+}
+
+[data-theme="light"] {
+  --background: var(--background);
+  --foreground: var(--foreground);
+  --card: var(--card);
+  --card-foreground: var(--card-foreground);
+  --popover: var(--popover);
+  --popover-foreground: var(--popover-foreground);
+  --primary: var(--primary);
+  --primary-foreground: white;
+  --secondary: var(--secondary);
+  --secondary-foreground: white;
+  --muted: var(--muted);
+  --muted-foreground: var(--muted-foreground);
+  --accent: var(--accent);
+  --accent-foreground: var(--accent-foreground);
+  --destructive: var(--destructive);
+  --destructive-foreground: var(--destructive-foreground);
+  --border: var(--border);
+}
+
+/* Headers styling */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--foreground);
+}
+
+/* Form controls */
+input, select, textarea {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+/* Cards */
+.card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-color: var(--border);
+}
+
+/* Tables */
+table {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-color: var(--border);
+}
+
+table th {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+/* Navigation and tabs */
+[role="tab"][data-state="active"] {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* Data grid / AG Grid customizations */
+.ag-theme-alpine, .ag-theme-alpine-dark {
+  --ag-background-color: var(--card);
+  --ag-foreground-color: var(--card-foreground);
+  --ag-border-color: var(--border);
+  --ag-header-background-color: var(--muted);
+  --ag-header-foreground-color: var(--muted-foreground);
+  --ag-odd-row-background-color: var(--accent);
+  --ag-row-hover-color: var(--muted);
+  --ag-selected-row-background-color: var(--primary);
+}
+
+/* Additional styling for sidebar specifically */
+[data-sidebar="menu-button"] {
+  color: var(--sidebar-foreground);
+}
+
+[data-sidebar="menu-button"]:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}

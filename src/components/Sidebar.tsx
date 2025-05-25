@@ -12,6 +12,7 @@ import {
   ChevronRight,
   HelpCircle,
   Settings,
+  MoreVertical, // Import MoreVertical
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import {
@@ -26,7 +27,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarTrigger,
+  // SidebarTrigger, // SidebarTrigger will be replaced
 } from "@/components/ui/sidebar";
 
 const tabs = [
@@ -39,15 +40,22 @@ const tabs = [
   { id: "uploadData", name: "Upload Data" },
 ];
 
-const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, isSidebarCollapsed }) => {
+const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, isSidebarCollapsed, toggleSidebar }) => { // Added toggleSidebar prop
   const [isWalmartWFSOpen, setIsWalmartWFSOpen] = React.useState(true);
 
   return (
     <Sidebar collapsible="icon" className="bg-sidebar-background text-sidebar-foreground">
       <SidebarContent>
         <div className="flex flex-col items-center justify-center py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between w-full p-2">
-            <SidebarTrigger />
+          <div className="flex items-center justify-end w-full p-2"> {/* Changed justify-between to justify-end */}
+            {/* Replace SidebarTrigger with a custom button */}
+            <button
+              onClick={toggleSidebar} 
+              className="p-2 rounded-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Toggle sidebar"
+            >
+              <MoreVertical className="h-6 w-6" />
+            </button>
           </div>
           <img
             src="/image.svg"

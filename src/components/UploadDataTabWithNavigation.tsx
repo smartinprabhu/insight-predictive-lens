@@ -4,7 +4,6 @@ import { TabNavigation } from './TabNavigation';
 
 const tabs = [
   { id: "uploadData", name: "Upload Data" },
-  { id: "uploadDataCopy", name: "Upload Data Copy" },
 ];
 
 const UploadDataTabWithNavigation = () => {
@@ -38,14 +37,6 @@ const UploadDataTabWithNavigation = () => {
         onTabChange={handleTabChange} 
       />
       {activeTab === "uploadData" && (
-        <UploadDataForm 
-          onFileUpload={handleFileUpload} 
-          onSubmit={handleSubmit} 
-          onApiResponse={handleApiResponse}
-          setOpenModal={setOpenModal}
-        />
-      )}
-      {activeTab === "uploadDataCopy" && (
         <UploadDataForm 
           onFileUpload={handleFileUpload} 
           onSubmit={handleSubmit} 

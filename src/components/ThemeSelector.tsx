@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react"; // Removed useEffect
 import { CheckIcon, Moon, Sun, Monitor } from "lucide-react";
 import {
   Popover,
@@ -11,70 +11,20 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useToast } from "@/components/ui/use-toast";
-
-// Theme types
-type ThemeMode = "light" | "dark" | "system";
-type ColorTheme = "default" | "blue" | "green" | "purple" | "orange";
+import { useTheme, ThemeMode, ColorTheme } from "../components/ThemeContext"; // Import useTheme and types from context
 
 const ThemeSelector = () => {
-  // State for theme mode and color theme
-  const [themeMode, setThemeMode] = useState<ThemeMode>("system");
-  const [colorTheme, setColorTheme] = useState<ColorTheme>("default");
+  const { themeMode, colorTheme, setThemeMode, setColorTheme } = useTheme(); // Use context
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  // Load theme preferences from localStorage on component mount
-  useEffect(() => {
-    const savedThemeMode = localStorage.getItem("themeMode") as ThemeMode;
-    const savedColorTheme = localStorage.getItem("colorTheme") as ColorTheme;
-
-    if (savedThemeMode) setThemeMode(savedThemeMode);
-    if (savedColorTheme) setColorTheme(savedColorTheme);
-
-    // Set initial theme based on saved preferences
-    applyTheme(savedThemeMode || "system", savedColorTheme || "default");
-  }, []);
-
-  // Apply theme based on mode and color
-  const applyTheme = (mode: ThemeMode, color: ColorTheme) => {
-    // Remove all theme classes first
-    document.documentElement.classList.remove(
-      "light-default", "light-blue", "light-green", "light-purple", "light-orange",
-      "dark-default", "dark-blue", "dark-green", "dark-purple", "dark-orange"
-    );
-
-    // Determine if dark mode should be applied
-    let isDark = false;
-
-    if (mode === "system") {
-      isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    } else {
-      isDark = mode === "dark";
-    }
-
-    // Apply dark/light class
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-
-    // Apply specific theme
-    const themeClass = `${isDark ? "dark" : "light"}-${color}`;
-    document.documentElement.classList.add(themeClass);
-
-    // Save preferences
-    localStorage.setItem("themeMode", mode);
-    localStorage.setItem("colorTheme", color);
-
-    // Force refresh of any UI components that might not update automatically
-    document.body.style.backgroundColor = '';
-    setTimeout(() => {
-      document.body.style.backgroundColor = '';
-    }, 10);
-  };
+  // Removed local state for themeMode and colorTheme
+  // Removed useEffect for loading from localStorage - handled by ThemeContext
+  // Removed applyTheme function - handled by ThemeContext
 
   // Handle theme mode change
   const handleModeChange = (value: ThemeMode) => {
-    setThemeMode(value);
-    applyTheme(value, colorTheme);
+    setThemeMode(value); // Use context function
     toast({
       title: "Theme Mode Updated",
       description: `Theme changed to ${value === "system" ? "system preference" : value} mode`,
@@ -84,8 +34,8 @@ const ThemeSelector = () => {
 
   // Handle color theme change
   const handleColorThemeChange = (value: ColorTheme) => {
-    setColorTheme(value);
-    applyTheme(themeMode, value);
+    setColorTheme(value); // setColorTheme from context will trigger useEffect in ThemeContext to apply theme
+    // applyTheme(themeMode, value); // This line should be removed as ThemeContext now handles applying the theme
     toast({
       title: "Color Theme Updated",
       description: `Color theme changed to ${value}`,
@@ -222,13 +172,25 @@ const ThemeSelector = () => {
                       "w-full h-full rounded-full overflow-hidden flex flex-wrap"
                     )}>
                       {/* Upper left - light teal */}
-                      <div className="w-1/2 h-1/2 bg-teal-100"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-teal-900" : "bg-teal-50"
+                      )}></div>
                       {/* Upper right - lighter teal */}
-                      <div className="w-1/2 h-1/2 bg-teal-200"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-teal-800" : "bg-teal-100"
+                      )}></div>
                       {/* Lower left - dark teal */}
-                      <div className="w-1/2 h-1/2 bg-teal-600"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-teal-200" : "bg-teal-600"
+                      )}></div>
                       {/* Lower right - darker teal */}
-                      <div className="w-1/2 h-1/2 bg-teal-400"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-teal-100" : "bg-teal-200"
+                      )}></div>
                     </div>
                     {colorTheme === "teal" && (
                       <div className="absolute top-1 left-1 bg-teal-600 rounded-full p-1">
@@ -255,13 +217,25 @@ const ThemeSelector = () => {
                       "w-full h-full rounded-full overflow-hidden flex flex-wrap"
                     )}>
                       {/* Upper left - light green */}
-                      <div className="w-1/2 h-1/2 bg-green-100"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-green-900" : "bg-green-50"
+                      )}></div>
                       {/* Upper right - lighter green */}
-                      <div className="w-1/2 h-1/2 bg-green-200"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-green-800" : "bg-green-100"
+                      )}></div>
                       {/* Lower left - dark green */}
-                      <div className="w-1/2 h-1/2 bg-green-700"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-green-200" : "bg-green-600"
+                      )}></div>
                       {/* Lower right - darker green */}
-                      <div className="w-1/2 h-1/2 bg-green-500"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-green-100" : "bg-green-200"
+                      )}></div>
                     </div>
                     {colorTheme === "green" && (
                       <div className="absolute top-1 left-1 bg-green-600 rounded-full p-1">
@@ -288,13 +262,25 @@ const ThemeSelector = () => {
                       "w-full h-full rounded-full overflow-hidden flex flex-wrap"
                     )}>
                       {/* Upper left - light purple */}
-                      <div className="w-1/2 h-1/2 bg-purple-100"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-purple-900" : "bg-purple-50"
+                      )}></div>
                       {/* Upper right - lighter purple */}
-                      <div className="w-1/2 h-1/2 bg-purple-200"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-purple-800" : "bg-purple-100"
+                      )}></div>
                       {/* Lower left - dark purple */}
-                      <div className="w-1/2 h-1/2 bg-purple-700"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-purple-200" : "bg-purple-600"
+                      )}></div>
                       {/* Lower right - darker purple */}
-                      <div className="w-1/2 h-1/2 bg-purple-500"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-purple-100" : "bg-purple-200"
+                      )}></div>
                     </div>
                     {colorTheme === "purple" && (
                       <div className="absolute top-1 left-1 bg-purple-600 rounded-full p-1">
@@ -321,13 +307,25 @@ const ThemeSelector = () => {
                       "w-full h-full rounded-full overflow-hidden flex flex-wrap"
                     )}>
                       {/* Upper left - light orange */}
-                      <div className="w-1/2 h-1/2 bg-orange-50"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-orange-900" : "bg-orange-50"
+                      )}></div>
                       {/* Upper right - lighter orange */}
-                      <div className="w-1/2 h-1/2 bg-orange-200"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-orange-800" : "bg-orange-100"
+                      )}></div>
                       {/* Lower left - dark orange */}
-                      <div className="w-1/2 h-1/2 bg-orange-600"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-orange-200" : "bg-orange-600"
+                      )}></div>
                       {/* Lower right - darker orange */}
-                      <div className="w-1/2 h-1/2 bg-orange-400"></div>
+                      <div className={cn(
+                        "w-1/2 h-1/2",
+                        themeMode === 'dark' ? "bg-orange-100" : "bg-orange-200"
+                      )}></div>
                     </div>
                     {colorTheme === "orange" && (
                       <div className="absolute top-1 left-1 bg-orange-600 rounded-full p-1">

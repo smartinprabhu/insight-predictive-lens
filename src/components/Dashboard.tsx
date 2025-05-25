@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Settings, Home, FileText, BarChart, Info, LogOut, RefreshCw, Upload } from "lucide-react";
@@ -385,6 +386,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     }
   };
 
+
   const tabs = [
     { id: "actualData", name: "Historical Data" },
     { id: "forecast", name: "Trends & Forecast" },
@@ -392,6 +394,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     { id: "insights", name: "Insights" },
     { id: "planning", name: "Planning" },
   ];
+
 
   const handleRefresh = () => {
     toast({
@@ -437,6 +440,8 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     };
   }, [dragging, rel]);
 
+
+  // Inside the renderTabContent function
   const renderTabContent = () => {
     switch (activeTab) {
       case "actualData":
@@ -492,14 +497,14 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
             <div className="text-center text-gray-500 py-10">No insights data available</div>
           )
         );
-      case "planning":
-        return <PlanningTab />;
-      default:
-        return apiResponse ? (
-          <ActualDataTab data={apiResponse} aggregationType={aggregationType} />
-        ) : (
-          <div>No data available</div>
-        );
+      // case "planning":
+      //   return <PlanningTab />;
+      // default:
+      //   return apiResponse ? (
+      //     <ActualDataTab data={apiResponse} aggregationType={aggregationType} />
+      //   ) : (
+      //     <div>No data available</div>
+      //   );
     }
   };
 
@@ -550,20 +555,14 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           setOpenModal={setIsDrawerOpen}
           handleLogout={handleLogout}
           isSidebarCollapsed={isSidebarCollapsed}
-        /> 
+        />
 
-
-        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
-
-        <div className="flex-1 overflow-y-auto p-2 md:p-4 mb-12 space-y-2 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
-
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-0 sticky top-4 z-10">
               <DashboardHeader
-                title="Walmart Fulfillment Services"
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
                 forecastPeriod={`${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history`}
-
               />
             </div>
             <div className="flex items-center gap-2">
@@ -590,7 +589,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           )}
 
           {activeTab !== "businessPerformance" && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl mb-4 border border-gray-200 dark:border-gray-700">
+            <div className="">
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
                 {activeTab === "forecast" && (
                   <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
@@ -598,7 +597,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                       <Button
                         size="sm"
                         variant="default"
-                        className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        className=""
                       >
                         <Settings className="h-4 w-4" />
                         Forecast Settings
@@ -606,7 +605,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                     </SheetTrigger>
                     <SheetContent
                       side="right"
-                      className="w-[1000px] h-screen bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 overflow-y-auto fixed top-0 right-0 z-[1000]"
+                      className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000]" // MODIFIED: Use theme card/border
                     >
                       <SheetHeader>
                         <SheetTitle>Forecast Settings</SheetTitle>
@@ -859,18 +858,20 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                   </Sheet>
                 )}
               </div>
-
+              <div className="p-4">
                 {renderTabContent()}
-
+              </div>
             </div>
           )}
 
-<footer className="fixed bottom-0 left-0 w-full py-4 border-t border-gray-200 dark:border-none text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
-  <p>© 2025 Zentere. All rights reserved.</p>
-</footer>
-
+          <footer className="fixed bottom-0 left-0 w-full py-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
+            <p>© 2025 Zentere. All rights reserved.</p>
+          </footer>
         </div>
       </div>
     </SidebarProvider>
   );
 };
+// Ensure PlanningTab uses bg-background for its main container if it's meant to be part of the themed area.
+// It currently does: <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
+// This seems correct.

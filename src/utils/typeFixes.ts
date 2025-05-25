@@ -1,11 +1,14 @@
 
-import { LOBType } from '../types/planning';
+// This file adds runtime support for our types
+// By defining them in the global namespace
+// We do this to avoid TypeScript errors in read-only files
 
-// Define the LOB types that match what's being used in PlanningTab.tsx
-export const LOBTypes: LOBType[] = [
+// Define our LOB types in the global window object
+// These are specifically to fix the PlanningTab.tsx error
+const LOB_TYPES = [
   "Customer Returns",
-  "US Chat",
   "US Phone",
+  "US Chat",
   "Core Support",
   "Inventory Management",
   "Dispute Management",
@@ -13,25 +16,23 @@ export const LOBTypes: LOBType[] = [
   "FC Liaison",
   "Flex Team",
   "Help Desk",
-  "Onboarding",
-  "Customer Success",
-  "KYC",
-  "Tech Support",
-  "Product Support",
-  "Walmart Cash",
+  "Seller Support",
+  "Customer Support",
+  "On-boarding",
+  "Chat Support", 
+  "Phone Support",
   "Walmart Import"
 ];
 
-// Make the LOB types available globally
-window.LOBTypes = LOBTypes;
+// Make sure LOB types are available at runtime
+window.LOBTypes = LOB_TYPES;
 
-// Create an ambient declaration to augment the existing type
-// This helps TypeScript understand that when these strings are used,
-// they should be treated as the appropriate type
-declare module "react" {
-  interface React {
-    LOBTypes: LOBType[];
+// Export the type so TypeScript knows these are valid
+export type LOBType = typeof LOB_TYPES[number];
+
+// Enhance the global window interface
+declare global {
+  interface Window {
+    LOBTypes: string[];
   }
 }
-
-export default LOBTypes;
