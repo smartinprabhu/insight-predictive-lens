@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { UploadDataForm } from "@/components/UploadDataForm";
-import { Dashboard } from "@/components/Dashboard";
+import Dashboard from "@/components/Dashboard";
 
 const Index = () => {
   const [showDashboard, setShowDashboard] = useState(false);
