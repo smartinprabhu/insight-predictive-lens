@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Settings, Home, FileText, BarChart, Info, LogOut, RefreshCw, Upload } from "lucide-react";
-import ThemeSelector from "./ThemeSelector";
 import { DashboardHeader } from "./DashboardHeader";
 import CustomSidebar from "./Sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -90,7 +89,6 @@ interface DashboardProps {
 }
 
 export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [modelType, setModelType] = useState("Prophet");
   const [tempModelType, setTempModelType] = useState("Prophet");
   const [forecastPeriod, setForecastPeriod] = useState(4);
@@ -554,7 +552,6 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           setActiveTab={setActiveTab}
           setOpenModal={setIsDrawerOpen}
           handleLogout={handleLogout}
-          isSidebarCollapsed={isSidebarCollapsed}
         />
 
         <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
@@ -576,7 +573,6 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
 
               </Button>
 
-              <ThemeSelector />
             </div>
           </div>
 

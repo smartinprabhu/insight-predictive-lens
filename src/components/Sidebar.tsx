@@ -14,7 +14,9 @@ import {
   Settings,
   MoreVertical, // Import MoreVertical
 } from "lucide-react";
+import ThemeSelector from "./ThemeSelector"; // Import ThemeSelector
 import { ThemeToggle } from "./ThemeToggle";
+import { useSidebar } from "@/components/ui/sidebar"; // Import useSidebar
 import {
   Sidebar,
   SidebarContent,
@@ -40,7 +42,8 @@ const tabs = [
   { id: "uploadData", name: "Upload Data" },
 ];
 
-const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, isSidebarCollapsed, toggleSidebar }) => { // Added toggleSidebar prop
+const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout }) => { // Removed isSidebarCollapsed and toggleSidebar from props
+  const { state: sidebarState, toggleSidebar } = useSidebar(); // Call useSidebar
   const [isWalmartWFSOpen, setIsWalmartWFSOpen] = React.useState(true);
 
   return (
@@ -61,7 +64,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
             src="/image.svg"
             alt="Logo"
             className={`transition-all duration-300 ${
-              isSidebarCollapsed ? 'w-8 h-8 mx-auto' : 'w-16 h-16 mx-auto'
+              sidebarState === 'collapsed' ? 'w-8 h-8 mx-auto' : 'w-16 h-16 mx-auto' // Use sidebarState
             } w-80 h-30 mb-0`}
           />
         </div>
@@ -74,7 +77,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
                   className="flex items-center gap-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                 >
                   {isWalmartWFSOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                  <span className="text-sm font-medium">Walmart Fulfillment services</span>
+                  <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Walmart Fulfillment services</span>
                 </SidebarMenuButtonOriginal>
                 {isWalmartWFSOpen && (
                   <SidebarMenuSub>
@@ -95,7 +98,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
                           {tab.id === "insights" && <Lightbulb className="sidebar-menu-icon" />}
                           {tab.id === "planning" && <NotebookPen className="sidebar-menu-icon" />}
                           {tab.id === "uploadData" && <CloudUpload className="sidebar-menu-icon" />}
-                          <span className="text-sm font-medium">{tab.name.replace("Dashboards", "Pages").replace("Metrics", "Page")}</span>
+                          <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">{tab.name.replace("Dashboards", "Pages").replace("Metrics", "Page")}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
@@ -108,13 +111,23 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+<SidebarMenuItem>
+  <SidebarMenuButtonOriginal
+    onClick={() => {/* Add your theme toggle functionality here if needed */}}
+    className="flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200"
+  >
+    <ThemeSelector />
+    <span className="text-sm font-medium group-data-[collapsible=icon]:hidden"></span>
+  </SidebarMenuButtonOriginal>
+</SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButtonOriginal
               tooltip="Help"
               className="flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200"
             >
               <HelpCircle className="h-5 w-5" />
-              <span className="text-sm font-medium">Help</span>
+              <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Help</span>
             </SidebarMenuButtonOriginal>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -123,7 +136,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
               className="flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200"
             >
               <Settings className="h-5 w-5" />
-              <span className="text-sm font-medium">Company Setting</span>
+              <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Company Setting</span>
             </SidebarMenuButtonOriginal>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -133,7 +146,7 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout, is
               className="flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200"
             >
               <LogOut className="h-5 w-5" />
-              <span className="text-sm font-medium">Logout</span>
+              <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Logout</span>
             </SidebarMenuButtonOriginal>
           </SidebarMenuItem>
         </SidebarMenu>

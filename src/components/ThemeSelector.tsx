@@ -1,4 +1,4 @@
-import React, { useState } from "react"; // Removed useEffect
+import React, { useState } from "react";
 import { CheckIcon, Moon, Sun, Monitor } from "lucide-react";
 import {
   Popover,
@@ -18,10 +18,6 @@ const ThemeSelector = () => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  // Removed local state for themeMode and colorTheme
-  // Removed useEffect for loading from localStorage - handled by ThemeContext
-  // Removed applyTheme function - handled by ThemeContext
-
   // Handle theme mode change
   const handleModeChange = (value: ThemeMode) => {
     setThemeMode(value); // Use context function
@@ -35,7 +31,6 @@ const ThemeSelector = () => {
   // Handle color theme change
   const handleColorThemeChange = (value: ColorTheme) => {
     setColorTheme(value); // setColorTheme from context will trigger useEffect in ThemeContext to apply theme
-    // applyTheme(themeMode, value); // This line should be removed as ThemeContext now handles applying the theme
     toast({
       title: "Color Theme Updated",
       description: `Color theme changed to ${value}`,
@@ -50,21 +45,27 @@ const ThemeSelector = () => {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="w-10 h-10 bg-background border-border"
-        >
-          {themeMode === "light" ? (
-            <Sun className="h-5 w-5 text-foreground" />
-          ) : themeMode === "dark" ? (
-            <Moon className="h-5 w-5 text-foreground" />
-          ) : (
-            <Monitor className="h-5 w-5 text-foreground" />
-          )}
-        </Button>
-      </PopoverTrigger>
+<PopoverTrigger asChild>
+  <Button
+    variant="ghost"
+    size="icon"
+    className="w-auto h-auto px-3"
+    style={{
+      backgroundColor: themeMode === "dark" ? "#272D35" : "transparent"
+    }}
+  >
+    {themeMode === "light" ? (
+      <Sun className="h-5 w-10 text-foreground mr-2" />
+    ) : themeMode === "dark" ? (
+      <Moon className="h-5 w-10 text-foreground mr-2" />
+    ) : (
+      <Monitor className="h-5 w-10 text-foreground mr-5" />
+    )}
+    Theme
+  </Button>
+</PopoverTrigger>
+
+
       <PopoverContent className="w-80 p-4 bg-popover text-popover-foreground border-border">
         <div className="space-y-4">
           {/* Theme Mode Selector - Matching reference image */}
@@ -102,7 +103,7 @@ const ThemeSelector = () => {
                     themeMode === "system" && "bg-primary text-white"
                   )}
                 >
-                  <Monitor className="h-4 w-4 mr-1" /> Device
+                  <Monitor className="h-4 w-4 mr-[-0.5px]" /> Device
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
