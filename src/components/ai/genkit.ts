@@ -1,20 +1,7 @@
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 
-// Mock implementation of the genkit ai interface
-export const ai = {
-  prompt: async (prompt: string) => {
-    console.log("AI prompt called with:", prompt);
-    
-    // Return a mock response object
-    return {
-      text: async () => {
-        return JSON.stringify({
-          suggestedGroupings: [
-            ["US Phone", "EU Phone"],
-            ["APAC Chat", "Global Email"]
-          ],
-          reasoning: "Mock reasoning for AI response"
-        });
-      }
-    };
-  }
-};
+export const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.0-flash',
+});
