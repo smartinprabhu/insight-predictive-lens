@@ -79,48 +79,51 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout }) 
                   {isWalmartWFSOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                   <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Walmart Fulfillment services</span>
                 </SidebarMenuButtonOriginal>
-                {isWalmartWFSOpen && (
-                  <SidebarMenuSub>
-                    {tabs.map((tab) => (
-                      <SidebarMenuSubItem key={tab.id}>
-                        <SidebarMenuSubButton
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`flex items-center gap-2 py-2 rounded-lg transition-colors duration-200 ${
-                            activeTab === tab.id
-                              ? 'bg-primary text-primary-foreground font-bold'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          {tab.id === "businessPerformance" && <ChartNoAxesGantt className="sidebar-menu-icon" />}
-                          {tab.id === "actualData" && <FileClock className="sidebar-menu-icon" />}
-                          {tab.id === "forecast" && <BarChart className="sidebar-menu-icon" />}
-                          {tab.id === "modelValidation" && <Package className="sidebar-menu-icon" />}
-                          {tab.id === "insights" && <Lightbulb className="sidebar-menu-icon" />}
-                          {tab.id === "planning" && <NotebookPen className="sidebar-menu-icon" />}
-                          {tab.id === "uploadData" && <CloudUpload className="sidebar-menu-icon" />}
-                          <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">{tab.name.replace("Dashboards", "Pages").replace("Metrics", "Page")}</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                )}
               </SidebarMenuItem>
+
+              {/* Conditionally rendered list of items, replacing SidebarMenuSub */}
+              {isWalmartWFSOpen && (
+                <>
+                  {tabs.map((tab) => (
+                    <SidebarMenuItem 
+                      key={tab.id}
+                    >
+                      <SidebarMenuButtonOriginal
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2 py-2 rounded-lg transition-colors duration-200 w-full ${ 
+                          activeTab === tab.id
+                            ? 'bg-primary text-primary-foreground font-bold'
+                            : 'hover:bg-accent hover:text-accent-foreground'
+                        } ${ sidebarState === 'expanded' ? 'pl-7' : '' }`} // Indentation for expanded state. Collapsed state handled by ui/sidebar.tsx for SidebarMenuButtonOriginal
+                      >
+                        {/* Icons always visible */}
+                        {tab.id === "businessPerformance" && <ChartNoAxesGantt className="sidebar-menu-icon" />}
+                        {tab.id === "actualData" && <FileClock className="sidebar-menu-icon" />}
+                        {tab.id === "forecast" && <BarChart className="sidebar-menu-icon" />}
+                        {tab.id === "modelValidation" && <Package className="sidebar-menu-icon" />}
+                        {tab.id === "insights" && <Lightbulb className="sidebar-menu-icon" />}
+                        {tab.id === "planning" && <NotebookPen className="sidebar-menu-icon" />}
+                        {tab.id === "uploadData" && <CloudUpload className="sidebar-menu-icon" />}
+
+                        {/* Text label hidden when sidebar is collapsed */}
+                        <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">{tab.name.replace("Dashboards", "Pages").replace("Metrics", "Page")}</span>
+                      </SidebarMenuButtonOriginal>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-<SidebarMenuItem>
-  <SidebarMenuButtonOriginal
-    onClick={() => {/* Add your theme toggle functionality here if needed */}}
-    className="flex items-center gap-2 py-2 hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200"
-  >
-    <ThemeSelector />
-    <span className="text-sm font-medium group-data-[collapsible=icon]:hidden"></span>
-  </SidebarMenuButtonOriginal>
-</SidebarMenuItem>
-
+          <SidebarMenuItem className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
+            <ThemeSelector />
+            <span className="text-sm font-medium group-data-[collapsible=icon]:hidden pr-2">
+                Theme
+            </span>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButtonOriginal
               tooltip="Help"

@@ -61,7 +61,7 @@ const ThemeSelector = () => {
     ) : (
       <Monitor className="h-5 w-10 text-foreground mr-5" />
     )}
-    Theme
+
   </Button>
 </PopoverTrigger>
 
