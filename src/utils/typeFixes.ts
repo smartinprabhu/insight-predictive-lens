@@ -27,6 +27,9 @@ const LOB_TYPES = [
 // Make sure LOB types are available at runtime
 window.LOBTypes = LOB_TYPES;
 
+// Export the type so TypeScript knows these are valid
+export type LOBType = typeof LOB_TYPES[number];
+
 // Enhance the global window interface
 declare global {
   interface Window {

@@ -1,9 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Define the types for theme mode and color theme
 type ThemeMode = "light" | "dark" | "system";
-type ColorTheme = "default" | "blue" | "teal" | "green" | "purple" | "orange";
+type ColorTheme = "default" | "blue" | "teal" | "green" | "purple" | "orange"; // Added "teal"
 
 // Define the context type
 interface ThemeContextType {
@@ -20,17 +19,14 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 // Theme provider component
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const stored = localStorage.getItem("themeMode");
-    return (stored as ThemeMode) || "system";
+    return (localStorage.getItem("themeMode") as ThemeMode | null) || "system";
   });
   const [colorTheme, setColorTheme] = useState<ColorTheme>(() => {
-    const stored = localStorage.getItem("colorTheme");
-    return (stored as ColorTheme) || "default";
+    return (localStorage.getItem("colorTheme") as ColorTheme | null) || "default";
   });
-  
   // Initialize isDarkTheme based on the initial themeMode
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(() => {
-    const initialMode = (localStorage.getItem("themeMode") as ThemeMode) || "system";
+    const initialMode = (localStorage.getItem("themeMode") as ThemeMode | null) || "system";
     if (initialMode === "system") {
       return window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
@@ -39,6 +35,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Effect to apply theme and listen for system changes
   useEffect(() => {
+    // Encapsulated applyTheme logic
     const currentMode = themeMode;
     const currentColor = colorTheme;
 
@@ -57,33 +54,36 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.documentElement.classList.toggle("dark", isDark);
     document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
 
+    // Ensure 'teal' is included if it's a valid ColorTheme type.
+    // For this example, assuming ColorTheme includes "teal" and "orange" as per previous contexts.
     const themeClass = `${isDark ? "dark" : "light"}-${currentColor}`;
     document.documentElement.classList.add(themeClass);
 
     localStorage.setItem("themeMode", currentMode);
     localStorage.setItem("colorTheme", currentColor);
-    setIsDarkTheme(isDark);
+    setIsDarkTheme(isDark); // Update isDarkTheme state
 
     // Listener for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      if (themeMode === "system") {
+      if (themeMode === "system") { // Check current state, not a stale closure value
+        // Re-apply theme logic when system theme changes and mode is 'system'
         document.documentElement.classList.remove(
           "light-default", "light-blue", "light-teal", "light-green", "light-purple", "light-orange",
           "dark-default", "dark-blue", "dark-teal", "dark-green", "dark-purple", "dark-orange"
         );
         document.documentElement.classList.toggle("dark", e.matches);
         document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
-        const newSystemThemeClass = `${e.matches ? "dark" : "light"}-${colorTheme}`;
+        const newSystemThemeClass = `${e.matches ? "dark" : "light"}-${colorTheme}`; // Use current colorTheme state
         document.documentElement.classList.add(newSystemThemeClass);
         setIsDarkTheme(e.matches);
-        localStorage.setItem("themeMode", "system");
+        localStorage.setItem("themeMode", "system"); // Ensure localStorage reflects system is active
       }
     };
 
     mediaQuery.addEventListener("change", handleSystemThemeChange);
     return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
-  }, [themeMode, colorTheme]);
+  }, [themeMode, colorTheme]); // Re-run when themeMode or colorTheme changes
 
   const handleModeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
@@ -108,6 +108,3 @@ export const useTheme = () => {
   }
   return context;
 };
-
-// Export types for use in other components
-export type { ThemeMode, ColorTheme };
