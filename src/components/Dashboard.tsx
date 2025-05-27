@@ -384,7 +384,6 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     }
   };
 
-
   const tabs = [
     { id: "actualData", name: "Historical Data" },
     { id: "forecast", name: "Trends & Forecast" },
@@ -392,7 +391,6 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     { id: "insights", name: "Insights" },
     { id: "planning", name: "Planning" },
   ];
-
 
   const handleRefresh = () => {
     toast({
@@ -437,7 +435,6 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [dragging, rel]);
-
 
   // Inside the renderTabContent function
   const renderTabContent = () => {
@@ -547,7 +544,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
   const getHeaderTitle = (tabId: string) => {
     switch (tabId) {
       case "businessPerformance":
-        return "Business Performance Metrics";
+        return "Walmart Fulfillment Services";
       case "actualData":
         return "Historical Data";
       case "forecast":
@@ -582,7 +579,8 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
               <DashboardHeader
                 title={headerTitle} // Pass the dynamic title
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
-                forecastPeriod={activeTab === 'forecast' ? `${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history` : undefined}
+                 forecastPeriod={activeTab === 'forecast' ? `${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history` : undefined}
+
               />
             </div>
             <div className="flex items-center gap-2">
@@ -600,170 +598,200 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           </div>
 
           {activeTab === "businessPerformance" && (
-            <KPIMetrics kpiData={kpiData} loading={kpiLoading} />
+            <div className="mx-2 mt-[-10px]">
+              <KPIMetrics kpiData={kpiData} loading={kpiLoading} />
+            </div>
           )}
 
           {activeTab === "planning" && (
-            <PlanningTab />
+            <div className="mb-4">
+              <PlanningTab />
+            </div>
           )}
 
           {activeTab !== "businessPerformance" && (
-            <div className="">
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
-                {activeTab === "forecast" && (
-                  <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-                    <SheetTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="default"
-                        className=""
-                      >
-                        <Settings className="h-4 w-4" />
-                        Forecast Settings
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent
-                      side="right"
-                      className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000] dark:bg-[#2C2A2D]" // MODIFIED: Use theme card/border and added dark:bg-[#2C2A2D]
+            <div className="mb-4">
+              {activeTab === "forecast" && (
+                <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                  <SheetTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="fixed right-4 top-20"
                     >
-                      <SheetHeader>
-                        <SheetTitle>Forecast Settings</SheetTitle>
-                      </SheetHeader>
-                      {loadingIcons.forecast ? (
-                        <div className="space-y-4 p-4">
-                          <LoadingSkeleton />
-                          <div className="flex justify-center">
-                            <CircularProgress />
-                          </div>
+                      <Settings className="h-4 w-4" />
+                      Forecast Settings
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent
+                    side="right"
+                    className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000]" // MODIFIED: Use theme card/border
+                  >
+                    <SheetHeader>
+                      <SheetTitle>Forecast Settings</SheetTitle>
+                    </SheetHeader>
+                    {loadingIcons.forecast ? (
+                      <div className="space-y-4 p-4">
+                        <LoadingSkeleton />
+                        <div className="flex justify-center">
+                          <CircularProgress />
                         </div>
-                      ) : (
-                        <TabContext value={forecastType}>
-                          <div className="space-y-4 p-4">
-                            {/* Forecast Period */}
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Forecast Period</label>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={tempForecastPeriod}
-                                  onChange={(e) => setTempForecastPeriod(Number(e.target.value))}
-                                  className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                                />
-                                <select
-                                  value={tempAggregationType}
-                                  onChange={(e) => setTempAggregationType(e.target.value)}
-                                  className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                                >
-                                  <option value="Weekly">Weeks</option>
-                                  <option value="Monthly">Months</option>
-                                </select>
-                              </div>
+                      </div>
+                    ) : (
+                      <TabContext value={forecastType}>
+                        <div className="space-y-4 =-2">
+                          {/* Forecast Period */}
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Forecast Period</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="1"
+                                value={tempForecastPeriod}
+                                onChange={(e) => setTempForecastPeriod(Number(e.target.value))}
+                                className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+                              />
+                              <select
+                                value={tempAggregationType}
+                                onChange={(e) => setTempAggregationType(e.target.value)}
+                                className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+                              >
+                                <option value="Weekly">Weeks</option>
+                                <option value="Monthly">Months</option>
+                              </select>
                             </div>
+                          </div>
 
-                            {/* Model Type Tabs */}
-                            <TabList
-                              onChange={(event, newValue) => setForecastType(newValue)}
-                              aria-label="model-type-tabs"
-                            >
-                              <Tab label="Modeling" value="single" />
-                              <Tab label="Hybrid" value="hybrid" />
-                            </TabList>
+                          {/* Model Type Tabs */}
+                          <TabList
+                            onChange={(event, newValue) => setForecastType(newValue)}
+                            aria-label="model-type-tabs"
+                          >
+                            <Tab label="Modeling" value="single" />
+                            <Tab label="Hybrid" value="hybrid" />
+                          </TabList>
 
-                            {/* Model Selection Panels */}
-                            <TabPanel value="single">
-                              <div>
-                                <label className="block text-sm font-medium mb-2">Select a Forecasting Model</label>
-                                <div className="space-y-2">
-                                  {["Prophet", "ARIMA", "SARIMAX", "ETS", "Weighted Moving Average", "CatBoost", "XGBoost", "LightGBM"].map(
-                                    (model) => (
-                                      <label key={model} className="flex items-center space-x-2">
-                                        <input
-                                          type="radio"
-                                          value={model}
-                                          checked={selectedModel === model}
-                                          onChange={(e) => setSelectedModel(e.target.value)}
-                                          className="dark:bg-gray-700 dark:text-white"
-                                        />
-                                        <span>{model}</span>
-                                      </label>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            </TabPanel>
-                            <TabPanel value="hybrid">
-                              <div>
-                                <div className="flex items-center justify-between mb-2">
-                                  <label className="block text-sm font-medium">Select Hybrid Model</label>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                                          <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent
-                                        side="right"
-                                        className="w-[300px] bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-2 rounded-md"
-                                      >
-                                        <p className="font-bold mb-1">Hybrid Models:</p>
-                                        <p className="mb-1"><span className="font-bold">Prophet + XGBoost:</span> Prophet captures broad trends/seasonality while XGBoost models residual irregularities.</p>
-                                        <p className="mb-1"><span className="font-bold">ARIMA + LightGBM:</span> ARIMA handles linear autocorrelation, LightGBM captures nonlinear patterns.</p>
-                                        <p><span className="font-bold">SARIMAX + CatBoost:</span> SARIMAX fits seasonal/exogenous factors, CatBoost learns complex interactions.</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                                <div className="space-y-2">
-                                  {[
-                                    { label: "ARIMA + LightGBM", value: "ARIMA+LightGBM", description: "ARIMA provides a solid statistical backbone for linear autocorrelation, while LightGBM quickly captures any leftover nonlinear patterns at scale—great for large datasets." },
-                                    { label: "Prophet + XGBoost", value: "Prophet+XGBoost", description: "Prophet nails the broad trend/seasonality and holiday effects, then XGBoost aggressively models the residual irregularities, giving you both interpretability and strong anomaly handling." },
-                                    { label: "SARIMAX + CatBoost", value: "SARIMAX+CatBoost", description: "SARIMAX delivers fine‑grained seasonal and exogenous‑regressor fits; CatBoost then flexibly learns any complex interactions or nonlinear 'leftovers.'" },
-                                  ].map((hybridModel) => (
-                                    <label key={hybridModel.value} className="flex items-center space-x-2">
+                          {/* Model Selection Panels */}
+                          <TabPanel value="single">
+                            <div>
+                              <label className="block text-sm font-medium mb-2">Select a Forecasting Model</label>
+                              <div className="space-y-2">
+                                {["Prophet", "ARIMA", "SARIMAX", "ETS", "Weighted Moving Average", "CatBoost", "XGBoost", "LightGBM"].map(
+                                  (model) => (
+                                    <label key={model} className="flex items-center space-x-2">
                                       <input
                                         type="radio"
-                                        value={hybridModel.value}
-                                        checked={selectedHybridModels[0] === hybridModel.value}
-                                        onChange={(e) => setSelectedHybridModels([e.target.value])}
+                                        value={model}
+                                        checked={selectedModel === model}
+                                        onChange={(e) => setSelectedModel(e.target.value)}
                                         className="dark:bg-gray-700 dark:text-white"
                                       />
-                                      <span>{hybridModel.label}</span>
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                                              <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
-                                            </div>
-                                          </TooltipTrigger>
-                                          <TooltipContent
-                                            side="right"
-                                            className="w-[300px] bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-2 rounded-md"
-                                          >
-                                            <p>{hybridModel.description}</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
+                                      <span>{model}</span>
                                     </label>
-                                  ))}
-                                </div>
+                                  )
+                                )}
                               </div>
-                            </TabPanel>
+                            </div>
+                          </TabPanel>
+                          <TabPanel value="hybrid">
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-medium">Select Hybrid Model</label>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                        <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                      side="right"
+                                      className="w-[300px] bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-2 rounded-md"
+                                    >
+                                      <p className="font-bold mb-1">Hybrid Models:</p>
+                                      <p className="mb-1"><span className="font-bold">Prophet + XGBoost:</span> Prophet captures broad trends/seasonality while XGBoost models residual irregularities.</p>
+                                      <p className="mb-1"><span className="font-bold">ARIMA + LightGBM:</span> ARIMA handles linear autocorrelation, LightGBM captures nonlinear patterns.</p>
+                                      <p><span className="font-bold">SARIMAX + CatBoost:</span> SARIMAX fits seasonal/exogenous factors, CatBoost learns complex interactions.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                              <div className="space-y-2">
+                                {[
+                                  { label: "ARIMA + LightGBM", value: "ARIMA+LightGBM", description: "ARIMA provides a solid statistical backbone for linear autocorrelation, while LightGBM quickly captures any leftover nonlinear patterns at scale—great for large datasets." },
+                                  { label: "Prophet + XGBoost", value: "Prophet+XGBoost", description: "Prophet nails the broad trend/seasonality and holiday effects, then XGBoost aggressively models the residual irregularities, giving you both interpretability and strong anomaly handling." },
+                                  { label: "SARIMAX + CatBoost", value: "SARIMAX+CatBoost", description: "SARIMAX delivers fine‑grained seasonal and exogenous‑regressor fits; CatBoost then flexibly learns any complex interactions or nonlinear 'leftovers.'" },
+                                ].map((hybridModel) => (
+                                  <label key={hybridModel.value} className="flex items-center space-x-2">
+                                    <input
+                                      type="radio"
+                                      value={hybridModel.value}
+                                      checked={selectedHybridModels[0] === hybridModel.value}
+                                      onChange={(e) => setSelectedHybridModels([e.target.value])}
+                                      className="dark:bg-gray-700 dark:text-white"
+                                    />
+                                    <span>{hybridModel.label}</span>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                            <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                          side="right"
+                                          className="w-[300px] bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-2 rounded-md"
+                                        >
+                                          <p>{hybridModel.description}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          </TabPanel>
 
-                            {/* External Factors Section (Always Visible) */}
-                            <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                              <h3 className="text-sm font-medium">External Factors</h3>
+                          {/* External Factors Section (Always Visible) */}
+                          <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                            <h3 className="text-sm font-medium">External Factors</h3>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={externalFactors.majorEvents}
+                                onChange={(e) =>
+                                  setExternalFactors({ ...externalFactors, majorEvents: e.target.checked })
+                                }
+                                className="dark:bg-gray-700 dark:text-white"
+                              />
+                              <span>Major Events</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                      <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="right"
+                                    className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-1 rounded-md"
+                                  >
+                                    <p>Includes holidays and major events like Christmas, New Year, etc.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </label>
+                            <div>
                               <label className="flex items-center space-x-2">
                                 <input
                                   type="checkbox"
-                                  checked={externalFactors.majorEvents}
+                                  checked={externalFactors.dynamicTarget}
                                   onChange={(e) =>
-                                    setExternalFactors({ ...externalFactors, majorEvents: e.target.checked })
+                                    setExternalFactors({ ...externalFactors, dynamicTarget: e.target.checked })
                                   }
                                   className="dark:bg-gray-700 dark:text-white"
                                 />
-                                <span>Major Events</span>
+                                <span>Dynamic Target</span>
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -775,109 +803,82 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                                       side="right"
                                       className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-1 rounded-md"
                                     >
-                                      <p>Includes holidays and major events like Christmas, New Year, etc.</p>
+                                      <p>
+                                        Specify a percentage amount for a specific date range to see its impact
+                                        on actual and predicted data.
+                                      </p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
                               </label>
-                              <div>
-                                <label className="flex items-center space-x-2">
+                              {externalFactors.dynamicTarget && (
+                                <div className="ml-6 space-y-2 mt-2">
                                   <input
-                                    type="checkbox"
-                                    checked={externalFactors.dynamicTarget}
+                                    type="date"
+                                    value={externalFactors.dynamicTargetStartDate}
                                     onChange={(e) =>
-                                      setExternalFactors({ ...externalFactors, dynamicTarget: e.target.checked })
+                                      setExternalFactors({
+                                        ...externalFactors,
+                                        dynamicTargetStartDate: e.target.value,
+                                      })
                                     }
-                                    className="dark:bg-gray-700 dark:text-white"
+                                    className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+                                    placeholder="Start Date"
                                   />
-                                  <span>Dynamic Target</span>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                                          <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent
-                                        side="right"
-                                        className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-1 rounded-md"
-                                      >
-                                        <p>
-                                          Specify a percentage amount for a specific date range to see its impact
-                                          on actual and predicted data.
-                                        </p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </label>
-                                {externalFactors.dynamicTarget && (
-                                  <div className="ml-6 space-y-2 mt-2">
-                                    <input
-                                      type="date"
-                                      value={externalFactors.dynamicTargetStartDate}
-                                      onChange={(e) =>
-                                        setExternalFactors({
-                                          ...externalFactors,
-                                          dynamicTargetStartDate: e.target.value,
-                                        })
-                                      }
-                                      className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                                      placeholder="Start Date"
-                                    />
-                                    <input
-                                      type="date"
-                                      value={externalFactors.dynamicTargetEndDate}
-                                      onChange={(e) =>
-                                        setExternalFactors({
-                                          ...externalFactors,
-                                          dynamicTargetEndDate: e.target.value,
-                                        })
-                                      }
-                                      className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                                      placeholder="End Date"
-                                    />
-                                    <input
-                                      type="number"
-                                      value={externalFactors.dynamicTargetDecreasePercentage}
-                                      onChange={(e) =>
-                                        setExternalFactors({
-                                          ...externalFactors,
-                                          dynamicTargetDecreasePercentage: e.target.value,
-                                        })
-                                      }
-                                      className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                                      placeholder="Decrease Percentage"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Apply Changes Button */}
-                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                              <Button
-                                size="sm"
-                                className="w-full"
-                                onClick={async () => {
-                                  setIsDrawerOpen(false);
-                                  await handleApplyChanges(tempForecastPeriod, modelType);
-                                  toast({
-                                    title: "Settings Applied",
-                                    description: "Forecast settings have been updated successfully.",
-                                  });
-                                }}
-                              >
-                                Apply Changes
-                              </Button>
+                                  <input
+                                    type="date"
+                                    value={externalFactors.dynamicTargetEndDate}
+                                    onChange={(e) =>
+                                      setExternalFactors({
+                                        ...externalFactors,
+                                        dynamicTargetEndDate: e.target.value,
+                                      })
+                                    }
+                                    className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+                                    placeholder="End Date"
+                                  />
+                                  <input
+                                    type="number"
+                                    value={externalFactors.dynamicTargetDecreasePercentage}
+                                    onChange={(e) =>
+                                      setExternalFactors({
+                                        ...externalFactors,
+                                        dynamicTargetDecreasePercentage: e.target.value,
+                                      })
+                                    }
+                                    className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
+                                    placeholder="Decrease Percentage"
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </TabContext>
-                      )}
-                    </SheetContent>
-                  </Sheet>
-                )}
-              </div>
-              <div className="p-4">
+
+                          {/* Apply Changes Button */}
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              onClick={async () => {
+                                setIsDrawerOpen(false);
+                                await handleApplyChanges(tempForecastPeriod, modelType);
+                                toast({
+                                  title: "Settings Applied",
+                                  description: "Forecast settings have been updated successfully.",
+                                });
+                              }}
+                            >
+                              Apply Changes
+                            </Button>
+                          </div>
+                        </div>
+                      </TabContext>
+                    )}
+                  </SheetContent>
+                </Sheet>
+              )}
+
+              <div className="p-2">
                 {renderTabContent()}
               </div>
             </div>
@@ -891,6 +892,3 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     </SidebarProvider>
   );
 };
-// Ensure PlanningTab uses bg-background for its main container if it's meant to be part of the themed area.
-// It currently does: <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
-// This seems correct.

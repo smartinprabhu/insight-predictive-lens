@@ -26,7 +26,7 @@ export const KPIMetricsCard = ({
   
   if (loading) {
     return (
-      <Card className="relative">
+      <Card className="relative m-20 shadow-md  w-60 h-162">
         <Skeleton className="h-4 w-3/4 mb-2" />
         <Skeleton className="h-8 w-1/2 mb-4" />
         <Skeleton className="h-4 w-full mb-4" />
@@ -39,11 +39,13 @@ export const KPIMetricsCard = ({
   }
 
   return (
-    <Card>
+    <Card className="shadow-md mb-[-20px] w-60 h-162">
       <div className="space-y-1.5">
         <h3 className="font-medium text-muted-foreground">{title}</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold dark:text-white">{typeof value === 'number' ? formatNumber(value) : value}</span>
+          <span className="text-4xl font-bold dark:text-white">
+            {typeof value === 'number' ? formatNumber(value) : value}
+          </span>
         </div>
         <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>
