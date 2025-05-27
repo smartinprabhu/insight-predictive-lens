@@ -582,7 +582,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
               <DashboardHeader
                 title={headerTitle} // Pass the dynamic title
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
-                forecastPeriod={`${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history`}
+                forecastPeriod={activeTab === 'forecast' ? `${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history` : undefined}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -624,7 +624,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                     </SheetTrigger>
                     <SheetContent
                       side="right"
-                      className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000]" // MODIFIED: Use theme card/border
+                      className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000] dark:bg-[#2C2A2D]" // MODIFIED: Use theme card/border and added dark:bg-[#2C2A2D]
                     >
                       <SheetHeader>
                         <SheetTitle>Forecast Settings</SheetTitle>
