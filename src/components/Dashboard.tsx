@@ -544,6 +544,27 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
     navigate("/planning");
   };
 
+  const getHeaderTitle = (tabId: string) => {
+    switch (tabId) {
+      case "businessPerformance":
+        return "Business Performance Metrics";
+      case "actualData":
+        return "Historical Data";
+      case "forecast":
+        return "Trends & Forecast";
+      case "modelValidation":
+        return "Model Validation";
+      case "insights":
+        return "Insights";
+      case "planning":
+        return "Planning";
+      default:
+        return "Walmart Fulfillment Services"; // Default title
+    }
+  };
+
+  const headerTitle = getHeaderTitle(activeTab);
+
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden">
@@ -557,8 +578,9 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
         <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
           <div className="flex items-center justify-between mb-2">
             {/* Removed sticky positioning from this wrapper div */}
-            <div className="flex items-center gap-0"> 
+            <div className="flex items-center gap-0">
               <DashboardHeader
+                title={headerTitle} // Pass the dynamic title
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
                 forecastPeriod={`${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history`}
               />

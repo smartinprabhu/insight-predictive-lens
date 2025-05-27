@@ -89,7 +89,7 @@ import {
 } from "@/components/ui2/table";
 
 import { Loader2, Zap, Download, Building2, Briefcase, ChevronDown, Edit3, ArrowDown, ArrowUp, Minus, Calendar as CalendarIcon, Users, ChevronsUpDown, ArrowLeft, ArrowRight } from "lucide-react";
-
+// Card imports for ui2 were already present: Card, CardContent, CardDescription, CardHeader, CardTitle
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { suggestLoBGroupings, SuggestLoBGroupingsOutput } from "@/ai/flows/suggest-lob-groupings";
@@ -955,8 +955,8 @@ function HeaderSection({
     <TooltipProvider>
       <header className="sticky top-0 z-50 bg-background p-4 border-b border-border rounded-tl-lg rounded-tr-lg">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-          <h1 className="text-2xl font-semibold text-foreground">Capacity Insights</h1>
-          <div className="flex flex-wrap items-center gap-2">
+          {/* <h1 className="text-2xl font-semibold text-foreground">Capacity Insights</h1> Removed as per Part 2 */}
+          <div className="flex flex-wrap items-center gap-2 ml-auto"> {/* Added ml-auto to push buttons to the right if no title */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -2249,10 +2249,14 @@ const processDataForTable = useCallback(() => {
 
  const scrollContainerRef = useRef<HTMLDivElement>(null);
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
-  <HeaderSection
-    filterOptions={filterOptions}
-    selectedBusinessUnit={selectedBusinessUnit}
+    <Card> {/* Part 1: New parent Card */}
+      <CardHeader>
+        <CardTitle>Capacity Insights</CardTitle> {/* Part 1: CardTitle added */}
+      </CardHeader>
+      <CardContent> {/* Part 1: CardContent added */}
+        <HeaderSection
+          filterOptions={filterOptions}
+          selectedBusinessUnit={selectedBusinessUnit}
     onSelectBusinessUnit={handleBusinessUnitChange}
     selectedLineOfBusiness={selectedLineOfBusiness}
     onSelectLineOfBusiness={handleLOBChange}
@@ -2263,13 +2267,13 @@ const processDataForTable = useCallback(() => {
     allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
     displayedPeriodHeaders={displayedPeriodHeaders}
     activeHierarchyContext={activeHierarchyContext}
-    headerPeriodScrollerRef={headerPeriodScrollerRef}
-  />
-  <div className="overflow-x-auto">
-    <main className="flex-grow px-4 pb-4 overflow-auto">
-      <CapacityTable
-        data={displayableCapacityData}
-        periodHeaders={displayedPeriodHeaders}
+          headerPeriodScrollerRef={headerPeriodScrollerRef}
+        />
+        <div className="overflow-x-auto"> {/* This div was already present */}
+          <main className="flex-grow px-4 pb-4 overflow-auto"> {/* This main was already present */}
+            <CapacityTable
+              data={displayableCapacityData}
+              periodHeaders={displayedPeriodHeaders}
         expandedItems={expandedItems}
         toggleExpand={toggleExpand}
         teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
@@ -2280,11 +2284,11 @@ const processDataForTable = useCallback(() => {
         onSetEditingCell={handleSetEditingCell}
         selectedTimeInterval={selectedTimeInterval}
         onActiveHierarchyChange={handleActiveHierarchyChange}
-        tableBodyScrollRef={tableBodyScrollRef}
-      />
-    </main>
-  </div>
-</div>
-
+              tableBodyScrollRef={tableBodyScrollRef}
+            />
+          </main>
+        </div>
+      </CardContent> {/* Part 1: Closing CardContent */}
+    </Card> /* Part 1: Closing Card */
   );
 }

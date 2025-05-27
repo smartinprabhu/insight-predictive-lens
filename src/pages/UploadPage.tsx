@@ -1,12 +1,26 @@
 
 import React from "react";
 import UploadDataTabWithNavigation from "@/components/UploadDataTabWithNavigation";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { DashboardHeader } from "@/components/DashboardHeader"; // Import DashboardHeader
 
 const UploadPage = () => {
   return (
-    <div className="p-4 md:p-6">
-      <h1 className="text-2xl font-bold mb-4">Upload & Planning</h1>
-      <UploadDataTabWithNavigation />
+    <div className="p-4 md:p-6 space-y-4"> {/* New top-level div */}
+      <DashboardHeader
+        title="Upload & Planning"
+        lastUpdated={new Date().toLocaleDateString("en-GB")}
+        forecastPeriod="Manage your data uploads and planning" // Example value
+        // onRefresh prop can be omitted if not needed for this page
+      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload & Planning</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UploadDataTabWithNavigation />
+        </CardContent>
+      </Card>
     </div>
   );
 };

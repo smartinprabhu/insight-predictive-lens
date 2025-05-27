@@ -26,7 +26,7 @@ export const KPIMetricsCard = ({
   
   if (loading) {
     return (
-      <Card className="p-6 shadow-md border border-border/40 hover:border-border/80 transition-all duration-200 dark:bg-gray-800/90 dark:border-gray-700 relative">
+      <Card className="relative">
         <Skeleton className="h-4 w-3/4 mb-2" />
         <Skeleton className="h-8 w-1/2 mb-4" />
         <Skeleton className="h-4 w-full mb-4" />
@@ -39,7 +39,7 @@ export const KPIMetricsCard = ({
   }
 
   return (
-    <Card className="p-6 shadow-md border border-border/40 hover:border-border/80 transition-all duration-200 dark:bg-gray-800/90 dark:border-gray-700">
+    <Card>
       <div className="space-y-1.5">
         <h3 className="font-medium text-muted-foreground">{title}</h3>
         <div className="flex items-baseline gap-2">
