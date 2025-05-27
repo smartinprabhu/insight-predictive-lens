@@ -575,10 +575,9 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           handleLogout={handleLogout}
         />
 
-        {/* New flex-col container to hold header and scrollable content */}
-        <div className="flex flex-col flex-1 bg-background text-foreground">
-          {/* Header section moved out of the scrollable div */}
-          <div className="flex items-center justify-between p-2 md:p-4 border-b border-border"> {/* Added: Wrapper for header, matching original padding/border if needed */}
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
+          <div className="flex items-center justify-between mb-2">
+            {/* Removed sticky positioning from this wrapper div */}
             <div className="flex items-center gap-0">
               <DashboardHeader
                 title={headerTitle} // Pass the dynamic title
@@ -594,35 +593,35 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                 className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />
+
               </Button>
+
             </div>
           </div>
 
-          {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4"> {/* Removed bg-background from here as parent might have it */}
-            {activeTab === "businessPerformance" && (
-              <KPIMetrics kpiData={kpiData} loading={kpiLoading} />
-            )}
+          {activeTab === "businessPerformance" && (
+            <KPIMetrics kpiData={kpiData} loading={kpiLoading} />
+          )}
 
-            {activeTab === "planning" && (
-              <PlanningTab />
-            )}
+          {activeTab === "planning" && (
+            <PlanningTab />
+          )}
 
-            {activeTab !== "businessPerformance" && (
-              <div className="">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
-                  {activeTab === "forecast" && (
-                    <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-                      <SheetTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className=""
-                        >
-                          <Settings className="h-4 w-4" />
-                          Forecast Settings
-                        </Button>
-                      </SheetTrigger>
+          {activeTab !== "businessPerformance" && (
+            <div className="">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
+                {activeTab === "forecast" && (
+                  <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                    <SheetTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className=""
+                      >
+                        <Settings className="h-4 w-4" />
+                        Forecast Settings
+                      </Button>
+                    </SheetTrigger>
                     <SheetContent
                       side="right"
                       className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000] dark:bg-[#2C2A2D]" // MODIFIED: Use theme card/border and added dark:bg-[#2C2A2D]
