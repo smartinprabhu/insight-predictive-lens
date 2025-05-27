@@ -953,9 +953,8 @@ function HeaderSection({
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-50 bg-background p-4 border-b border-border rounded-tl-lg rounded-tr-lg">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-          {/* <h1 className="text-2xl font-semibold text-foreground">Capacity Insights</h1> Removed as per Part 2 */}
+          <h1 className="text-2xl font-semibold text-foreground">Capacity Insights</h1> 
           <div className="flex flex-wrap items-center gap-2 ml-auto"> {/* Added ml-auto to push buttons to the right if no title */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -1074,7 +1073,7 @@ function HeaderSection({
           </div>
         </div>
         <AiGroupingDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
-      </header>
+
     </TooltipProvider>
   );
 }
@@ -2249,46 +2248,44 @@ const processDataForTable = useCallback(() => {
 
  const scrollContainerRef = useRef<HTMLDivElement>(null);
   return (
-    <Card> {/* Part 1: New parent Card */}
-      <CardHeader>
-        <CardTitle>Capacity Insights</CardTitle> {/* Part 1: CardTitle added */}
-      </CardHeader>
-      <CardContent> {/* Part 1: CardContent added */}
+
+ <div>
+      <CardContent>
         <HeaderSection
           filterOptions={filterOptions}
           selectedBusinessUnit={selectedBusinessUnit}
-    onSelectBusinessUnit={handleBusinessUnitChange}
-    selectedLineOfBusiness={selectedLineOfBusiness}
-    onSelectLineOfBusiness={handleLOBChange}
-    selectedTimeInterval={selectedTimeInterval}
-    onSelectTimeInterval={handleTimeIntervalChange}
-    selectedDateRange={selectedDateRange}
-    onSelectDateRange={setSelectedDateRange}
-    allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
-    displayedPeriodHeaders={displayedPeriodHeaders}
-    activeHierarchyContext={activeHierarchyContext}
+          onSelectBusinessUnit={handleBusinessUnitChange}
+          selectedLineOfBusiness={selectedLineOfBusiness}
+          onSelectLineOfBusiness={handleLOBChange}
+          selectedTimeInterval={selectedTimeInterval}
+          onSelectTimeInterval={handleTimeIntervalChange}
+          selectedDateRange={selectedDateRange}
+          onSelectDateRange={setSelectedDateRange}
+          allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
+          displayedPeriodHeaders={displayedPeriodHeaders}
+          activeHierarchyContext={activeHierarchyContext}
           headerPeriodScrollerRef={headerPeriodScrollerRef}
         />
-        <div className="overflow-x-auto"> {/* This div was already present */}
-          <main className="flex-grow px-4 pb-4 overflow-auto"> {/* This main was already present */}
+        <div className="overflow-x-auto">
+          <main className="flex-grow px-4 pb-4 overflow-auto">
             <CapacityTable
               data={displayableCapacityData}
               periodHeaders={displayedPeriodHeaders}
-        expandedItems={expandedItems}
-        toggleExpand={toggleExpand}
-        teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
-        aggregatedMetricDefinitions={AGGREGATED_METRIC_ROW_DEFINITIONS}
-        onTeamMetricChange={handleTeamMetricChange}
-        onLobMetricChange={handleLobMetricChange}
-        editingCell={editingCell}
-        onSetEditingCell={handleSetEditingCell}
-        selectedTimeInterval={selectedTimeInterval}
-        onActiveHierarchyChange={handleActiveHierarchyChange}
+              expandedItems={expandedItems}
+              toggleExpand={toggleExpand}
+              teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
+              aggregatedMetricDefinitions={AGGREGATED_METRIC_ROW_DEFINITIONS}
+              onTeamMetricChange={handleTeamMetricChange}
+              onLobMetricChange={handleLobMetricChange}
+              editingCell={editingCell}
+              onSetEditingCell={handleSetEditingCell}
+              selectedTimeInterval={selectedTimeInterval}
+              onActiveHierarchyChange={handleActiveHierarchyChange}
               tableBodyScrollRef={tableBodyScrollRef}
             />
           </main>
         </div>
-      </CardContent> {/* Part 1: Closing CardContent */}
-    </Card> /* Part 1: Closing Card */
+      </CardContent>
+    </div>
   );
 }

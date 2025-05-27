@@ -243,11 +243,11 @@ return (
     <div className="flex flex-row gap-4 w-full items-start">
       {!showForecastSettings && (
         <Card className="flex-1 shadow-md dark:border-gray-700 relative overflow-visible">
-          <div className="relative">
-            <CardHeader>
-              <CardTitle>Model Validation</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
+          <div className="relative pt-2 mt-[-17px] ">
+
+
+                              <h3 className="text-xl font-semibold">Model Validation</h3>
+            <CardContent className="p-6">
               <div className="absolute top-2 right-2 z-10 flex items-center space-x-2">
                 <Select value={selectedMetric} onValueChange={setSelectedMetric}>
                   <SelectTrigger className="w-[180px]" aria-label="Select metric">

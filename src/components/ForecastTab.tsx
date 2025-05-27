@@ -242,10 +242,10 @@ export const ForecastTab = ({
   return (
     <TooltipProvider>
       <Card className="shadow-md">
-        <CardContent className="pt-6">
+        <CardContent className="pt-2 mt-[-17px]">
           <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ">
                 <h3 className="text-xl font-semibold">Trends & Forecast</h3>
                 <UITooltip>
                   <TooltipTrigger asChild>

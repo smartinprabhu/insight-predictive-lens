@@ -546,15 +546,15 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
       case "businessPerformance":
         return "Walmart Fulfillment Services";
       case "actualData":
-        return "Historical Data";
+        return "Walmart Fulfillment Services";
       case "forecast":
-        return "Trends & Forecast";
+        return "Walmart Fulfillment Services";
       case "modelValidation":
-        return "Model Validation";
+        return "Walmart Fulfillment Services";
       case "insights":
-        return "Insights";
+        return "Walmart Fulfillment Services";
       case "planning":
-        return "Planning";
+        return "Walmart Fulfillment Services";
       default:
         return "Walmart Fulfillment Services"; // Default title
     }
@@ -598,7 +598,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           </div>
 
           {activeTab === "businessPerformance" && (
-            <div className="mx-2 mt-[-10px]">
+            <div className="mx-2  ">
               <KPIMetrics kpiData={kpiData} loading={kpiLoading} />
             </div>
           )}

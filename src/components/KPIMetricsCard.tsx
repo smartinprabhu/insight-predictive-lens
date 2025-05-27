@@ -13,11 +13,11 @@ interface KPIMetricProps {
   loading?: boolean;
 }
 
-export const KPIMetricsCard = ({ 
-  title, 
-  value, 
-  subtitle, 
-  changeValue, 
+export const KPIMetricsCard = ({
+  title,
+  value,
+  subtitle,
+  changeValue,
   changeText,
   invertChange = false,
   loading = false,
@@ -26,7 +26,7 @@ export const KPIMetricsCard = ({
   
   if (loading) {
     return (
-      <Card className="relative m-20 shadow-md  w-60 h-162">
+      <Card className="relative m-4 shadow-md w-full max-w-xs h-40">
         <Skeleton className="h-4 w-3/4 mb-2" />
         <Skeleton className="h-8 w-1/2 mb-4" />
         <Skeleton className="h-4 w-full mb-4" />
@@ -39,24 +39,24 @@ export const KPIMetricsCard = ({
   }
 
   return (
-    <Card className="shadow-md mb-[-20px] w-60 h-162">
+    <Card className="shadow-md p-4 w-full max-w-xs h-auto bg-[#272D35] hover:bg-[#3A3F49] transition duration-200 ease-in-out overflow-hidden">
       <div className="space-y-1.5">
-        <h3 className="font-medium text-muted-foreground">{title}</h3>
+        <h3 className="font-medium text-gray-200 truncate">{title}</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold dark:text-white">
+          <span className="text-3xl font-bold text-gray-100 truncate">
             {typeof value === 'number' ? formatNumber(value) : value}
           </span>
         </div>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
+        <p className="text-sm text-gray-400 truncate">{subtitle}</p>
       </div>
       <div className="mt-4 flex flex-col space-y-1">
         <div className="flex items-center gap-1">
           {isPositive ? (
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <TrendingUp className="h-4 w-4 text-green-400" />
           ) : (
-            <TrendingDown className="h-4 w-4 text-red-500" />
+            <TrendingDown className="h-4 w-4 text-red-400" />
           )}
-          <span className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+          <span className={`text-sm font-medium ${isPositive ? 'text-green-400' : 'text-red-400'} truncate`}>
             {changeValue >= 0 ? '+' : '-'} {Math.abs(changeValue).toFixed(2)}% {changeText}
           </span>
         </div>

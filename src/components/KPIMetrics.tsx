@@ -27,10 +27,10 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading }) => {
     <Card> {/* Root element is now Card */}
       <CardHeader>
         <div className="flex justify-between items-center"> {/* To keep title and date on same line if desired */}
-          <CardTitle className="text-lg font-medium text-foreground"> {/* Applied original h2 classes for consistency, though CardTitle has its own */}
+          <CardTitle className="text-xl mb-2 mt-[-2px] font-medium text-foreground"> {/* Applied original h2 classes for consistency, though CardTitle has its own */}
             Business Performance Metrics
           </CardTitle>
-          <div className="text-sm text-muted-foreground bg-background/80 dark:bg-gray-800/80 px-3 py-1 rounded-md shadow-sm border border-border/30">
+          <div className="text-sm text-muted-foreground bg-background/80 mb-2 dark:bg-gray-800/80 px-3 py-1 rounded-md shadow-sm border border-border/30">
             {/* This was the original "As of" date styling. It can be simplified or put into CardDescription */}
             <span>As of {new Date().toLocaleDateString('en-GB')}</span>
           </div>
