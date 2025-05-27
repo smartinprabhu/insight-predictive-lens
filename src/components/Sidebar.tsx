@@ -12,7 +12,8 @@ import {
   ChevronRight,
   HelpCircle,
   Settings,
-  MoreVertical, // Import MoreVertical
+  MoreVertical, // Existing icon
+  Menu,           // New hamburger icon
 } from "lucide-react";
 import ThemeSelector from "./ThemeSelector"; // Import ThemeSelector
 import { ThemeToggle } from "./ThemeToggle";
@@ -52,13 +53,13 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout }) 
         <div className="flex flex-col items-center justify-center py-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-end w-full p-2"> {/* Changed justify-between to justify-end */}
             {/* Replace SidebarTrigger with a custom button */}
-            <button
+            {/* <button
               onClick={toggleSidebar} 
               className="p-2 rounded-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label="Toggle sidebar"
             >
-              <MoreVertical className="h-6 w-6" />
-            </button>
+              <Menu className="h-6 w-6" />
+            </button> */}
           </div>
           <img
             src="/image.svg"
@@ -118,9 +119,9 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout }) 
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
+          <SidebarMenuItem className="flex items-center justify-start group-data-[collapsible=icon]:justify-center">
             <ThemeSelector />
-            <span className="text-sm font-medium group-data-[collapsible=icon]:hidden pr-2">
+            <span className="text-sm font-medium group-data-[collapsible=icon]:hidden ml-2">
                 Theme
             </span>
           </SidebarMenuItem>

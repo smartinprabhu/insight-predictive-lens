@@ -556,7 +556,8 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
 
         <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-0 sticky top-4 z-10">
+            {/* Removed sticky positioning from this wrapper div */}
+            <div className="flex items-center gap-0"> 
               <DashboardHeader
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
                 forecastPeriod={`${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history`}
