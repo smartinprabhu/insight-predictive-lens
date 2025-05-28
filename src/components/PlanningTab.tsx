@@ -2249,7 +2249,7 @@ const processDataForTable = useCallback(() => {
 
  const scrollContainerRef = useRef<HTMLDivElement>(null);
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
+    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg min-h-0">
   <HeaderSection
     filterOptions={filterOptions}
     selectedBusinessUnit={selectedBusinessUnit}
@@ -2265,8 +2265,8 @@ const processDataForTable = useCallback(() => {
     activeHierarchyContext={activeHierarchyContext}
     headerPeriodScrollerRef={headerPeriodScrollerRef}
   />
-  <div className="overflow-x-auto">
-    <main className="flex-grow px-4 pb-4 overflow-auto">
+  <div className="flex-grow overflow-hidden flex flex-col"> {/* This div contains the main content and needs to manage scrolling */}
+    <main className="px-4 pb-4 flex-grow overflow-y-auto"> {/* Main content area that will scroll */}
       <CapacityTable
         data={displayableCapacityData}
         periodHeaders={displayedPeriodHeaders}

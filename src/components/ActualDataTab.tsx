@@ -158,7 +158,7 @@ export const ActualDataTab = ({
 
   return (
     <Card className="text-gray-900 dark:text-gray-100">
-      <CardContent className="pt-2 mt-[-20px]">
+      <CardContent className="pt-2 mt-[-14px]">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Historical Data Analysis</h2>
           <div className="flex gap-2 items-center">

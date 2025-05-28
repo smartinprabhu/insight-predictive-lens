@@ -572,8 +572,14 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
           handleLogout={handleLogout}
         />
 
-        <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 bg-background text-foreground"> {/* MODIFIED: Use theme background/foreground */}
-          <div className="flex items-center justify-between mb-2">
+
+        <div className="flex flex-col flex-1  h-screen overflow-hidden bg-background text-foreground transition-all duration-300"
+          style={{ zIndex: 0 }} // Ensure content is behind the floating sidebar
+        >
+          {/* Dashboard Header (Sticky) */}
+ <div className="sticky top-0 z-10 flex items-center  justify-between px-2 md:px-4 py-2 bg-background  border-gray-200 dark:border-gray-700">
+
+
             {/* Removed sticky positioning from this wrapper div */}
             <div className="flex items-center gap-0">
               <DashboardHeader
@@ -873,7 +879,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
             </div>
           )}
 
-          <footer className="fixed bottom-0 left-0 w-full py-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
+          <footer className="fixed bottom-0 left-0 w-full py-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900" style={{ zIndex: 2 }}>
             <p>© 2025 Zentere. All rights reserved.</p>
           </footer>
         </div>
