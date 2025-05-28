@@ -583,18 +583,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
 
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleRefresh}
-                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <RefreshCw className="h-4 w-4" />
-
-              </Button>
-
-            </div>
+ 
           </div>
 
           {activeTab === "businessPerformance" && (
@@ -617,7 +606,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
                     <Button
                       size="sm"
                       variant="default"
-                      className="fixed right-4 top-20"
+                      className="fixed right-4 top-40 mb-[-10px]"
                     >
                       <Settings className="h-4 w-4" />
                       Forecast Settings

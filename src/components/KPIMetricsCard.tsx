@@ -39,15 +39,15 @@ export const KPIMetricsCard = ({
   }
 
   return (
-    <Card className="shadow-md p-4 w-full max-w-xs h-auto bg-[#272D35] hover:bg-[#3A3F49] transition duration-200 ease-in-out overflow-hidden">
+    <Card className="shadow-md p-4 w-full max-w-xs h-auto dark:bg-[#272D35] bg-white dark:hover:bg-[#3A3F49] hover:bg-gray-100 transition duration-200 ease-in-out overflow-hidden">
       <div className="space-y-1.5">
-        <h3 className="font-medium text-gray-200 truncate">{title}</h3>
+        <h3 className="font-medium dark:text-gray-200 text-black truncate">{title}</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-100 truncate">
+          <span className="text-3xl font-bold dark:text-gray-100 text-black truncate">
             {typeof value === 'number' ? formatNumber(value) : value}
           </span>
         </div>
-        <p className="text-sm text-gray-400 truncate">{subtitle}</p>
+        <p className="text-sm dark:text-gray-400 text-gray-700 truncate">{subtitle}</p>
       </div>
       <div className="mt-4 flex flex-col space-y-1">
         <div className="flex items-center gap-1">

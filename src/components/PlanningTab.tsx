@@ -89,7 +89,7 @@ import {
 } from "@/components/ui2/table";
 
 import { Loader2, Zap, Download, Building2, Briefcase, ChevronDown, Edit3, ArrowDown, ArrowUp, Minus, Calendar as CalendarIcon, Users, ChevronsUpDown, ArrowLeft, ArrowRight } from "lucide-react";
-// Card imports for ui2 were already present: Card, CardContent, CardDescription, CardHeader, CardTitle
+
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { suggestLoBGroupings, SuggestLoBGroupingsOutput } from "@/ai/flows/suggest-lob-groupings";
@@ -953,9 +953,10 @@ function HeaderSection({
 
   return (
     <TooltipProvider>
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-          <h1 className="text-2xl font-semibold text-foreground">Capacity Insights</h1> 
-          <div className="flex flex-wrap items-center gap-2 ml-auto"> {/* Added ml-auto to push buttons to the right if no title */}
+      <header className="sticky top-0 z-50 bg-background p-2  border-b border-border rounded-tl-lg rounded-tr-lg">
+        <div className="flex flex-col md:flex-row justify-between mt-[-7px]   ">
+          <h1 className="text-xl font-semibold text-foreground">Capacity Insights</h1>
+          <div className="flex flex-wrap items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -1073,7 +1074,7 @@ function HeaderSection({
           </div>
         </div>
         <AiGroupingDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
-
+      </header>
     </TooltipProvider>
   );
 }
@@ -2248,44 +2249,42 @@ const processDataForTable = useCallback(() => {
 
  const scrollContainerRef = useRef<HTMLDivElement>(null);
   return (
+    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground rounded-lg">
+  <HeaderSection
+    filterOptions={filterOptions}
+    selectedBusinessUnit={selectedBusinessUnit}
+    onSelectBusinessUnit={handleBusinessUnitChange}
+    selectedLineOfBusiness={selectedLineOfBusiness}
+    onSelectLineOfBusiness={handleLOBChange}
+    selectedTimeInterval={selectedTimeInterval}
+    onSelectTimeInterval={handleTimeIntervalChange}
+    selectedDateRange={selectedDateRange}
+    onSelectDateRange={setSelectedDateRange}
+    allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
+    displayedPeriodHeaders={displayedPeriodHeaders}
+    activeHierarchyContext={activeHierarchyContext}
+    headerPeriodScrollerRef={headerPeriodScrollerRef}
+  />
+  <div className="overflow-x-auto">
+    <main className="flex-grow px-4 pb-4 overflow-auto">
+      <CapacityTable
+        data={displayableCapacityData}
+        periodHeaders={displayedPeriodHeaders}
+        expandedItems={expandedItems}
+        toggleExpand={toggleExpand}
+        teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
+        aggregatedMetricDefinitions={AGGREGATED_METRIC_ROW_DEFINITIONS}
+        onTeamMetricChange={handleTeamMetricChange}
+        onLobMetricChange={handleLobMetricChange}
+        editingCell={editingCell}
+        onSetEditingCell={handleSetEditingCell}
+        selectedTimeInterval={selectedTimeInterval}
+        onActiveHierarchyChange={handleActiveHierarchyChange}
+        tableBodyScrollRef={tableBodyScrollRef}
+      />
+    </main>
+  </div>
+</div>
 
- <div>
-      <CardContent>
-        <HeaderSection
-          filterOptions={filterOptions}
-          selectedBusinessUnit={selectedBusinessUnit}
-          onSelectBusinessUnit={handleBusinessUnitChange}
-          selectedLineOfBusiness={selectedLineOfBusiness}
-          onSelectLineOfBusiness={handleLOBChange}
-          selectedTimeInterval={selectedTimeInterval}
-          onSelectTimeInterval={handleTimeIntervalChange}
-          selectedDateRange={selectedDateRange}
-          onSelectDateRange={setSelectedDateRange}
-          allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
-          displayedPeriodHeaders={displayedPeriodHeaders}
-          activeHierarchyContext={activeHierarchyContext}
-          headerPeriodScrollerRef={headerPeriodScrollerRef}
-        />
-        <div className="overflow-x-auto">
-          <main className="flex-grow px-4 pb-4 overflow-auto">
-            <CapacityTable
-              data={displayableCapacityData}
-              periodHeaders={displayedPeriodHeaders}
-              expandedItems={expandedItems}
-              toggleExpand={toggleExpand}
-              teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
-              aggregatedMetricDefinitions={AGGREGATED_METRIC_ROW_DEFINITIONS}
-              onTeamMetricChange={handleTeamMetricChange}
-              onLobMetricChange={handleLobMetricChange}
-              editingCell={editingCell}
-              onSetEditingCell={handleSetEditingCell}
-              selectedTimeInterval={selectedTimeInterval}
-              onActiveHierarchyChange={handleActiveHierarchyChange}
-              tableBodyScrollRef={tableBodyScrollRef}
-            />
-          </main>
-        </div>
-      </CardContent>
-    </div>
   );
 }
