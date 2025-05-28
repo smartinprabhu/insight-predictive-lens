@@ -241,7 +241,7 @@ export const ForecastTab = ({
 
   return (
     <TooltipProvider>
-      <Card className="shadow-md">
+      <Card className="">
         <CardContent className="pt-2 mt-[-17px]">
           <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
             <div>
@@ -320,7 +320,7 @@ export const ForecastTab = ({
             </div>
           </div>
 
-          <div className="w-full h-[400px] bg-gradient-to-b from-card/40 to-background/10 p-4 rounded-lg border border-border/10 mb-6">
+          <div className="w-full h-[400px]  mb-6">
             {loading ? (
               <div className="space-y-4 h-full flex flex-col justify-center items-center">
                 {[1, 2, 3, 4].map((i) => (

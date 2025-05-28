@@ -242,7 +242,7 @@ return (
   <TooltipProvider>
     <div className="flex flex-row gap-4 w-full items-start">
       {!showForecastSettings && (
-        <Card className="flex-1 shadow-md dark:border-gray-700 relative overflow-visible">
+        <Card className="flex-1  dark:border-gray-700 relative overflow-visible">
           <div className="relative pt-2 mt-[-17px] ">
 
 
