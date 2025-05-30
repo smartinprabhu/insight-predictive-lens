@@ -243,7 +243,7 @@ return (
     <div className="flex flex-row gap-4 w-full items-start">
       {!showForecastSettings && (
         <Card className="flex-1  dark:border-gray-700 relative overflow-visible">
-          <div className="relative pt-2 mt-[-17px] ">
+          <div className="relative pt-2 mt-[-10px] ">
 
 
                               <h3 className="text-xl font-semibold">Model Validation</h3>

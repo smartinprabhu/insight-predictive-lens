@@ -29,7 +29,7 @@ export const DashboardHeader = ({
 
   return (
     <div className="w-full sticky top-0 z-20 bg-background border-b border-border/30 dark:border-border/50">
-<div className={` flex flex-col md:flex-row justify-between items-center gap-4 p-4 w-full ${state === 'expanded' ? 'w-[1200px]' : 'w-[1370px]'}`}>
+<div className={` flex flex-col md:flex-row justify-between items-center gap-4 p-4  ${state === 'expanded' ? 'w-[1200px]' : 'w-[1370px]'}`}>
         <div className="flex items-center gap-4 w-full">
           {/* Sidebar toggle button */}
           <button

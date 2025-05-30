@@ -44,7 +44,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 // List of API URLs to try
 const apiUrls = [
-  "http://localhost:5011",
+  // "http://localhost:5011",
   "http://15.206.169.202:5011",
   "http://aptino-dev.zentere.com:5011"
 ];
@@ -573,11 +573,11 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
         />
 
 
-        <div className="flex flex-col flex-1  h-screen overflow-hidden bg-background text-foreground transition-all duration-300"
-          style={{ zIndex: 0 }} // Ensure content is behind the floating sidebar
-        >
+        <div className="flex flex-col flex-1 h-screen overflow-hidden bg-background text-foreground transition-all duration-300"
+ style={{ zIndex: 0, overflowY: 'auto' }} // Ensure content is behind the floating sidebar and enable vertical scrolling
+>
           {/* Dashboard Header (Sticky) */}
- <div className="sticky top-0 z-10 flex items-center  justify-between px-2 md:px-4 py-2 bg-background  border-gray-200 dark:border-gray-700">
+ <div className="sticky top-0 z-10 flex items-center justify-between px-2 md:px-4 py-2 bg-background  dark:border-gray-700">
 
 
             {/* Removed sticky positioning from this wrapper div */}
@@ -879,11 +879,12 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
             </div>
           )}
 
-          <footer className="fixed bottom-0 left-0 w-full py-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900" style={{ zIndex: 2 }}>
-            <p>© 2025 Zentere. All rights reserved.</p>
-          </footer>
+
         </div>
       </div>
+                <footer className="fixed bottom-0 left-0 w-full py-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
+            <p>© 2025 Zentere. All rights reserved.</p>
+          </footer>
     </SidebarProvider>
   );
 };

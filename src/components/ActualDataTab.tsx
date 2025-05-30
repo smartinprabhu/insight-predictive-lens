@@ -24,6 +24,20 @@ interface ActualDataTabProps {
   plotAggregationType?: string;
   setPlotAggregationType?: (type: string) => void;
 }
+const handleMetricToggle = (metric: keyof typeof selectedMetrics) => {
+  setSelectedMetrics(prev => ({ ...prev, [metric]: !prev[metric] }));
+};
+
+// Inside your return statement, ensure the Legend component is set up like this:
+<Legend
+  wrapperStyle={{ marginBottom: 20 }}
+  formatter={(value) => metricLabels[value] || value}
+  onClick={(event, payload) => {
+    if (!payload) return;
+    const dataKey = payload[0].dataKey;
+    handleMetricToggle(dataKey);
+  }}
+/>
 
 const transformData = (data: any[], aggregationType: string): DataItem[] => {
   if (aggregationType === 'Monthly') {
@@ -290,10 +304,15 @@ export const ActualDataTab = ({
                   );
                 }}
               />
-              <Legend
-                wrapperStyle={{ marginBottom: 20 }}
-                formatter={(value) => metricLabels[value] || value}
-              />
+<Legend
+  wrapperStyle={{ marginBottom: 20 }}
+  formatter={(value) => metricLabels[value] || value}
+  onClick={(event, payload) => {
+    if (!payload) return;
+    const dataKey = payload[0].dataKey;
+    handleMetricToggle(dataKey);
+  }}
+/>
               
               {selectedMetrics['Total IB Units'] && (
                 <Area
