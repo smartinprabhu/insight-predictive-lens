@@ -162,9 +162,8 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
     displayValue = `${numValue.toFixed(1)} min`;
   } else if (metricDef.isTime) {
     displayValue = `${numValue.toFixed(0)} min`;
-  } else if (metricDef.isHC || ['moveIn', 'moveOut', 'newHireBatch', 'newHireProduction', 'attritionLossHC', 'endingHC', 'hcAfterAttrition'].includes(metricDef.key as string)) {
-    const digits = (['moveIn', 'moveOut', 'newHireBatch', 'newHireProduction'].includes(metricDef.key as string)) ? 0 : 2;
-    displayValue = isNaN(numValue) ? '-' : numValue.toFixed(digits);
+  } else if (metricDef.isHC || ['requiredHC', 'actualHC', 'overUnderHC', 'moveIn', 'moveOut', 'newHireBatch', 'newHireProduction', 'attritionLossHC', 'hcAfterAttrition', 'endingHC'].includes(metricDef.key as string)) {
+    displayValue = isNaN(numValue) ? '-' : Math.round(numValue).toString();
   } else if (metricDef.key === 'lobTotalBaseRequiredMinutes') {
     displayValue = `${numValue.toFixed(0)} min`;
   } else if (typeof numValue === 'number' && !isNaN(numValue)) {
@@ -284,12 +283,21 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
   }
 
   if (metricDef.key === "overUnderHC") {
-    if (numValue < -0.001) {
-      textColor = "text-destructive";
-      icon = <ArrowDown className="h-3 w-3 inline-block ml-1" />;
-    } else if (numValue > 0.001) {
-      textColor = "text-primary";
+    if (numValue >= 0) { // Condition for Green
+      textColor = "text-green-600"; // Green color
       icon = <ArrowUp className="h-3 w-3 inline-block ml-1" />;
+    } else { // Conditions for Red or Amber (numValue < 0)
+      icon = <ArrowDown className="h-3 w-3 inline-block ml-1" />;
+      // Retrieve requiredHC for the specific conditions
+      const requiredHCValue = metricData?.requiredHC; // Accessing requiredHC from the metricData of the current period
+
+      if (typeof requiredHCValue === 'number' && requiredHCValue <= 10 && numValue === -1) {
+        textColor = "text-red-600"; // Specific Red color
+      } else if (typeof requiredHCValue === 'number' && requiredHCValue >= 100 && numValue === -1) {
+        textColor = "text-yellow-500"; // Amber color
+      } else {
+        textColor = "text-destructive"; // Default Red for other negative values
+      }
     }
   }
 

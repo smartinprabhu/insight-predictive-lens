@@ -282,7 +282,7 @@ export const TEAM_METRIC_ROW_DEFINITIONS: TeamMetricDefinitions = [
   { key: "endingHC", label: "Ending HC", isHC: true, isDisplayOnly: true, category: 'HCAdjustment', description: "Projected headcount at the end of the period." },
   
   // Internal/Detailed Calculations (not directly displayed as rows, but used in tooltips or other calcs)
-  { key: "_calculatedRequiredAgentMinutes", label: "Eff. Req. Mins (Team)", isDisplayOnly: true, isTime: true, category: 'Internal' }, 
+  { key: "_calculatedRequiredAgentMinutes", label: "Eff Req Min", isDisplayOnly: true, isTime: true, category: 'HCAdjustment' }, 
   { key: "_calculatedActualProductiveAgentMinutes", label: "Actual Prod. Mins (Team)", isDisplayOnly: true, isTime: true, category: 'Internal' }, 
 ];
 

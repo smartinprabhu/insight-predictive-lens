@@ -21,7 +21,7 @@ const MetricRow: React.FC<MetricRowProps> = React.memo(({ item, metricDef, level
   return (
     <TableRow className="hover:bg-muted/50">
       <TableCell
-        className="sticky left-0 z-20 bg-card font-normal text-foreground whitespace-nowrap py-2 pr-4 w-[200px]"
+        className="sticky left-0 z-20 bg-card font-normal text-foreground whitespace-nowrap py-2 pr-4 w-[300px]"
       >
         <div
           style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}

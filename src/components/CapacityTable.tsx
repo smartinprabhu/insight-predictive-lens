@@ -230,8 +230,8 @@ const CapacityTable: React.FC<CapacityTableProps> = ({
           )}
           style={{
             zIndex: itemZIndex,
-            width: '400px',
-            minWidth: '335px',
+            width: '300px',
+            minWidth: '300px',
             paddingLeft: `${Math.min(item.level, 5) * 1.5 + 0.5}rem`,
             paddingRight: '1rem'
           }}

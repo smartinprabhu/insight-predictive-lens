@@ -160,7 +160,7 @@ export default function HeaderSection({
         </div>
 
         <div className="flex items-center border-b border-border bg-card px-4 h-12 mt-4">
-          <div className="sticky left-0 z-55 bg-card min-w-[320px] whitespace-nowrap px-4 py-2 text-sm font-semibold text-foreground h-full flex items-center">
+          <div className="sticky left-0 z-55 bg-card min-w-[300px] whitespace-nowrap px-4 py-2 text-sm font-semibold text-foreground h-full flex items-center">
             {activeHierarchyContext}
           </div>
           <div ref={headerPeriodScrollerRef} className="flex-grow overflow-x-auto scrollbar-hide whitespace-nowrap h-full">
