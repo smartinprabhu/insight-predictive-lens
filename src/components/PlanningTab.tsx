@@ -199,6 +199,7 @@ export interface TeamPeriodicMetrics extends BaseHCValues {
 
   _calculatedRequiredAgentMinutes?: number | null; 
   _calculatedActualProductiveAgentMinutes?: number | null; 
+  _lobTotalBaseReqMinutesForCalc?: number | null; 
 }
 
 export interface AggregatedPeriodicMetrics extends BaseHCValues {
@@ -459,6 +460,7 @@ const calculateTeamMetricsForPeriod = (
   defaults.hcAfterAttrition = hcAfterAttrition; 
 
   defaults.endingHC = hcAfterAttrition + (defaults.newHireProduction ?? 0) + (defaults.moveIn ?? 0) - (defaults.moveOut ?? 0);
+  defaults._lobTotalBaseReqMinutesForCalc = lobTotalBaseRequiredMinutesForPeriod;
   
   return defaults;
 };
@@ -2087,6 +2089,7 @@ export default function CapacityInsightsPage() {
         onSelectDateRange={setSelectedDateRange}
         allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
         displayedPeriodHeaders={displayedPeriodHeaders}
+        displayableCapacityData={displayableCapacityData}
         activeHierarchyContext={activeHierarchyContext}
         headerPeriodScrollerRef={headerPeriodScrollerRef}
       />

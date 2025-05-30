@@ -225,29 +225,31 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
         }
         break;
       case '_calculatedRequiredAgentMinutes':
-        if (metricData && 'volumeMixPercentage' in metricData && typeof metricData.volumeMixPercentage === 'number' &&
-          'backlogPercentage' in metricData && typeof metricData.backlogPercentage === 'number' &&
-          typeof item.lobId === 'string') {
-          const lobEntry = rawCapacityDataSource.find(lob => lob.id === item.lobId);
-          if (lobEntry) {
-            const lobVol = lobEntry.lobVolumeForecast?.[periodName];
-            const lobAHT = lobEntry.lobAverageAHT?.[periodName];
-            let lobTotalBase = 0;
-            if (lobVol !== null && lobVol !== undefined && lobAHT !== null && lobAHT !== undefined && lobAHT > 0) {
-              lobTotalBase = lobVol * lobAHT;
-            } else if (lobEntry.lobTotalBaseRequiredMinutes?.[periodName] !== null && lobEntry.lobTotalBaseRequiredMinutes?.[periodName] !== undefined) {
-              lobTotalBase = lobEntry.lobTotalBaseRequiredMinutes[periodName]!;
-            }
+      // metricData is available here and should be of type TeamPeriodicMetrics
+      // It now contains _lobTotalBaseReqMinutesForCalc, volumeMixPercentage, and backlogPercentage
+      const teamMetricData = metricData as TeamPeriodicMetrics; // Cast for type safety/clarity
 
-            formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)\n` +
-              `Calc: (${lobTotalBase.toFixed(0)} * ${(metricData.volumeMixPercentage / 100).toFixed(2)}) * (1 + ${(metricData.backlogPercentage / 100).toFixed(2)}) = ${numValue.toFixed(0)}\n`+
-              `Represents team's share of LOB demand, adjusted for team's backlog.`;
-          } else {
-            formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)\n` +
-              `Represents team's share of LOB demand, adjusted for team's backlog. (LOB data not found for tooltip)`;
-          }
-        }
-        break;
+      const lobBaseMins = teamMetricData?._lobTotalBaseReqMinutesForCalc;
+      const volMix = teamMetricData?.volumeMixPercentage;
+      const backlog = teamMetricData?.backlogPercentage;
+
+      if (typeof lobBaseMins === 'number' &&
+          typeof volMix === 'number' &&
+          typeof backlog === 'number' &&
+          numValue !== null && !isNaN(numValue)) { // numValue is the already calculated _calculatedRequiredAgentMinutes
+
+        formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)
+` +
+                      `Calc: (${lobBaseMins.toFixed(0)} * ${(volMix / 100).toFixed(2)}) * (1 + ${(backlog / 100).toFixed(2)}) = ${numValue.toFixed(0)}
+` +
+                      `Represents team's share of LOB demand, adjusted for team's backlog.`;
+      } else {
+        // Fallback if some data is missing, though it ideally shouldn't be
+        formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)
+` +
+                      `Represents team's share of LOB demand, adjusted for team's backlog. (Component data missing for full Calc display)`;
+      }
+      break;
       case '_calculatedActualProductiveAgentMinutes':
         if (teamMetrics?.actualHC !== null && teamMetrics?.actualHC !== undefined &&
           teamMetrics?.shrinkagePercentage !== null && teamMetrics?.occupancyPercentage !== null && standardWorkMinutesForPeriod > 0) {
