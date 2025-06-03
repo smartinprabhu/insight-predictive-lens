@@ -9,16 +9,16 @@ services:
     environment:
       - FLASK_ENV=production
     restart: unless-stopped
-    platform: linux/amd64
+    platform: linux/amd64 # It's good practice to keep this if required for the prebuilt image
 
   frontend:
-    image: hsense/inventory-analyzer-frontend:1.0.5
+    build: . # Changed from 'image' to 'build'
     container_name: inventory-analyzer-frontend
     ports:
-      - "80:80"
+      - "3000:80" # Changed host port to 3000 to match Vite local dev, maps to Nginx 80
     environment:
-      - API_URL=http://backend:5011
+      - VITE_API_URL=http://backend:5011 # Changed API_URL to VITE_API_URL
     depends_on:
       - backend
     restart: unless-stopped
-    platform: linux/amd64
+    # platform: linux/amd64 # Generally not needed when building locally unless cross-compiling
