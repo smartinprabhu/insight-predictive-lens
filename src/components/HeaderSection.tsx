@@ -19,7 +19,18 @@ import { CalendarIcon, ChevronDown, Building2, Briefcase, Download, Zap } from "
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AiGroupingDialog from "./AiGroupingDialog";
 import DateRangePicker from "./DateRangePicker";
-import { BusinessUnitName, TimeInterval, DateRange } from "./types";
+// import { BusinessUnitName, TimeInterval, DateRange } from "./types"; // Original, remove if redundant
+
+import { 
+  BusinessUnitName, 
+  TimeInterval, 
+  DateRange, 
+  CapacityDataRow,
+  TeamPeriodicMetrics, // Added
+  AggregatedPeriodicMetrics, // Added
+  TEAM_METRIC_ROW_DEFINITIONS, // Added
+  AGGREGATED_METRIC_ROW_DEFINITIONS // Added
+} from "./types";
 
 interface HeaderSectionProps {
   filterOptions: { businessUnits: BusinessUnitName[]; linesOfBusiness: string[] };
@@ -32,9 +43,10 @@ interface HeaderSectionProps {
   selectedDateRange: DateRange | undefined;
   onSelectDateRange: (value: DateRange | undefined) => void;
   allAvailablePeriods: string[];
-  displayedPeriodHeaders: string[];
+  displayedPeriodHeaders: string[]; // This was already here
   activeHierarchyContext: string;
   headerPeriodScrollerRef: React.RefObject<HTMLDivElement>;
+  displayableCapacityData: CapacityDataRow[]; // Add this
 }
 
 export default function HeaderSection({
@@ -48,11 +60,120 @@ export default function HeaderSection({
   selectedDateRange,
   onSelectDateRange,
   allAvailablePeriods,
-  displayedPeriodHeaders,
+  displayedPeriodHeaders, // This was already here
   activeHierarchyContext,
   headerPeriodScrollerRef,
+  displayableCapacityData, // Add this
 }: HeaderSectionProps) {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+
+  const handleExportCsv = () => {
+    if (!displayableCapacityData || !displayedPeriodHeaders) {
+      console.error("CSV Export: Data not available");
+      // Optionally, show a toast to the user
+      return;
+    }
+
+    const dataForExport: string[][] = [];
+
+    // Helper to format period headers for CSV (e.g., "W1", "W2")
+    const formatPeriodHeaderForCsv = (header: string): string => {
+      const parts = header.split(': ');
+      return parts[0].replace("FWk", "W");
+    };
+    const csvHeaders = ["Hierarchy / Metric", ...displayedPeriodHeaders.map(formatPeriodHeaderForCsv)];
+    dataForExport.push(csvHeaders);
+
+    // Recursive helper to flatten data and collect metric rows
+    const processRow = (row: CapacityDataRow, indentLevel: number) => {
+      const indent = "  ".repeat(indentLevel); // 2 spaces per indent level
+      const namePrefix = indent + row.name;
+
+      // Add primary HC rows for BU/LOB/Team first
+      const primaryHcKeys: Array<keyof (TeamPeriodicMetrics & AggregatedPeriodicMetrics)> = ["requiredHC", "actualHC", "overUnderHC"];
+      
+      primaryHcKeys.forEach(metricKey => {
+        const metricDef = AGGREGATED_METRIC_ROW_DEFINITIONS.find(def => def.key === metricKey) || TEAM_METRIC_ROW_DEFINITIONS.find(def => def.key === metricKey);
+        if (!metricDef) return;
+
+        // Skip LOB specific metrics if item is a BU
+        if (row.itemType === 'BU' && (metricDef.key === 'lobVolumeForecast' || metricDef.key === 'lobAverageAHT' || metricDef.key === 'lobTotalBaseRequiredMinutes')) {
+          return;
+        }
+
+        const values = displayedPeriodHeaders.map(period => {
+          const periodData = row.periodicData[period];
+          const val = periodData ? (periodData as any)[metricKey] : null;
+          if (val === null || val === undefined) return "";
+          return typeof val === 'number' && (metricDef.isHC || ['requiredHC', 'actualHC', 'overUnderHC'].includes(metricKey as string)) ? Math.round(val) : val;
+        });
+        dataForExport.push([namePrefix + (indentLevel === 0 ? "" : ` - ${metricDef.label}`), ...values.map(String)]);
+      });
+      
+      // For LOBs, add LOB-specific aggregated metrics
+      if (row.itemType === 'LOB') {
+          const lobSpecificKeys: Array<keyof AggregatedPeriodicMetrics> = ["lobVolumeForecast", "lobAverageAHT", "lobTotalBaseRequiredMinutes"];
+          lobSpecificKeys.forEach(metricKey => {
+              const metricDef = AGGREGATED_METRIC_ROW_DEFINITIONS.find(def => def.key === metricKey);
+              if (!metricDef) return;
+              const values = displayedPeriodHeaders.map(period => {
+                  const periodData = row.periodicData[period];
+                  const val = periodData ? (periodData as any)[metricKey] : null;
+                  return (val === null || val === undefined) ? "" : String(val);
+              });
+              dataForExport.push([namePrefix + ` - ${metricDef.label}`, ...values]);
+          });
+      }
+
+      // For Teams, add detailed metrics based on TEAM_METRIC_ROW_DEFINITIONS
+      if (row.itemType === 'Team') {
+        const teamMetricCategories = ['Assumption', 'HCAdjustment']; // Categories to iterate over
+        teamMetricCategories.forEach(category => {
+          // Add a sub-header for the category if desired, or just list metrics
+          // dataForExport.push([namePrefix + ` - ${category}`]); // Optional category row
+          TEAM_METRIC_ROW_DEFINITIONS.forEach(metricDef => {
+            if (metricDef.category === category && !primaryHcKeys.includes(metricDef.key as any) && metricDef.key !== '_calculatedActualProductiveAgentMinutes' && metricDef.key !== '_lobTotalBaseReqMinutesForCalc' && metricDef.key !== '_calculatedRequiredAgentMinutes') { // Exclude already handled primary HC and internal calcs
+              const values = displayedPeriodHeaders.map(period => {
+                const periodData = row.periodicData[period] as TeamPeriodicMetrics;
+                const val = periodData ? periodData[metricDef.key as keyof TeamPeriodicMetrics] : null;
+                if (val === null || val === undefined) return "";
+                return metricDef.isHC ? Math.round(val as number) : val;
+              });
+              dataForExport.push([namePrefix + ` - ${metricDef.label}`, ...values.map(String)]);
+            }
+          });
+        });
+      }
+
+      // Process children
+      if (row.children) {
+        row.children.forEach(child => processRow(child, indentLevel + 1));
+      }
+    };
+
+    displayableCapacityData.forEach(buRow => processRow(buRow, 0));
+
+    // Convert array of arrays to CSV string
+    const csvString = dataForExport.map(e => e.join(",")).join("\n");
+
+    // Trigger download
+    const filename = "capacity_insights_export.csv";
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) { // feature detection
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } else {
+        console.error("CSV Export: Download not supported by browser.");
+        // Fallback or message to user
+    }
+  };
 
   const handleLobSelectionChange = (lob: string, checked: boolean) => {
     const newSelectedLOBs = checked
@@ -81,11 +202,11 @@ export default function HeaderSection({
           <div className="flex flex-wrap items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Download className="mr-2" /> Export
+                <Button variant="outline" size="sm" onClick={handleExportCsv}>
+                  <Download className="mr-2" /> Export CSV
                 </Button>
               </TooltipTrigger>
-              <TooltipContent><p>Export current view as CSV (not implemented)</p></TooltipContent>
+              <TooltipContent><p>Export current view as CSV</p></TooltipContent>
             </Tooltip>
             <Button variant="default" size="sm" onClick={() => setIsAiDialogOpen(true)}>
               <Zap className="mr-2" /> Assumptions Assister
@@ -160,7 +281,7 @@ export default function HeaderSection({
         </div>
 
         <div className="flex items-center border-b border-border bg-card px-4 h-12 mt-4">
-          <div className="sticky left-0 z-55 bg-card min-w-[320px] whitespace-nowrap px-4 py-2 text-sm font-semibold text-foreground h-full flex items-center">
+          <div className="sticky left-0 z-55 bg-card min-w-[300px] whitespace-nowrap px-4 py-2 text-sm font-semibold text-foreground h-full flex items-center">
             {activeHierarchyContext}
           </div>
           <div ref={headerPeriodScrollerRef} className="flex-grow overflow-x-auto scrollbar-hide whitespace-nowrap h-full">

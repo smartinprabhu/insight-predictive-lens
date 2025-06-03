@@ -46,23 +46,24 @@ const ThemeSelector = () => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
 <PopoverTrigger asChild>
-  <Button
-    variant="ghost"
-    size="icon"
-    className="w-auto h-auto px-3"
-    style={{
-      backgroundColor: themeMode === "dark" ? "#272D35" : "transparent"
-    }}
-  >
-    {themeMode === "light" ? (
-      <Sun className="h-5 w-10 text-foreground mr-2" />
-    ) : themeMode === "dark" ? (
-      <Moon className="h-5 w-10 text-foreground mr-2" />
-    ) : (
-      <Monitor className="h-5 w-10 text-foreground mr-5" />
-    )}
+    <Button
+  variant="ghost"
+  size="sm"
+  className="w-full justify-start px-3"
+  style={{
+    backgroundColor: themeMode === "dark" ? "transparent" : "transparent"
+  }}
+>
+  {themeMode === "light" ? (
+    <Sun className=" text-foreground flex items-center  hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200" />
+  ) : themeMode === "dark" ? (
+    <Moon  className=" text-foreground flex items-center  hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200" />
+  ) : (
+    <Monitor className=" text-foreground flex items-center  hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors duration-200" />
+  )}
+  <span className=" text-foreground text-sm font-medium group-data-[collapsible=icon]:hidden">Themes</span> {/* Added text here */}
+</Button>
 
-  </Button>
 </PopoverTrigger>
 
 

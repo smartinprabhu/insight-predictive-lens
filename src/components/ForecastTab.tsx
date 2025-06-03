@@ -241,11 +241,11 @@ export const ForecastTab = ({
 
   return (
     <TooltipProvider>
-      <Card className="shadow-md">
-        <CardContent className="pt-6">
+      <Card className="">
+        <CardContent className="pt-2 mt-[-10px]">
           <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 mb-6">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ">
                 <h3 className="text-xl font-semibold">Trends & Forecast</h3>
                 <UITooltip>
                   <TooltipTrigger asChild>
@@ -320,7 +320,7 @@ export const ForecastTab = ({
             </div>
           </div>
 
-          <div className="w-full h-[400px] bg-gradient-to-b from-card/40 to-background/10 p-4 rounded-lg border border-border/10 mb-6">
+          <div className="w-full h-[400px]  mb-6">
             {loading ? (
               <div className="space-y-4 h-full flex flex-col justify-center items-center">
                 {[1, 2, 3, 4].map((i) => (

@@ -13,11 +13,11 @@ interface KPIMetricProps {
   loading?: boolean;
 }
 
-export const KPIMetricsCard = ({ 
-  title, 
-  value, 
-  subtitle, 
-  changeValue, 
+export const KPIMetricsCard = ({
+  title,
+  value,
+  subtitle,
+  changeValue,
   changeText,
   invertChange = false,
   loading = false,
@@ -26,7 +26,7 @@ export const KPIMetricsCard = ({
   
   if (loading) {
     return (
-      <Card className="p-6 shadow-md border border-border/40 hover:border-border/80 transition-all duration-200 dark:bg-gray-800/90 dark:border-gray-700 relative">
+      <Card className="relative m-4 shadow-md w-full max-w-xs h-40">
         <Skeleton className="h-4 w-3/4 mb-2" />
         <Skeleton className="h-8 w-1/2 mb-4" />
         <Skeleton className="h-4 w-full mb-4" />
@@ -39,22 +39,24 @@ export const KPIMetricsCard = ({
   }
 
   return (
-    <Card className="p-6 shadow-md border border-border/40 hover:border-border/80 transition-all duration-200 dark:bg-gray-800/90 dark:border-gray-700">
+    <Card className="shadow-md p-4 w-full max-w-xs h-auto dark:bg-[#272D35] bg-white dark:hover:bg-[#3A3F49] hover:bg-gray-100 transition duration-200 ease-in-out overflow-hidden">
       <div className="space-y-1.5">
-        <h3 className="font-medium text-muted-foreground">{title}</h3>
+        <h3 className="font-medium dark:text-gray-200 text-black truncate">{title}</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold dark:text-white">{typeof value === 'number' ? formatNumber(value) : value}</span>
+          <span className="text-3xl font-bold dark:text-gray-100 text-black truncate">
+            {typeof value === 'number' ? formatNumber(value) : value}
+          </span>
         </div>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
+        <p className="text-sm dark:text-gray-400 text-gray-700 truncate">{subtitle}</p>
       </div>
       <div className="mt-4 flex flex-col space-y-1">
         <div className="flex items-center gap-1">
           {isPositive ? (
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <TrendingUp className="h-4 w-4 text-green-400" />
           ) : (
-            <TrendingDown className="h-4 w-4 text-red-500" />
+            <TrendingDown className="h-4 w-4 text-red-400" />
           )}
-          <span className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+          <span className={`text-sm font-medium ${isPositive ? 'text-green-400' : 'text-red-400'} truncate`}>
             {changeValue >= 0 ? '+' : '-'} {Math.abs(changeValue).toFixed(2)}% {changeText}
           </span>
         </div>

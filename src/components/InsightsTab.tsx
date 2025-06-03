@@ -213,7 +213,7 @@ export const InsightsTab = ({ data }: InsightsTabProps) => {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="pt-2 mt-[-10px]">
         <div className="mb-6">
           <h3 className="text-xl font-semibold">Insights & Analysis</h3>
           <div className="flex mt-4 border-b">
@@ -469,5 +469,6 @@ export const InsightsTab = ({ data }: InsightsTabProps) => {
         )}
       </CardContent>
     </Card>
+    
   );
 };

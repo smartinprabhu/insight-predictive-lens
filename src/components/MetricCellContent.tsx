@@ -162,9 +162,8 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
     displayValue = `${numValue.toFixed(1)} min`;
   } else if (metricDef.isTime) {
     displayValue = `${numValue.toFixed(0)} min`;
-  } else if (metricDef.isHC || ['moveIn', 'moveOut', 'newHireBatch', 'newHireProduction', 'attritionLossHC', 'endingHC', 'hcAfterAttrition'].includes(metricDef.key as string)) {
-    const digits = (['moveIn', 'moveOut', 'newHireBatch', 'newHireProduction'].includes(metricDef.key as string)) ? 0 : 2;
-    displayValue = isNaN(numValue) ? '-' : numValue.toFixed(digits);
+  } else if (metricDef.isHC || ['requiredHC', 'actualHC', 'overUnderHC', 'moveIn', 'moveOut', 'newHireBatch', 'newHireProduction', 'attritionLossHC', 'hcAfterAttrition', 'endingHC'].includes(metricDef.key as string)) {
+    displayValue = isNaN(numValue) ? '-' : Math.round(numValue).toString();
   } else if (metricDef.key === 'lobTotalBaseRequiredMinutes') {
     displayValue = `${numValue.toFixed(0)} min`;
   } else if (typeof numValue === 'number' && !isNaN(numValue)) {
@@ -226,29 +225,31 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
         }
         break;
       case '_calculatedRequiredAgentMinutes':
-        if (metricData && 'volumeMixPercentage' in metricData && typeof metricData.volumeMixPercentage === 'number' &&
-          'backlogPercentage' in metricData && typeof metricData.backlogPercentage === 'number' &&
-          typeof item.lobId === 'string') {
-          const lobEntry = rawCapacityDataSource.find(lob => lob.id === item.lobId);
-          if (lobEntry) {
-            const lobVol = lobEntry.lobVolumeForecast?.[periodName];
-            const lobAHT = lobEntry.lobAverageAHT?.[periodName];
-            let lobTotalBase = 0;
-            if (lobVol !== null && lobVol !== undefined && lobAHT !== null && lobAHT !== undefined && lobAHT > 0) {
-              lobTotalBase = lobVol * lobAHT;
-            } else if (lobEntry.lobTotalBaseRequiredMinutes?.[periodName] !== null && lobEntry.lobTotalBaseRequiredMinutes?.[periodName] !== undefined) {
-              lobTotalBase = lobEntry.lobTotalBaseRequiredMinutes[periodName]!;
-            }
+      // metricData is available here and should be of type TeamPeriodicMetrics
+      // It now contains _lobTotalBaseReqMinutesForCalc, volumeMixPercentage, and backlogPercentage
+      const teamMetricData = metricData as TeamPeriodicMetrics; // Cast for type safety/clarity
 
-            formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)\n` +
-              `Calc: (${lobTotalBase.toFixed(0)} * ${(metricData.volumeMixPercentage / 100).toFixed(2)}) * (1 + ${(metricData.backlogPercentage / 100).toFixed(2)}) = ${numValue.toFixed(0)}\n`+
-              `Represents team's share of LOB demand, adjusted for team's backlog.`;
-          } else {
-            formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)\n` +
-              `Represents team's share of LOB demand, adjusted for team's backlog. (LOB data not found for tooltip)`;
-          }
-        }
-        break;
+      const lobBaseMins = teamMetricData?._lobTotalBaseReqMinutesForCalc;
+      const volMix = teamMetricData?.volumeMixPercentage;
+      const backlog = teamMetricData?.backlogPercentage;
+
+      if (typeof lobBaseMins === 'number' &&
+          typeof volMix === 'number' &&
+          typeof backlog === 'number' &&
+          numValue !== null && !isNaN(numValue)) { // numValue is the already calculated _calculatedRequiredAgentMinutes
+
+        formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)
+` +
+                      `Calc: (${lobBaseMins.toFixed(0)} * ${(volMix / 100).toFixed(2)}) * (1 + ${(backlog / 100).toFixed(2)}) = ${numValue.toFixed(0)}
+` +
+                      `Represents team's share of LOB demand, adjusted for team's backlog.`;
+      } else {
+        // Fallback if some data is missing, though it ideally shouldn't be
+        formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)
+` +
+                      `Represents team's share of LOB demand, adjusted for team's backlog. (Component data missing for full Calc display)`;
+      }
+      break;
       case '_calculatedActualProductiveAgentMinutes':
         if (teamMetrics?.actualHC !== null && teamMetrics?.actualHC !== undefined &&
           teamMetrics?.shrinkagePercentage !== null && teamMetrics?.occupancyPercentage !== null && standardWorkMinutesForPeriod > 0) {
@@ -284,12 +285,21 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
   }
 
   if (metricDef.key === "overUnderHC") {
-    if (numValue < -0.001) {
-      textColor = "text-destructive";
-      icon = <ArrowDown className="h-3 w-3 inline-block ml-1" />;
-    } else if (numValue > 0.001) {
-      textColor = "text-primary";
+    if (numValue >= 0) { // Condition for Green
+      textColor = "text-green-600"; // Green color
       icon = <ArrowUp className="h-3 w-3 inline-block ml-1" />;
+    } else { // Conditions for Red or Amber (numValue < 0)
+      icon = <ArrowDown className="h-3 w-3 inline-block ml-1" />;
+      // Retrieve requiredHC for the specific conditions
+      const requiredHCValue = metricData?.requiredHC; // Accessing requiredHC from the metricData of the current period
+
+      if (typeof requiredHCValue === 'number' && requiredHCValue <= 10 && numValue === -1) {
+        textColor = "text-red-600"; // Specific Red color
+      } else if (typeof requiredHCValue === 'number' && requiredHCValue >= 100 && numValue === -1) {
+        textColor = "text-yellow-500"; // Amber color
+      } else {
+        textColor = "text-destructive"; // Default Red for other negative values
+      }
     }
   }
 
