@@ -55,7 +55,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
+  DropdownMenuSeparator, // Corrected import
   DropdownMenuTrigger,
 } from "@/components/ui2/dropdown-menu";
 import {
@@ -78,7 +78,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui2/table";
-import { Loader2, Zap, Download, Building2, Briefcase, ChevronDown, Edit3, ArrowDown, ArrowUp, Minus, Calendar as CalendarIcon, Users, ChevronsUpDown, ArrowLeft, ArrowRight, BarChart2 } from "lucide-react";
+import { Loader2, Zap, Download, Building2, Briefcase, ChevronDown, Edit3, ArrowDown, ArrowUp, Minus, Calendar as CalendarIcon, Users, ChevronsUpDown, ArrowLeft, ArrowRight, BarChart2, Table as TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { suggestLoBGroupings, SuggestLoBGroupingsOutput } from "@/ai/flows/suggest-lob-groupings";
@@ -96,8 +96,7 @@ import {
 }
  from "date-fns";
 import type { DayPickerProps } from "react-day-picker";
-// Removed recharts imports
-// import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 const throttle = (func: (...args: any[]) => void, wait: number) => {
   let timeout: NodeJS.Timeout | null = null;
@@ -264,9 +263,9 @@ export const TEAM_METRIC_ROW_DEFINITIONS: TeamMetricDefinitions = [
 ];
 
 export const AGGREGATED_METRIC_ROW_DEFINITIONS: AggregatedMetricDefinitions = [
-  { key: "lobVolumeForecast", label: "LOB Volume Forecast", isEditableForLob: true, step: 1, isCount: true, description: "Total number of interactions forecasted for this LOB." },
-  { key: "lobAverageAHT", label: "LOB Average AHT", isEditableForLob: true, step: 0.1, isTime: true, description: "Average handle time assumed for LOB interactions." },
-  { key: "lobTotalBaseRequiredMinutes", label: "LOB Total Base Req Mins", isEditableForLob: true, isTime: true, step: 1, description: "Total agent minutes required for LOB volume, calculated as Volume * AHT or input directly." },
+  { key: "lobVolumeForecast", label: "Volume Forecast", isEditableForLob: true, step: 1, isCount: true, description: "Total number of interactions forecasted for this LOB." },
+  // { key: "lobAverageAHT", label: "Average AHT", isEditableForLob: true, step: 0.1, isTime: true, description: "Average handle time assumed for LOB interactions." },
+  // { key: "lobTotalBaseRequiredMinutes", label: "Total Base Req Mins", isEditableForLob: true, isTime: true, step: 1, description: "Total agent minutes required for LOB volume, calculated as Volume * AHT or input directly." },
   { key: "requiredHC", label: "Required HC", isHC: true, description: "Aggregated required headcount from child entities." },
   { key: "actualHC", label: "Actual/Starting HC", isHC: true, description: "Aggregated actual/starting headcount from child entities." },
   { key: "overUnderHC", label: "Over/Under HC", isHC: true, description: "Difference between aggregated Actual/Starting HC and Required HC." },
@@ -278,21 +277,33 @@ export interface FilterOptions {
 }
 
 export interface HeaderSectionProps {
-  filterOptions: FilterOptions;
-  selectedBusinessUnit: BusinessUnitName;
-  onSelectBusinessUnit: (value: BusinessUnitName) => void;
-  selectedLineOfBusiness: string[];
-  onSelectLineOfBusiness: (value: string[]) => void;
-  selectedTimeInterval: TimeInterval;
-  onSelectTimeInterval: (value: TimeInterval) => void;
-  selectedDateRange: DateRange | undefined;
-  onSelectDateRange: (value: DateRange | undefined) => void;
+  planFilterOptions: FilterOptions;
+  selectedPlanBusinessUnit: BusinessUnitName;
+  onSelectPlanBusinessUnit: (value: BusinessUnitName) => void;
+  selectedPlanLineOfBusiness: string[];
+  onSelectPlanLineOfBusiness: (value: string[]) => void;
+  selectedPlanTimeInterval: TimeInterval;
+  onSelectPlanTimeInterval: (value: TimeInterval) => void;
+  selectedPlanDateRange: DateRange | undefined;
+  onSelectPlanDateRange: (value: DateRange | undefined) => void;
+
+  chartFilterOptions: FilterOptions;
+  selectedChartBusinessUnit: BusinessUnitName;
+  onSelectChartBusinessUnit: (value: BusinessUnitName) => void;
+  selectedChartLineOfBusiness: string[];
+  onSelectChartLineOfBusiness: (value: string[]) => void;
+  selectedChartTimeInterval: TimeInterval;
+  onSelectChartTimeInterval: (value: TimeInterval) => void;
+  selectedChartDateRange: DateRange | undefined;
+  onSelectChartDateRange: (value: DateRange | undefined) => void;
+
   allAvailablePeriods: string[];
   displayedPeriodHeaders: string[];
   activeHierarchyContext: string;
   headerPeriodScrollerRef: React.RefObject<HTMLDivElement>;
   onExportCsv: () => void;
-  onViewChart: () => void;
+  viewMode: 'plan' | 'chart';
+  onSetViewMode: (mode: 'plan' | 'chart') => void;
 }
 
 export interface RawTeamDataEntry {
@@ -541,14 +552,13 @@ const getHeaderDateRange = (header: string, interval: TimeInterval): { startDate
   return { startDate: null, endDate: null };
 };
 
-const getDefaultDateRange = (interval: TimeInterval): DateRange => {
+const getDefaultDateRange = (interval: TimeInterval, numPeriodsToDefault: number): DateRange => {
   const headers = interval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS;
-  const numPeriodsToDefault = interval === "Week" ? 51 : 2;
 
   if (headers.length === 0) return { from: undefined, to: undefined };
 
   const fromHeaderDetails = getHeaderDateRange(headers[0], interval);
-  const toHeaderIndex = Math.min(numPeriodsToDefault, headers.length - 1);
+  const toHeaderIndex = Math.min(numPeriodsToDefault - 1, headers.length - 1);
   const toHeaderDetails = getHeaderDateRange(headers[toHeaderIndex], interval);
 
   let fromDate = fromHeaderDetails.startDate;
@@ -919,218 +929,65 @@ function DateRangePicker({ date, onDateChange, className }: DateRangePickerProps
   );
 }
 
-interface HierarchyNodeProps {
-  node: CapacityDataRow;
-  level: number;
-  periodHeader: string;
-  expandedNodes: Record<string, boolean>;
-  toggleExpand: (id: string) => void;
-}
-
-const HierarchyNode: React.FC<HierarchyNodeProps> = ({ node, level, periodHeader, expandedNodes, toggleExpand }) => {
-  const isExpanded = expandedNodes[node.id];
-  const hasChildren = node.children && node.children.length > 0;
-
-  const latestPeriodData = node.periodicData[periodHeader];
-
-  let hcMetrics: { label: string; value: number | null }[] = [];
-  let volumeMetric: { label: string; value: number | null } | null = null;
-
-  if (latestPeriodData) {
-    hcMetrics.push(
-      { label: "Req HC", value: latestPeriodData.requiredHC ?? null },
-      { label: "Actual HC", value: latestPeriodData.actualHC ?? null },
-      { label: "O/U HC", value: latestPeriodData.overUnderHC ?? null }
-    );
-
-    // Display volume for LOB and BU nodes
-    if ((node.itemType === 'LOB' || node.itemType === 'BU') && 'lobVolumeForecast' in latestPeriodData) {
-      volumeMetric = { label: "Volume", value: latestPeriodData.lobVolumeForecast ?? null };
-    }
-  }
-
-  const nodeColorClass =
-    node.itemType === 'BU' ? 'bg-secondary text-secondary-foreground' :
-    node.itemType === 'LOB' ? 'bg-muted text-muted-foreground' :
-    'bg-card text-foreground';
-
-  const indentStyle = { paddingLeft: `${level * 1.5 + 0.5}rem` };
-
-  return (
-    <div className="flex flex-col">
-      <div
-        className={cn(
-          "flex items-center gap-2 py-2 px-3 border-b border-border/50",
-          nodeColorClass,
-          hasChildren ? "cursor-pointer hover:bg-opacity-80" : ""
-        )}
-        style={indentStyle}
-        onClick={hasChildren ? () => toggleExpand(node.id) : undefined}
-      >
-        {hasChildren && (
-          <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-        )}
-        <span className="font-semibold text-sm">{node.name} ({node.itemType})</span>
-        <div className="flex-grow flex justify-end items-center gap-4 text-xs">
-          {hcMetrics.map((metric, idx) => (
-            <span key={idx} className="flex items-center gap-1">
-              {metric.label}: <span className="font-medium">{metric.value !== null ? metric.value.toFixed(0) : '-'}</span>
-            </span>
-          ))}
-          {volumeMetric && (
-            <span className="flex items-center gap-1">
-              {volumeMetric.label}: <span className="font-medium">{volumeMetric.value !== null ? volumeMetric.value.toFixed(0) : '-'}</span>
-            </span>
-          )}
-        </div>
-      </div>
-      {isExpanded && hasChildren && (
-        <div className="flex flex-col">
-          {node.children?.map(child => (
-            <HierarchyNode
-              key={child.id}
-              node={child}
-              level={level + 1}
-              periodHeader={periodHeader}
-              expandedNodes={expandedNodes}
-              toggleExpand={toggleExpand}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-interface HierarchyChartProps {
-  data: CapacityDataRow[];
-  periodHeaders: string[];
-}
-
-const HierarchyChart: React.FC<HierarchyChartProps> = ({ data, periodHeaders }) => {
-  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
-
-  const toggleExpand = useCallback((id: string) => {
-    setExpandedNodes(prev => ({ ...prev, [id]: !prev[id] }));
-  }, []);
-
-  const latestPeriod = periodHeaders[periodHeaders.length - 1];
-  if (!latestPeriod) {
-    return <div className="text-center text-muted-foreground py-8">No period data available for charting.</div>;
-  }
-
-  return (
-    <div className="flex flex-col border rounded-lg overflow-hidden">
-      {data.length > 0 ? (
-        data.map(buNode => (
-          <HierarchyNode
-            key={buNode.id}
-            node={buNode}
-            level={0}
-            periodHeader={latestPeriod}
-            expandedNodes={expandedNodes}
-            toggleExpand={toggleExpand}
-          />
-        ))
-      ) : (
-        <div className="text-center text-muted-foreground py-8">No hierarchical data available for charting.</div>
-      )}
-    </div>
-  );
-};
-
-
-interface CapacityChartDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  data: CapacityDataRow[];
-  periodHeaders: string[];
-  selectedTimeInterval: TimeInterval;
-  selectedBusinessUnit: BusinessUnitName;
-  selectedLineOfBusiness: string[];
-}
-
-function CapacityChartDialog({
-  open,
-  onOpenChange,
-  data,
-  periodHeaders,
-  selectedTimeInterval,
-  selectedBusinessUnit,
-  selectedLineOfBusiness,
-}: CapacityChartDialogProps) {
-  // Filter the data to show only the selected business unit and its relevant LOBs
-  const chartData = useMemo(() => {
-    const buNode = data.find(item => item.itemType === 'BU' && item.name === selectedBusinessUnit);
-    if (!buNode) return [];
-
-    const filteredLobs = buNode.children?.filter(lob => selectedLineOfBusiness.includes(lob.name)) || [];
-    
-    // Create a new BU node with only the filtered LOBs
-    return [{
-      ...buNode,
-      children: filteredLobs
-    }];
-  }, [data, selectedBusinessUnit, selectedLineOfBusiness]);
-
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Capacity Hierarchy View</DialogTitle>
-          <DialogDescription>
-            Interactive hierarchy of Business Units, Lines of Business, and Teams for {selectedBusinessUnit}.
-            Data shown for the latest period: {periodHeaders[periodHeaders.length - 1]}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex-grow overflow-y-auto p-4">
-          {/* Directly render HierarchyChart instead of a table */}
-          <HierarchyChart data={chartData} periodHeaders={periodHeaders} />
-        </div>
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 
 function HeaderSection({
-  filterOptions,
-  selectedBusinessUnit,
-  onSelectBusinessUnit,
-  selectedLineOfBusiness,
-  onSelectLineOfBusiness,
-  selectedTimeInterval,
-  onSelectTimeInterval,
-  selectedDateRange,
-  onSelectDateRange,
+  planFilterOptions,
+  selectedPlanBusinessUnit,
+  onSelectPlanBusinessUnit,
+  selectedPlanLineOfBusiness,
+  onSelectPlanLineOfBusiness,
+  selectedPlanTimeInterval,
+  onSelectPlanTimeInterval,
+  selectedPlanDateRange,
+  onSelectPlanDateRange,
+
+  chartFilterOptions,
+  selectedChartBusinessUnit,
+  onSelectChartBusinessUnit,
+  selectedChartLineOfBusiness,
+  onSelectChartLineOfBusiness,
+  selectedChartTimeInterval,
+  onSelectChartTimeInterval,
+  selectedChartDateRange,
+  onSelectChartDateRange,
+
   allAvailablePeriods,
   displayedPeriodHeaders,
   activeHierarchyContext,
   headerPeriodScrollerRef,
   onExportCsv,
-  onViewChart,
+  viewMode,
+  onSetViewMode,
 }: HeaderSectionProps) {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
 
+  const currentSelectedBusinessUnit = viewMode === 'plan' ? selectedPlanBusinessUnit : selectedChartBusinessUnit;
+  const currentSelectedLineOfBusiness = viewMode === 'plan' ? selectedPlanLineOfBusiness : selectedChartLineOfBusiness;
+  const currentSelectedTimeInterval = viewMode === 'plan' ? selectedPlanTimeInterval : selectedChartTimeInterval;
+  const currentSelectedDateRange = viewMode === 'plan' ? selectedPlanDateRange : selectedChartDateRange;
+  const currentFilterOptions = viewMode === 'plan' ? planFilterOptions : chartFilterOptions;
+
+  const handleSelectBusinessUnit = viewMode === 'plan' ? onSelectPlanBusinessUnit : onSelectChartBusinessUnit;
+  const handleSelectLineOfBusiness = viewMode === 'plan' ? onSelectPlanLineOfBusiness : onSelectChartLineOfBusiness;
+  const handleSelectTimeInterval = viewMode === 'plan' ? onSelectPlanTimeInterval : onSelectChartTimeInterval;
+  const handleSelectDateRange = viewMode === 'plan' ? onSelectPlanDateRange : onSelectChartDateRange;
+
+
   const handleLobSelectionChange = (lob: string, checked: boolean) => {
     const newSelectedLOBs = checked
-      ? [...selectedLineOfBusiness, lob]
-      : selectedLineOfBusiness.filter((item) => item !== lob);
-    onSelectLineOfBusiness(newSelectedLOBs);
+      ? [...currentSelectedLineOfBusiness, lob]
+      : currentSelectedLineOfBusiness.filter((item) => item !== lob);
+    handleSelectLineOfBusiness(newSelectedLOBs);
   };
 
-  const actualLobsForCurrentBu = BUSINESS_UNIT_CONFIG[selectedBusinessUnit]?.lonsOfBusiness || [];
+  const actualLobsForCurrentBu = BUSINESS_UNIT_CONFIG[currentSelectedBusinessUnit]?.lonsOfBusiness || [];
   let lobDropdownLabel = "Select LOBs";
-  if (selectedLineOfBusiness.length === 1) {
-    lobDropdownLabel = selectedLineOfBusiness[0];
-  } else if (actualLobsForCurrentBu.length > 0 && selectedLineOfBusiness.length === actualLobsForCurrentBu.length) {
+  if (currentSelectedLineOfBusiness.length === 1) {
+    lobDropdownLabel = currentSelectedLineOfBusiness[0];
+  } else if (actualLobsForCurrentBu.length > 0 && currentSelectedLineOfBusiness.length === actualLobsForCurrentBu.length) {
     lobDropdownLabel = `All ${actualLobsForCurrentBu.length} LOBs`;
-  } else if (selectedLineOfBusiness.length > 1) {
-    lobDropdownLabel = `${selectedLineOfBusiness.length} LOBs Selected`;
+  } else if (currentSelectedLineOfBusiness.length > 1) {
+    lobDropdownLabel = `${currentSelectedLineOfBusiness.length} LOBs Selected`;
   } else if (actualLobsForCurrentBu.length === 0) {
     lobDropdownLabel = "No LOBs";
   }
@@ -1150,29 +1007,49 @@ function HeaderSection({
               <TooltipContent><p>Export current view as CSV</p></TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={onViewChart}>
-                  <BarChart2 className="mr-2" /> View Chart
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>View interactive charts</p></TooltipContent>
-            </Tooltip>
+            <div className="flex items-center gap-2 border rounded-md p-1 bg-muted">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === "plan" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => onSetViewMode("plan")}
+                    className="h-7 px-3"
+                  >
+                    <TableIcon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Plan View</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === "chart" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => onSetViewMode("chart")}
+                    className="h-7 px-3"
+                  >
+                    <BarChart2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Chart View</TooltipContent>
+              </Tooltip>
+            </div>
 
-            <Button variant="default" size="sm" onClick={() => setIsAiDialogOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setIsAiDialogOpen(true)}>
               <Zap className="mr-2" /> Assumptions Assister
             </Button>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-x-4 gap-y-2">
-          <Select value={selectedBusinessUnit} onValueChange={onSelectBusinessUnit}>
+          <Select value={currentSelectedBusinessUnit} onValueChange={handleSelectBusinessUnit}>
             <SelectTrigger className="w-full lg:w-[180px] text-sm h-9">
               <Building2 className="mr-2 opacity-70" />
               <SelectValue placeholder="Business Unit" />
             </SelectTrigger>
             <SelectContent>
-              {filterOptions.businessUnits.map((bu) => (
+              {currentFilterOptions.businessUnits.map((bu) => (
                 <SelectItem key={bu} value={bu}>
                   {bu}
                 </SelectItem>
@@ -1194,12 +1071,12 @@ function HeaderSection({
               <DropdownMenuLabel>Select Lines of Business</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuCheckboxItem
-                checked={selectedLineOfBusiness.length === actualLobsForCurrentBu.length && actualLobsForCurrentBu.length > 0}
+                checked={currentSelectedLineOfBusiness.length === actualLobsForCurrentBu.length && actualLobsForCurrentBu.length > 0}
                 onCheckedChange={(checkedValue) => {
                   if (checkedValue) {
-                    onSelectLineOfBusiness(actualLobsForCurrentBu);
+                    handleSelectLineOfBusiness(actualLobsForCurrentBu);
                   } else {
-                    onSelectLineOfBusiness([]);
+                    handleSelectLineOfBusiness([]);
                   }
                 }}
                 onSelect={(e) => e.preventDefault()}
@@ -1211,7 +1088,7 @@ function HeaderSection({
                 actualLobsForCurrentBu.map((lob) => (
                   <DropdownMenuCheckboxItem
                     key={lob}
-                    checked={selectedLineOfBusiness.includes(lob)}
+                    checked={currentSelectedLineOfBusiness.includes(lob)}
                     onCheckedChange={(checkedValue) => handleLobSelectionChange(lob, Boolean(checkedValue))}
                     onSelect={(e) => e.preventDefault()}
                   >
@@ -1219,67 +1096,69 @@ function HeaderSection({
                   </DropdownMenuCheckboxItem>
                 ))
               ) : (
-                <DropdownMenuItem disabled>No LOBs available for {selectedBusinessUnit}</DropdownMenuItem>
+                <DropdownMenuItem disabled>No LOBs available for {currentSelectedBusinessUnit}</DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
 
           <div className="flex items-center gap-2 border rounded-md p-1 bg-muted">
             <Button
-              variant={selectedTimeInterval === "Week" ? "default" : "ghost"}
+              variant={currentSelectedTimeInterval === "Week" ? "default" : "ghost"}
               size="sm"
-              onClick={() => onSelectTimeInterval("Week")}
+              onClick={() => handleSelectTimeInterval("Week")}
               className="h-7 px-3"
             >
               Week
             </Button>
             <Button
-              variant={selectedTimeInterval === "Month" ? "default" : "ghost"}
+              variant={currentSelectedTimeInterval === "Month" ? "default" : "ghost"}
               size="sm"
-              onClick={() => onSelectTimeInterval("Month")}
+              onClick={() => handleSelectTimeInterval("Month")}
               className="h-7 px-3"
             >
               Month
             </Button>
           </div>
-          <DateRangePicker date={selectedDateRange} onDateChange={onSelectDateRange} />
+          <DateRangePicker date={currentSelectedDateRange} onDateChange={handleSelectDateRange} />
         </div>
 
         {/* Integrated Table Header Row */}
-        <div className="flex items-center border-b border-border bg-card px-4 h-12 mt-4 sticky top-0 z-40">
-          <div className="sticky left-0 z-55 bg-card min-w-[320px] whitespace-nowrap px-4 py-2 text-sm font-semibold text-foreground h-full flex items-center">
-            {activeHierarchyContext}
-          </div>
-          <div ref={headerPeriodScrollerRef} className="flex-grow overflow-x-auto scrollbar-hide whitespace-nowrap h-full">
-            <div className="flex h-full">
-              {displayedPeriodHeaders.map((period) => {
-                const parts = period.split(': ');
-                const weekLabelPart = parts.length > 0 ? parts[0].replace("FWk", "WK") : period;
-                let dateRangePart = "";
-                if (parts.length > 1) {
-                  const dateAndYearPart = parts[1];
-                  const dateMatch = dateAndYearPart.match(/^(\d{2}\/\d{2}-\d{2}\/\d{2})/);
-                  if (dateMatch) {
-                    dateRangePart = dateMatch[1];
+        {viewMode === 'plan' && (
+          <div className="flex items-center border-b border-border bg-card px-4 h-12 mt-4 sticky top-0 z-40">
+            <div className="sticky left-0 z-55 bg-card min-w-[320px] whitespace-nowrap px-4 py-2 text-sm font-semibold text-foreground h-full flex items-center">
+              {activeHierarchyContext}
+            </div>
+            <div ref={headerPeriodScrollerRef} className="flex-grow overflow-x-auto scrollbar-hide whitespace-nowrap h-full">
+              <div className="flex h-full">
+                {displayedPeriodHeaders.map((period) => {
+                  const parts = period.split(': ');
+                  const weekLabelPart = parts.length > 0 ? parts[0].replace("FWk", "WK") : period;
+                  let dateRangePart = "";
+                  if (parts.length > 1) {
+                    const dateAndYearPart = parts[1];
+                    const dateMatch = dateAndYearPart.match(/^(\d{2}\/\d{2}-\d{2}\/\d{2})/);
+                    if (dateMatch) {
+                      dateRangePart = dateMatch[1];
+                    }
                   }
-                }
-                return (
-                  <div
-                    key={period}
-                    className="text-right min-w-[100px] px-2 py-2 border-l border-border/50 h-full flex flex-col justify-center items-end"
-                  >
-                    <span className="text-sm font-medium text-foreground">{weekLabelPart}</span>
-                    {dateRangePart && (
-                      <span className="text-xs text-muted-foreground">
-                        ({dateRangePart})
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={period}
+                      className="text-right min-w-[100px] px-2 py-2 border-l border-border/50 h-full flex flex-col justify-center items-end"
+                    >
+                      <span className="text-sm font-medium text-foreground">{weekLabelPart}</span>
+                      {dateRangePart && (
+                        <span className="text-xs text-muted-foreground">
+                          ({dateRangePart})
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        )}
         <AiGroupingDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
       </header>
     </TooltipProvider>
@@ -1523,7 +1402,7 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
                                           (teamMetrics.occupancyPercentage / 100);
             if (effectiveMinutesPerHC > 0) {
               formulaText = `Formula: Eff. Req. Mins / (Std Mins * (1-Shrink%) * Occupancy%)\n` +
-                            `Calc: ${teamMetrics._calculatedRequiredAgentMinutes.toFixed(0)} / (${standardWorkMinutesForPeriod.toFixed(0)} * (1 - ${teamMetrics.shrinkagePercentage.toFixed(1)}%) * ${teamMetrics.occupancyPercentage.toFixed(1)}%) = ${numValue.toFixed(2)}\n` +
+                            `Calc: ${teamMetrics._calculatedRequiredAgentMinutes.toFixed(0)} / (${standardWorkMinutesForPeriod.toFixed(0)} * (1 - ${(teamMetrics.shrinkagePercentage / 100).toFixed(2)}) * ${(teamMetrics.occupancyPercentage / 100).toFixed(2)}) = ${numValue.toFixed(2)}\n` +
                             `(Effective Mins per HC: ${effectiveMinutesPerHC.toFixed(0)})`;
             } else {
               formulaText = `Formula: Eff. Req. Mins / (Std Mins * (1-Shrink%) * Occupancy%)\n` +
@@ -1541,11 +1420,11 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
             const lobTotalBase = teamMetrics._lobTotalBaseReqMinutesForCalc;
             const baseTeamRequiredMinutes = lobTotalBase * (teamMetrics.volumeMixPercentage / 100);
             const effectiveTeamRequiredMinutes = baseTeamRequiredMinutes * (1 + (teamMetrics.backlogPercentage / 100));
-            formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)\n` +
+            formulaText = `Formula: (Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)\n` +
                           `Calc: ${lobTotalBase.toFixed(0)} * (${teamMetrics.volumeMixPercentage.toFixed(1)}%) * (1 + ${teamMetrics.backlogPercentage.toFixed(1)}%) = ${effectiveTeamRequiredMinutes.toFixed(0)} min\n` +
                           `Represents team's share of LOB demand, adjusted for team's backlog.`;
         } else {
-            formulaText = `Formula: (LOB Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)\n` +
+            formulaText = `Formula: (Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)\n` +
                           `Calculation inputs missing or invalid.`;
         }
         break;
@@ -1604,7 +1483,7 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
           const volume = aggMetrics.lobVolumeForecast;
           const aht = aggMetrics.lobAverageAHT;
           const calculatedMins = (typeof volume === 'number' && typeof aht === 'number' && volume > 0 && aht > 0) ? volume * aht : numValue;
-          formulaText = `Formula: LOB Volume Forecast * LOB Avg AHT\n` +
+          formulaText = `Formula: Volume Forecast * Avg AHT\n` +
             `Calc: ${volume?.toFixed(0) ?? 'N/A'} * ${aht?.toFixed(1) ?? 'N/A'} = ${calculatedMins.toFixed(0)}\n` +
             `(Current value may be a direct input or calculated)`;
         }
@@ -1691,8 +1570,8 @@ const MetricRow: React.FC<MetricRowProps> = React.memo(({ item, metricDef, level
           </Tooltip>
         </div>
       </TableCell>
-      {periodHeaders.map((periodHeader) => {
-        const metricForPeriod = item.periodicData[periodHeader];
+      {periodHeaders.map(ph => {
+        const metricForPeriod = item.periodicData[ph];
         let cellTextColor = "text-foreground";
         if (metricDef.key === "overUnderHC" && metricForPeriod && (metricForPeriod as any)[metricDef.key] !== null && (metricForPeriod as any)[metricDef.key] !== undefined) {
           const value = Number((metricForPeriod as any)[metricDef.key]);
@@ -1703,19 +1582,19 @@ const MetricRow: React.FC<MetricRowProps> = React.memo(({ item, metricDef, level
         const currentEditId = item.itemType === 'Team' && item.lobId ? `${item.lobId}_${item.name.replace(/\s+/g, '-')}` : item.id;
         const isCurrentlyEditing =
           editingCell?.id === currentEditId &&
-          editingCell?.period === periodHeader &&
+          editingCell?.period === ph &&
           editingCell?.metricKey === metricDef.key;
 
         return (
           <TableCell
-            key={`${item.id}-${metricDef.key}-${periodHeader}`}
+            key={`${item.id}-${metricDef.key}-${ph}`}
             className={`text-right tabular-nums ${cellTextColor} py-2 px-2 min-w-[100px] border-l border-border/50`}
           >
             <MetricCellContent
               item={item}
               metricData={metricForPeriod}
               metricDef={metricDef}
-              periodName={periodHeader}
+              periodName={ph}
               onTeamMetricChange={onTeamMetricChange}
               onLobMetricChange={onLobMetricChange}
               isEditing={isCurrentlyEditing}
@@ -2015,6 +1894,28 @@ const CapacityTable = React.memo(CapacityTableComponent);
 // --- MAIN PAGE COMPONENT ---
 let rawCapacityDataSource: RawLoBCapacityEntry[] = JSON.parse(JSON.stringify(initialMockRawCapacityData));
 
+// Base HSL colors for charts - these are chosen to be distinct enough
+const BASE_CHART_HSL_COLORS = [
+  '222.2 47.4% 40%', // A shade of primary blue
+  '142.1 76.2% 36.3%', // A shade of green
+  '346.8 77.2% 49.8%', // A shade of red/pink
+  '48.5 95.3% 50.8%', // A shade of yellow/orange
+  '262.1 83.3% 57.8%', // A shade of purple
+  '174.9 70.9% 49.4%', // A shade of cyan
+  '39.2 95.3% 60.8%', // A golden yellow
+  '290 60% 50%', // A magenta
+];
+
+// Helper to generate lighter shades from a base HSL string
+const getShade = (hsl: string, lightnessOffset: number) => {
+  const parts = hsl.split(' ');
+  const h = parseFloat(parts[0]);
+  const s = parseFloat(parts[1].replace('%', ''));
+  const l = parseFloat(parts[2].replace('%', ''));
+  const newL = Math.min(100, l + lightnessOffset); // Ensure lightness doesn't exceed 100
+  return `hsl(${h} ${s}% ${newL}%)`;
+};
+
 export default function CapacityInsightsPage() {
   const [localRawCapacityDataSource, setLocalRawCapacityDataSource] = useState<RawLoBCapacityEntry[]>(() => {
     return JSON.parse(JSON.stringify(initialMockRawCapacityData));
@@ -2024,21 +1925,35 @@ export default function CapacityInsightsPage() {
     rawCapacityDataSource = localRawCapacityDataSource;
   }, [localRawCapacityDataSource]);
 
+  // --- Plan View States ---
   const defaultWFSLoBs = useMemo(() => ["Inventory Management", "Customer Returns", "Help Desk"], []);
-  const [selectedBusinessUnit, setSelectedBusinessUnit] = useState<BusinessUnitName>("WFS");
-
-  const [selectedLineOfBusiness, setSelectedLineOfBusiness] = useState<string[]>(() => {
+  const [selectedPlanBusinessUnit, setSelectedPlanBusinessUnit] = useState<BusinessUnitName>("WFS");
+  const [selectedPlanLineOfBusiness, setSelectedPlanLineOfBusiness] = useState<string[]>(() => {
     const initialBuLobs = BUSINESS_UNIT_CONFIG["WFS"].lonsOfBusiness;
     return defaultWFSLoBs.filter(lob => initialBuLobs.includes(lob as LineOfBusinessName<"WFS">));
   });
+  const [selectedPlanTimeInterval, setSelectedPlanTimeInterval] = useState<TimeInterval>("Week");
+  const [selectedPlanDateRange, setSelectedPlanDateRange] = React.useState<DateRange | undefined>(() => getDefaultDateRange("Week", 51));
 
-  const [selectedTimeInterval, setSelectedTimeInterval] = useState<TimeInterval>("Week");
-  const [selectedDateRange, setSelectedDateRange] = React.useState<DateRange | undefined>(() => getDefaultDateRange("Week"));
+  // --- Chart View States ---
+  const defaultChartBusinessUnit = "WFS";
+  const defaultChartLobs = useMemo(() => BUSINESS_UNIT_CONFIG[defaultChartBusinessUnit].lonsOfBusiness.slice(0, 2), []);
+  const [selectedChartBusinessUnit, setSelectedChartBusinessUnit] = useState<BusinessUnitName>(defaultChartBusinessUnit);
+  const [selectedChartLineOfBusiness, setSelectedChartLineOfBusiness] = useState<string[]>(defaultChartLobs);
+  const [selectedChartTimeInterval, setSelectedChartTimeInterval] = useState<TimeInterval>("Week");
+  const [selectedChartDateRange, setSelectedChartDateRange] = React.useState<DateRange | undefined>(() => getDefaultDateRange("Week", 10));
 
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>(() => ({
+
+  const [planFilterOptions, setPlanFilterOptions] = useState<FilterOptions>(() => ({
     businessUnits: [...ALL_BUSINESS_UNITS],
     linesOfBusiness: [...BUSINESS_UNIT_CONFIG["WFS"].lonsOfBusiness],
   }));
+
+  const [chartFilterOptions, setChartFilterOptions] = useState<FilterOptions>(() => ({
+    businessUnits: [...ALL_BUSINESS_UNITS],
+    linesOfBusiness: [...BUSINESS_UNIT_CONFIG[defaultChartBusinessUnit].lonsOfBusiness],
+  }));
+
 
   const [displayableCapacityData, setDisplayableCapacityData] = useState<CapacityDataRow[]>([]);
   const [displayedPeriodHeaders, setDisplayedPeriodHeaders] = useState<string[]>([]);
@@ -2046,7 +1961,7 @@ export default function CapacityInsightsPage() {
   // Initialize expandedItems to expand only the initially selected business unit
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(() => {
     const initialExpanded: Record<string, boolean> = {};
-    initialExpanded[selectedBusinessUnit] = true; // Expand the default selected BU
+    initialExpanded[selectedPlanBusinessUnit] = true; // Expand the default selected BU for plan view
     return initialExpanded;
   });
 
@@ -2054,13 +1969,13 @@ export default function CapacityInsightsPage() {
   useEffect(() => {
     setExpandedItems(prev => ({
       ...prev,
-      [selectedBusinessUnit]: true
+      [selectedPlanBusinessUnit]: true
     }));
-  }, [selectedBusinessUnit]);
+  }, [selectedPlanBusinessUnit]);
 
 
   const [editingCell, setEditingCell] = useState<{ id: string; period: string; metricKey: string } | null>(null);
-  const [isChartDialogOpen, setIsChartDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'plan' | 'chart'>('plan'); // 'plan' or 'chart'
 
   const [activeHierarchyContext, setActiveHierarchyContext] = useState<string>("BU / LoB / Team / Metric");
 
@@ -2086,7 +2001,7 @@ export default function CapacityInsightsPage() {
       return;
     }
 
-    let csvContent = "Hierarchy,Metric," + displayedPeriodHeaders.join(",") + "\n";
+    let csvContent = "Hierarchy,Metric," + displayedPeriodHeaders.map(header => header.replace(/FWk/g, 'WK')).join(",") + "\n";
 
     const processRow = (row: CapacityDataRow, level: number) => {
       const indent = "  ".repeat(level);
@@ -2207,7 +2122,7 @@ export default function CapacityInsightsPage() {
               let newShare = remainingMixPercentage * originalShareOfOthers;
 
               if (i === otherTeams.length - 1) {
-                currentMix = remainingMixPercentage - distributedSum;
+                let currentMix = remainingMixPercentage - distributedSum;
               }
               newShare = Math.max(0, Math.min(100, parseFloat(newShare.toFixed(1))));
               (team.periodicInputData[periodHeader] as any).volumeMixPercentage = newShare;
@@ -2274,28 +2189,28 @@ export default function CapacityInsightsPage() {
         }
         (lobEntry[metricKey] as any)[periodHeader] = newValue;
 
-        const volume = lobEntry.lobVolumeForecast?.[period];
+        const volume = lobEntry.lobVolumeForecast?.[periodHeader];
         const aht = lobEntry.lobAverageAHT?.[period];
         if (typeof volume === 'number' && volume > 0 && typeof aht === 'number' && aht > 0) {
           if (!lobEntry.lobTotalBaseRequiredMinutes) lobEntry.lobTotalBaseRequiredMinutes = {};
-          lobEntry.lobTotalBaseRequiredMinutes[period] = volume * aht;
+          lobEntry.lobTotalBaseRequiredMinutes[periodHeader] = volume * aht;
         } else if (volume === null || aht === null || volume === 0 || aht === 0) {
           if (!lobEntry.lobTotalBaseRequiredMinutes) lobEntry.lobTotalBaseRequiredMinutes = {};
-          lobEntry.lobTotalBaseRequiredMinutes[period] = null;
+          lobEntry.lobTotalBaseRequiredMinutes[periodHeader] = null;
         }
       } else if (metricKey === 'lobTotalBaseRequiredMinutes') {
         if (!lobEntry.lobTotalBaseRequiredMinutes) {
           lobEntry.lobTotalBaseRequiredMinutes = {};
         }
-        lobEntry.lobTotalBaseRequiredMinutes[period] = newValue;
+        lobEntry.lobTotalBaseRequiredMinutes[periodHeader] = newValue;
       }
 
       return newData;
     });
   }, []);
 
-  const handleBusinessUnitChange = useCallback((bu: BusinessUnitName) => {
-    setSelectedBusinessUnit(bu);
+  const handlePlanBusinessUnitChange = useCallback((bu: BusinessUnitName) => {
+    setSelectedPlanBusinessUnit(bu);
     const newBuConfig = BUSINESS_UNIT_CONFIG[bu];
     const allLobsForNewBu = [...newBuConfig.lonsOfBusiness];
     let newDefaultSelectedLobs: string[];
@@ -2307,38 +2222,66 @@ export default function CapacityInsightsPage() {
     } else {
       newDefaultSelectedLobs = [...allLobsForNewBu];
     }
-    setSelectedLineOfBusiness(newDefaultSelectedLobs);
-    setFilterOptions(prev => ({
+    setSelectedPlanLineOfBusiness(newDefaultSelectedLobs);
+    setPlanFilterOptions(prev => ({
       ...prev,
       linesOfBusiness: allLobsForNewBu
     }));
   }, [defaultWFSLoBs]);
 
-  const handleLOBChange = useCallback((lobs: string[]) => {
-    setSelectedLineOfBusiness(lobs);
+  const handlePlanLOBChange = useCallback((lobs: string[]) => {
+    setSelectedPlanLineOfBusiness(lobs);
   }, []);
 
-  const handleTimeIntervalChange = useCallback((interval: TimeInterval) => {
-    setSelectedTimeInterval(interval);
-    setSelectedDateRange(getDefaultDateRange(interval));
+  const handlePlanTimeIntervalChange = useCallback((interval: TimeInterval) => {
+    setSelectedPlanTimeInterval(interval);
+    setSelectedPlanDateRange(getDefaultDateRange(interval, 51));
   }, []);
+
+  const handleChartBusinessUnitChange = useCallback((bu: BusinessUnitName) => {
+    setSelectedChartBusinessUnit(bu);
+    const newBuConfig = BUSINESS_UNIT_CONFIG[bu];
+    const allLobsForNewBu = [...newBuConfig.lonsOfBusiness];
+    setSelectedChartLineOfBusiness(allLobsForNewBu.slice(0, 2)); // Default to first 2 LOBs
+    setChartFilterOptions(prev => ({
+      ...prev,
+      linesOfBusiness: allLobsForNewBu
+    }));
+  }, []);
+
+  const handleChartLOBChange = useCallback((lobs: string[]) => {
+    setSelectedChartLineOfBusiness(lobs);
+  }, []);
+
+  const handleChartTimeIntervalChange = useCallback((interval: TimeInterval) => {
+    setSelectedChartTimeInterval(interval);
+    setSelectedChartDateRange(getDefaultDateRange(interval, 10)); // Default to first 10 weeks
+  }, []);
+
 
   const processDataForTable = useCallback(() => {
-    const sourcePeriods = selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS;
+    const currentSelectedBusinessUnit = viewMode === 'plan' ? selectedPlanBusinessUnit : selectedChartBusinessUnit;
+    const currentSelectedLineOfBusiness = viewMode === 'plan' ? selectedPlanLineOfBusiness : selectedChartLineOfBusiness;
+    const currentSelectedTimeInterval = viewMode === 'plan' ? selectedPlanTimeInterval : selectedChartTimeInterval;
+    const currentSelectedDateRange = viewMode === 'plan' ? selectedPlanDateRange : selectedChartDateRange;
+
+    const sourcePeriods = currentSelectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS;
     let periodsToDisplayCurrently: string[] = [];
 
-    if (selectedDateRange?.from) {
-      const userRangeStart = selectedDateRange.from;
-      const userRangeEnd = selectedDateRange.to || userRangeStart;
+    if (currentSelectedDateRange?.from) {
+      const userRangeStart = currentSelectedDateRange.from;
+      const userRangeEnd = currentSelectedDateRange.to || userRangeStart;
 
       periodsToDisplayCurrently = sourcePeriods.filter(periodHeaderStr => {
-        const { startDate: periodStartDate, endDate: periodEndDate } = getHeaderDateRange(periodHeaderStr, selectedTimeInterval);
+        const { startDate: periodStartDate, endDate: periodEndDate } = getHeaderDateRange(periodHeaderStr, currentSelectedTimeInterval);
         if (!periodStartDate || !periodEndDate) return false;
 
         return isAfter(periodEndDate, addDays(userRangeStart, -1)) && isBefore(periodStartDate, addDays(userRangeEnd, 1));
       });
     } else {
-      periodsToDisplayCurrently = sourcePeriods.slice(0, 60);
+      // Default for plan view: first 51 weeks, for chart view: first 10 weeks
+      const numPeriodsToDefault = viewMode === 'plan' ? 51 : 10;
+      periodsToDisplayCurrently = sourcePeriods.slice(0, numPeriodsToDefault);
     }
 
     if (headerPeriodScrollerRef.current) headerPeriodScrollerRef.current.scrollLeft = 0;
@@ -2346,10 +2289,10 @@ export default function CapacityInsightsPage() {
 
     setDisplayedPeriodHeaders(periodsToDisplayCurrently);
 
-    const standardWorkMinutes = selectedTimeInterval === "Week" ? STANDARD_WEEKLY_WORK_MINUTES : STANDARD_MONTHLY_WORK_MINUTES;
+    const standardWorkMinutes = currentSelectedTimeInterval === "Week" ? STANDARD_WEEKLY_WORK_MINUTES : STANDARD_MONTHLY_WORK_MINUTES;
     const newDisplayData: CapacityDataRow[] = [];
 
-    const buName = selectedBusinessUnit;
+    const buName = currentSelectedBusinessUnit;
     const relevantRawLobEntriesForSelectedBu = localRawCapacityDataSource.filter(d => d.bu === buName);
 
     if (relevantRawLobEntriesForSelectedBu.length === 0) {
@@ -2360,9 +2303,9 @@ export default function CapacityInsightsPage() {
     const childrenLobsDataRows: CapacityDataRow[] = [];
 
     // MODIFIED: Corrected logic for "Select All" / "Unselect All"
-    const lobsToProcessForThisBu = selectedLineOfBusiness.length === 0
+    const lobsToProcessForThisBu = currentSelectedLineOfBusiness.length === 0
       ? [] // If nothing is selected, process an empty array of LOBs
-      : relevantRawLobEntriesForSelectedBu.filter(lobEntry => selectedLineOfBusiness.includes(lobEntry.lob));
+      : relevantRawLobEntriesForSelectedBu.filter(lobEntry => currentSelectedLineOfBusiness.includes(lobEntry.lob));
 
 
     lobsToProcessForThisBu.forEach(lobRawEntry => {
@@ -2471,7 +2414,9 @@ export default function CapacityInsightsPage() {
     }
 
     setDisplayableCapacityData(newDisplayData);
-  }, [selectedBusinessUnit, selectedLineOfBusiness, selectedTimeInterval, selectedDateRange, localRawCapacityDataSource]);
+  }, [viewMode, selectedPlanBusinessUnit, selectedPlanLineOfBusiness, selectedPlanTimeInterval, selectedPlanDateRange,
+      selectedChartBusinessUnit, selectedChartLineOfBusiness, selectedChartTimeInterval, selectedChartDateRange,
+      localRawCapacityDataSource]);
 
   useEffect(() => {
     processDataForTable();
@@ -2482,18 +2427,29 @@ export default function CapacityInsightsPage() {
   }, []);
 
   useEffect(() => {
+    // Only apply scroll synchronization logic if in 'plan' view
+    if (viewMode !== 'plan') {
+      return;
+    }
+
     const headerScroller = headerPeriodScrollerRef.current;
     const bodyScroller = tableBodyScrollRef.current;
 
-    if (!headerScroller || !bodyScroller) return;
+    if (!headerScroller || !bodyScroller) {
+      console.log("Scroll refs not available, skipping scroll sync setup.");
+      return;
+    }
 
-    headerScroller.scrollLeft = bodyScroller.scrollLeft;
+    // Reset scroll positions when content changes or view mode changes to ensure a fresh start
+    headerScroller.scrollLeft = 0;
+    bodyScroller.scrollLeft = 0;
 
     const syncScroll = (source: HTMLElement, target: HTMLElement) => {
       if (isSyncingScroll.current) return;
       isSyncingScroll.current = true;
       target.scrollLeft = source.scrollLeft;
-      isSyncingScroll.current = false;
+      // A slightly longer timeout might help ensure the scroll completes before allowing re-sync
+      setTimeout(() => { isSyncingScroll.current = false; }, 100); // Increased timeout
     };
 
     const throttledHeaderScroll = throttle(() => syncScroll(headerScroller, bodyScroller), 16);
@@ -2502,59 +2458,163 @@ export default function CapacityInsightsPage() {
     headerScroller.addEventListener('scroll', throttledHeaderScroll, { passive: true });
     bodyScroller.addEventListener('scroll', throttledBodyScroll, { passive: true });
 
+    // Cleanup function
     return () => {
       headerScroller.removeEventListener('scroll', throttledHeaderScroll);
       bodyScroller.removeEventListener('scroll', throttledBodyScroll);
     };
-  }, []);
+  }, [displayedPeriodHeaders, displayableCapacityData, viewMode]); // Added viewMode to dependencies
+
+
+  // Map LOB names to their color shades
+  const lobColorMap = useMemo(() => {
+    const map: { [lobName: string]: { required: string, actual: string, overUnder: string } } = {};
+    const lobsToColor = viewMode === 'plan' ? selectedPlanLineOfBusiness : selectedChartLineOfBusiness;
+    lobsToColor.forEach((lobName, index) => {
+      const baseHsl = BASE_CHART_HSL_COLORS[index % BASE_CHART_HSL_COLORS.length];
+      map[lobName] = {
+        required: getShade(baseHsl, 0),    // Base color for Required HC
+        actual: getShade(baseHsl, 15),     // Lighter shade for Actual HC
+        overUnder: getShade(baseHsl, 30),  // Even lighter shade for Over/Under HC
+      };
+    });
+    return map;
+  }, [selectedPlanLineOfBusiness, selectedChartLineOfBusiness, viewMode]);
+
+
+  // Prepare data for charts
+  const chartDataForMetrics = useMemo(() => {
+    const processedData: any[] = [];
+    const buNode = displayableCapacityData.find(item => item.itemType === 'BU' && item.name === selectedChartBusinessUnit);
+
+    if (!buNode || !buNode.children) return [];
+
+    const selectedLobs = buNode.children.filter(lob => selectedChartLineOfBusiness.includes(lob.name));
+
+    // Use displayedPeriodHeaders which are already filtered by chart view's date range
+    displayedPeriodHeaders.forEach(period => {
+      const periodData: { [key: string]: any } = { name: period.replace("FWk", "WK").split(':')[0] };
+
+      selectedLobs.forEach(lob => {
+        const lobPeriodMetric = lob.periodicData[period] as AggregatedPeriodicMetrics;
+        if (lobPeriodMetric) {
+          periodData[`${lob.name}_RequiredHC`] = lobPeriodMetric.requiredHC ?? 0;
+          periodData[`${lob.name}_ActualHC`] = lobPeriodMetric.actualHC ?? 0;
+          periodData[`${lob.name}_OverUnderHC`] = lobPeriodMetric.overUnderHC ?? 0;
+        }
+      });
+      processedData.push(periodData);
+    });
+    return processedData;
+  }, [displayableCapacityData, selectedChartBusinessUnit, selectedChartLineOfBusiness, displayedPeriodHeaders]);
+
+  const allChartDataKeys = useMemo(() => {
+    const keys: string[] = [];
+    selectedChartLineOfBusiness.forEach(lobName => {
+      keys.push(`${lobName}_RequiredHC`);
+      keys.push(`${lobName}_ActualHC`);
+      keys.push(`${lobName}_OverUnderHC`);
+    });
+    return keys;
+  }, [selectedChartLineOfBusiness]);
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground rounded-lg min-h-0">
       <HeaderSection
-        filterOptions={filterOptions}
-        selectedBusinessUnit={selectedBusinessUnit}
-        onSelectBusinessUnit={handleBusinessUnitChange}
-        selectedLineOfBusiness={selectedLineOfBusiness}
-        onSelectLineOfBusiness={handleLOBChange}
-        selectedTimeInterval={selectedTimeInterval}
-        onSelectTimeInterval={handleTimeIntervalChange}
-        selectedDateRange={selectedDateRange}
-        onSelectDateRange={setSelectedDateRange}
-        allAvailablePeriods={selectedTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
+        planFilterOptions={planFilterOptions}
+        selectedPlanBusinessUnit={selectedPlanBusinessUnit}
+        onSelectPlanBusinessUnit={handlePlanBusinessUnitChange}
+        selectedPlanLineOfBusiness={selectedPlanLineOfBusiness}
+        onSelectPlanLineOfBusiness={handlePlanLOBChange}
+        selectedPlanTimeInterval={selectedPlanTimeInterval}
+        onSelectPlanTimeInterval={handlePlanTimeIntervalChange}
+        selectedPlanDateRange={selectedPlanDateRange}
+        onSelectPlanDateRange={setSelectedPlanDateRange}
+
+        chartFilterOptions={chartFilterOptions}
+        selectedChartBusinessUnit={selectedChartBusinessUnit}
+        onSelectChartBusinessUnit={handleChartBusinessUnitChange}
+        selectedChartLineOfBusiness={selectedChartLineOfBusiness}
+        onSelectChartLineOfBusiness={handleChartLOBChange}
+        selectedChartTimeInterval={selectedChartTimeInterval}
+        onSelectChartTimeInterval={handleChartTimeIntervalChange}
+        selectedChartDateRange={selectedChartDateRange}
+        onSelectChartDateRange={setSelectedChartDateRange}
+
+        allAvailablePeriods={selectedPlanTimeInterval === "Week" ? ALL_WEEKS_HEADERS : ALL_MONTH_HEADERS}
         displayedPeriodHeaders={displayedPeriodHeaders}
         activeHierarchyContext={activeHierarchyContext}
         headerPeriodScrollerRef={headerPeriodScrollerRef}
         onExportCsv={handleExportCsv}
-        onViewChart={() => setIsChartDialogOpen(true)}
+        viewMode={viewMode}
+        onSetViewMode={setViewMode}
       />
       <div className="flex-grow overflow-hidden flex flex-col">
         <main className="px-4 pb-4 flex-grow overflow-y-auto">
-          <CapacityTable
-            data={displayableCapacityData}
-            periodHeaders={displayedPeriodHeaders}
-            expandedItems={expandedItems}
-            toggleExpand={toggleExpand}
-            teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
-            aggregatedMetricDefinitions={AGGREGATED_METRIC_ROW_DEFINITIONS}
-            onTeamMetricChange={handleTeamMetricChange}
-            onLobMetricChange={handleLobMetricChange}
-            editingCell={editingCell}
-            onSetEditingCell={handleSetEditingCell}
-            selectedTimeInterval={selectedTimeInterval}
-            onActiveHierarchyChange={handleActiveHierarchyContextChange}
-            tableBodyScrollRef={tableBodyScrollRef}
-          />
+          {viewMode === 'plan' ? (
+            <CapacityTable
+              data={displayableCapacityData}
+              periodHeaders={displayedPeriodHeaders}
+              expandedItems={expandedItems}
+              toggleExpand={toggleExpand}
+              teamMetricDefinitions={TEAM_METRIC_ROW_DEFINITIONS}
+              aggregatedMetricDefinitions={AGGREGATED_METRIC_ROW_DEFINITIONS}
+              onTeamMetricChange={handleTeamMetricChange}
+              onLobMetricChange={handleLobMetricChange}
+              editingCell={editingCell}
+              onSetEditingCell={handleSetEditingCell}
+              selectedTimeInterval={selectedPlanTimeInterval} // Use plan's time interval
+              onActiveHierarchyChange={handleActiveHierarchyContextChange}
+              tableBodyScrollRef={tableBodyScrollRef}
+            />
+          ) : (
+            <div className="w-full h-[600px] mt-4 p-4 border rounded-lg bg-card">
+              {chartDataForMetrics.length > 0 && allChartDataKeys.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartDataForMetrics}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <RechartsTooltip />
+                    <Legend
+                      formatter={(value, entry) => {
+                        // The 'name' prop of the Bar component is already set to the full label (e.g., "LOB1 RequiredHC")
+                        // So, we can just return the value directly for the legend.
+                        return value;
+                      }}
+                    />
+                    {allChartDataKeys.map((key) => {
+                      const [lobName, metricType] = key.split('_');
+                      const colorShades = lobColorMap[lobName];
+                      let fill = '';
+                      if (colorShades) {
+                        if (metricType === 'RequiredHC') fill = colorShades.required;
+                        else if (metricType === 'ActualHC') fill = colorShades.actual;
+                        else if (metricType === 'OverUnderHC') fill = colorShades.overUnder;
+                      }
+                      return (
+                        <Bar
+                          key={key}
+                          dataKey={key}
+                          name={`${lobName} ${metricType}`} // Display full name in tooltip and legend
+                          fill={fill}
+                        />
+                      );
+                    })}
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  No chart data available for the current selection. Please select Business Unit and Lines of Business.
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
-      <CapacityChartDialog
-        open={isChartDialogOpen}
-        onOpenChange={setIsChartDialogOpen}
-        data={displayableCapacityData}
-        periodHeaders={displayedPeriodHeaders}
-        selectedTimeInterval={selectedTimeInterval}
-        selectedBusinessUnit={selectedBusinessUnit}
-        selectedLineOfBusiness={selectedLineOfBusiness}
-      />
     </div>
   );
 }

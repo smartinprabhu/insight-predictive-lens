@@ -585,7 +585,7 @@ export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
               <DashboardHeader
                 title={headerTitle} // Pass the dynamic title
                 lastUpdated={new Date().toLocaleDateString("en-GB")}
-                 forecastPeriod={activeTab === 'forecast' ? `${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history` : undefined}
+                //  forecastPeriod={activeTab === 'forecast' ? `${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history` : undefined}
 
               />
             </div>

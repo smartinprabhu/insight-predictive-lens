@@ -46,7 +46,7 @@ export const DashboardHeader = ({
               {title}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Last updated: {lastUpdated} • {forecastPeriod}
+              Last updated: {lastUpdated} 
             </p>
           </div>
         </div>
