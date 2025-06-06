@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import API_CONFIG from '../lib/apiConfig'; // Adjusted path
 import { Settings, Home, FileText, BarChart, Info, LogOut, RefreshCw, Upload } from "lucide-react";
 import { DashboardHeader } from "./DashboardHeader";
 import CustomSidebar from "./Sidebar";
@@ -42,28 +43,23 @@ import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { Tab } from '@mui/material';
 import { Checkbox } from "@/components/ui/checkbox";
 
-// List of API URLs to try
-const apiUrls = [
-  // "http://localhost:5011",
-  "http://15.206.169.202:5011",
-  "http://aptino-dev.zentere.com:5011"
-];
-
-// Helper function to try each URL until one succeeds
-async function tryApiUrls(endpoint, formData) {
-  for (const url of apiUrls) {
+async function tryApiUrls(endpointKey: keyof typeof API_CONFIG.endpoints, formData: FormData) {
+  const endpoint = API_CONFIG.endpoints[endpointKey];
+  for (const url of API_CONFIG.baseUrls) {
     try {
+      // For 'analyze_forecasts', it might be a GET request or POST with empty body
+      // Assuming POST for consistency with original code, but this might need adjustment
       const response = await axios.post(`${url}/${endpoint}`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "multipart/form-data", // This header might not be needed for all endpoints
         },
       });
       return response;
     } catch (error) {
-      console.error(`Failed to connect to ${url}:`, error);
+      console.error(`Failed to connect to ${url}/${endpoint}:`, error);
     }
   }
-  throw new Error("All API URLs failed");
+  throw new Error(`All API URLs failed for endpoint: ${endpoint}`);
 }
 
 // Helper to get ISO week number from a date string

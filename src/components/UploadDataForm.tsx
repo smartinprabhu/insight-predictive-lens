@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from 'axios';
+import API_CONFIG from '../lib/apiConfig'; // Adjusted path
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,16 +24,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// List of API URLs to try
-const apiUrls = [
-  // "http://localhost:5011",
-  "http://15.206.169.202:5011",
-  "http://aptino-dev.zentere.com:5011"
-];
-
-// Helper function to try each URL until one succeeds
-async function tryApiUrls(endpoint, formData) {
-  for (const url of apiUrls) {
+async function tryApiUrls(endpointKey: keyof typeof API_CONFIG.endpoints, formData: FormData) {
+  const endpoint = API_CONFIG.endpoints[endpointKey];
+  for (const url of API_CONFIG.baseUrls) {
     try {
       const response = await axios.post(`${url}/${endpoint}`, formData, {
         headers: {
@@ -41,10 +35,10 @@ async function tryApiUrls(endpoint, formData) {
       });
       return response;
     } catch (error) {
-      console.error(`Failed to connect to ${url}:`, error);
+      console.error(`Failed to connect to ${url}/${endpoint}:`, error);
     }
   }
-  throw new Error("All API URLs failed");
+  throw new Error(`All API URLs failed for endpoint: ${endpoint}`);
 }
 
 interface UploadDataFormProps {

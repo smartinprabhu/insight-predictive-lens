@@ -1,21 +1,17 @@
-const apiBaseUrls = [
-  // 'http://localhost:5011',
-  'http://15.206.169.202:5011',
-  'http://aptino-dev.zentere.com:5011'
-];
+// Access VITE_API_URL from process.env
+const VITE_API_URL = "http://aptino-dev2.zentere.com:5011";
 
-const getApiBaseUrl = async () => {
-  for (const url of apiBaseUrls) {
-    try {
-      const response = await fetch(`${url}/healthcheck`);
-      if (response.ok) {
-        return url;
-      }
-    } catch (error) {
-      console.error(`Error checking ${url}:`, error);
-    }
-  }
-  return null;
+if (!VITE_API_URL) {
+  throw new Error('VITE_API_URL environment variable is not defined');
+}
+
+const API_CONFIG = {
+  baseUrls: [VITE_API_URL.replace(/\/$/, '')], // Use environment variable and remove trailing slash
+  endpoints: {
+    forecast: "forecast",
+    analyze_forecasts: "analyze_forecasts",
+  },
+  healthcheck: "healthcheck",
 };
 
-export default getApiBaseUrl;
+export default API_CONFIG;
