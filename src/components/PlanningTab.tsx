@@ -404,7 +404,7 @@ const generateLobInputs = (periods: string[]) => {
   return { volume, aht };
 };
 
-const initialMockRawCapacityData: RawLoBCapacityEntry[] = [];
+export const initialMockRawCapacityData: RawLoBCapacityEntry[] = [];
 ALL_BUSINESS_UNITS.forEach(bu => {
   BUSINESS_UNIT_CONFIG[bu].lonsOfBusiness.forEach(lob => {
     const teamsForLob: RawTeamDataEntry[] = [];
