@@ -14,6 +14,7 @@ import {
   Settings,
   MoreVertical,
   Menu,
+  LayoutDashboard, // Import LayoutDashboard icon
 } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
 import { ThemeToggle } from "./ThemeToggle";
@@ -31,6 +32,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { Link } from "react-router-dom"; // Import Link for navigation
 
 const tabs = [
   { id: "businessPerformance", name: "Business Performance Metrics" },
@@ -62,6 +64,18 @@ const CustomSidebar = ({ activeTab, setActiveTab, setOpenModal, handleLogout }) 
         <SidebarGroup className="w-auto mt-0">
           <SidebarGroupContent className="mt-0">
             <SidebarMenu>
+              {/* New Menu Item for Overview Dashboard */}
+              <SidebarMenuItem>
+                <Link
+                  to="/overview"
+                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200 text-sidebar-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+                  title="Overview Dashboard" // Tooltip for the link
+                >
+                  <LayoutDashboard className="h-5 w-5 group-data-[collapsible=icon]:mx-auto" />
+                  <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Overview Dashboard</span>
+                </Link>
+              </SidebarMenuItem>
+              {/* Existing Walmart Fulfillment Services Menu Item */}
               <SidebarMenuItem>
                 <SidebarMenuButtonOriginal
                   tooltip="Walmart Fulfillment Services"
