@@ -71,14 +71,12 @@ const Dashboard = () => {
       setSelectedLob('All LOBs'); // Reset LOB selection
     } else {
       const buConf = BUSINESS_UNIT_CONFIG[selectedBu as BusinessUnitName];
-      if (buConf) {
-        // Make sure to spread lobs into a new array
-        setAvailableLobsForFilter([...buConf.lobs]);
-        setSelectedLob('All LOBs'); // Reset LOB selection to "All LOBs" for the new BU
+      if (buConf && Array.isArray(buConf.lonsOfBusiness)) {
+        setAvailableLobsForFilter([...buConf.lonsOfBusiness]);
       } else {
-        setAvailableLobsForFilter([]); // Should not happen if ALL_BUSINESS_UNITS is derived from BUSINESS_UNIT_CONFIG
-        setSelectedLob('All LOBs');
+        setAvailableLobsForFilter([]);
       }
+      setSelectedLob('All LOBs'); // Reset LOB selection to "All LOBs" for the new BU
     }
   }, [selectedBu]);
 
@@ -95,7 +93,7 @@ const Dashboard = () => {
         const buConfig = BUSINESS_UNIT_CONFIG[buName];
         // buConfig is guaranteed to exist due to the filter above
 
-        let lobsToProcessForThisBu = [...buConfig.lobs]; // Get all LOBs for the current BU
+        let lobsToProcessForThisBu = (buConfig && Array.isArray(buConfig.lonsOfBusiness)) ? [...buConfig.lonsOfBusiness] : [];
 
         // If a specific LOB is selected (and it's not "All LOBs"), filter down
         if (selectedBu !== 'All' && selectedLob !== 'All LOBs') {
