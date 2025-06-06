@@ -213,22 +213,13 @@ const Dashboard = () => {
               })),
             };
           }
-        });
-
-        return {
-            lobName,
-            totalCases: Math.round(totalCasesLOB),
-            overUnderHC: lobOverUnderHC !== null ? parseFloat(lobOverUnderHC.toFixed(0)) : null,
-            isAlert: lobIsAlert,
-            teams: teamsData,
-          };
-        });
+        }); // End of lobsData map
 
         return {
           buName,
           lobs: lobsData,
         };
-      });
+      }); // End of data map
       setProcessedData(data);
     };
 
