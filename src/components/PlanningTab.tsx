@@ -435,7 +435,7 @@ ALL_BUSINESS_UNITS.forEach(bu => {
 export const STANDARD_WEEKLY_WORK_MINUTES = 40 * 60;
 export const STANDARD_MONTHLY_WORK_MINUTES = (40 * 52 / 12) * 60;
 
-const calculateTeamMetricsForPeriod = (
+export const calculateTeamMetricsForPeriod = (
   teamInputDataCurrentPeriod: Partial<TeamPeriodicMetrics>,
   lobTotalBaseRequiredMinutesForPeriod: number | null,
   standardWorkMinutesForPeriod: number
