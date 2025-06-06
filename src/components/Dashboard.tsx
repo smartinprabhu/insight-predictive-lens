@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import API_CONFIG from '../../lib/apiConfig'; // Adjusted path
+import API_CONFIG from '../lib/apiConfig'; // Adjusted path
 import { Settings, Home, FileText, BarChart, Info, LogOut, RefreshCw, Upload } from "lucide-react";
 import { DashboardHeader } from "./DashboardHeader";
 import CustomSidebar from "./Sidebar";

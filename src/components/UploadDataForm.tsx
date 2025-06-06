@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from 'axios';
-import API_CONFIG from '../../lib/apiConfig'; // Adjusted path
+import API_CONFIG from '../lib/apiConfig'; // Adjusted path
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
