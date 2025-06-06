@@ -1,886 +1,355 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import API_CONFIG from '../lib/apiConfig'; // Adjusted path
-import { Settings, Home, FileText, BarChart, Info, LogOut, RefreshCw, Upload } from "lucide-react";
-import { DashboardHeader } from "./DashboardHeader";
-import CustomSidebar from "./Sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { ModelConfiguration } from "./ModelConfiguration";
-import CircularProgress from '@mui/material/CircularProgress';
-import LoadingSkeleton from "./LoadingSkeleton";
-import { UploadDataForm } from "./UploadDataForm";
-import { TabNavigation } from "./TabNavigation";
-import { ActualDataTab } from "./ActualDataTab";
-import { ForecastTab } from "./ForecastTab";
-import { ModelValidationTab } from "./ModelValidationTab";
-import { InsightsTab } from "./InsightsTab";
-import { useToast } from "@/hooks/use-toast";
-import { KPIMetricsCard } from "./KPIMetricsCard";
-import KPIMetrics from "./KPIMetrics";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import PlanningTab from "./PlanningTab";
+import React, { useEffect, useState, useMemo } from 'react';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui2/select'; // Added
+import { Label } from './ui2/label'; // Added
 import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  BUSINESS_UNIT_CONFIG,
+  RawLoBCapacityEntry, // RawLoBCapacityEntry is not directly used in current code but kept for context
+  ALL_BUSINESS_UNITS,
+  LineOfBusinessName,
+  TeamName,
+  initialMockRawCapacityData,
+  ALL_TEAM_NAMES,
+  BusinessUnitName,
+  TeamPeriodicMetrics,
+  AggregatedPeriodicMetrics, // Not directly used in ProcessedData but good for context
+  calculateTeamMetricsForPeriod,
+  STANDARD_WEEKLY_WORK_MINUTES,
+  ALL_WEEKS_HEADERS, // For determining the latest period from mock data
+} from './PlanningTab';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider
-} from "@/components/ui/tooltip";
-import { TabContext, TabList, TabPanel } from '@mui/lab';
-import { Tab } from '@mui/material';
-import { Checkbox } from "@/components/ui/checkbox";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './ui2/table';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from './ui2/card';
+import { AlertCircle } from 'lucide-react';
 
-async function tryApiUrls(endpointKey: keyof typeof API_CONFIG.endpoints, formData: FormData) {
-  const endpoint = API_CONFIG.endpoints[endpointKey];
-  for (const url of API_CONFIG.baseUrls) {
-    try {
-      // For 'analyze_forecasts', it might be a GET request or POST with empty body
-      // Assuming POST for consistency with original code, but this might need adjustment
-      const response = await axios.post(`${url}/${endpoint}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data", // This header might not be needed for all endpoints
-        },
-      });
-      return response;
-    } catch (error) {
-      console.error(`Failed to connect to ${url}/${endpoint}:`, error);
-    }
-  }
-  throw new Error(`All API URLs failed for endpoint: ${endpoint}`);
+interface ProcessedTeamData {
+  teamName: TeamName;
+  caseVolume: number;
+  overUnderHC: number | null;
+  isAlert: boolean;
 }
 
-// Helper to get ISO week number from a date string
-function getISOWeekNumber(dateStr: string | undefined): number | null {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return null;
-
-  // Set to nearest Thursday: current date + 4 - current day number
-  const target = new Date(date.valueOf());
-  const dayNr = (date.getDay() + 6) % 7; // Monday=0, Sunday=6
-  target.setDate(target.getDate() - dayNr + 3);
-
-  // January 4th is always in week 1
-  const jan4 = new Date(target.getFullYear(), 0, 4);
-  const dayDiff = (target.getTime() - jan4.getTime()) / 86400000;
-  return 1 + Math.floor(dayDiff / 7);
+interface ProcessedLobData {
+  lobName: LineOfBusinessName;
+  totalCases: number;
+  overUnderHC: number | null;
+  isAlert: boolean;
+  teams: ProcessedTeamData[];
 }
 
-interface DashboardProps {
-  onReset: () => void;
-  apiResponse: any;
+interface ProcessedBuData {
+  buName: BusinessUnitName;
+  lobs: ProcessedLobData[];
 }
 
-export const Dashboard = ({ onReset, apiResponse }: DashboardProps) => {
-  const [modelType, setModelType] = useState("Prophet");
-  const [tempModelType, setTempModelType] = useState("Prophet");
-  const [forecastPeriod, setForecastPeriod] = useState(4);
-  const [tempForecastPeriod, setTempForecastPeriod] = useState(4);
-  const [aggregationType, setAggregationType] = useState("Weekly");
-  const [tempAggregationType, setTempAggregationType] = useState("Weekly");
-  const [modelValidationForecastPeriod, setModelValidationForecastPeriod] = useState(4);
-  const [activeTab, setActiveTab] = useState("businessPerformance");
-  const { toast } = useToast();
-  const [file, setFile] = useState(null);
-  const handleFileUpload = (file) => {
-    setFile(file);
-    setActiveTab("businessPerformance");
-  };
-  const [analysisData, setAnalysisData] = useState([]);
-  const [futureData, setFutureData] = useState([]);
-  const [kpiSourceData, setKpiSourceData] = useState([]);
-  const [kpiInitialized, setKpiInitialized] = useState(false);
-  const [formData, setFormData] = useState(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [loadingIcons, setLoadingIcons] = useState({ forecast: false, insights: false });
-  const [insights, setInsights] = useState({});
+const Dashboard = () => {
+  const [processedData, setProcessedData] = useState<ProcessedBuData[]>([]);
+  const [selectedBu, setSelectedBu] = useState<string>('All');
+  const [selectedLob, setSelectedLob] = useState<string>('All LOBs'); // For single LOB selection
+  const [availableLobsForFilter, setAvailableLobsForFilter] = useState<LineOfBusinessName[]>([]);
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  const filteredData = kpiSourceData?.filter((item) => {
-    const dateStr = item.date || item.ds;
-    if (!dateStr) return false;
-    if (startDate && dateStr < startDate) return false;
-    if (endDate && dateStr > endDate) return false;
-    return true;
-  }) || [];
-
-  const computeKPIs = (weekNumber = null) => {
-    const categories = [
-      "Total IB Units",
-      "exceptions",
-      "inventory",
-      "returns",
-      "wfs_china",
-    ];
-    const labels = [
-      "IB Units",
-      "IB Exceptions",
-      "Inventory",
-      "Customer Returns",
-      "WSF China",
-    ];
-
-    if (weekNumber === null && kpiSourceData && kpiSourceData.length > 0) {
-      const lastRecord = kpiSourceData[kpiSourceData.length - 1];
-      const dateStr = lastRecord.date || lastRecord.ds;
-      weekNumber = getISOWeekNumber(dateStr);
-    }
-
-    if (!kpiSourceData || kpiSourceData.length < 2) {
-      return categories.map((cat, idx) => ({
-        title: `${labels[idx]}${weekNumber ? ` (W${weekNumber})` : ""}`,
-        value: 0,
-        subtitle: `Total ${labels[idx]}`,
-        changeValue: 0,
-        changeText: "from previous period",
-      }));
-    }
-
-    const latest = kpiSourceData[kpiSourceData.length - 1];
-    const previous = kpiSourceData[kpiSourceData.length - 2];
-
-    return categories.map((cat, idx) => {
-      const latestVal = Number(latest[cat]) || 0;
-      const prevVal = Number(previous[cat]) || 0;
-      const change = prevVal !== 0 ? ((latestVal - prevVal) / prevVal) * 100 : 0;
-      const invertChange = ["exceptions", "inventory", "returns", "wfs_china"].includes(
-        cat
-      );
-
-      return {
-        title: `${labels[idx]}${weekNumber ? ` (W${weekNumber})` : ""}`,
-        value: Number(latestVal.toFixed(2)),
-        subtitle: `Total ${labels[idx]}`,
-        changeValue: Number(change.toFixed(2)),
-        changeText: "from previous period",
-        invertChange: invertChange,
-      };
-    });
-  };
-
-  const [kpiData, setKpiData] = useState([]);
-  const [lastWeekNumber, setLastWeekNumber] = useState(null);
-  const [kpiLoading, setKpiLoading] = useState(false);
-
-  // Update KPIs only when analysisData changes
+  // Effect to update available LOBs for filter when selectedBu changes
   useEffect(() => {
-    const fetchKpiData = async () => {
-      setKpiLoading(true);
-      try {
-        let weekNum = null;
-        if (analysisData && analysisData.length > 0) {
-          const lastRecord = analysisData[analysisData.length - 1];
-          let parsedWeek = null;
-
-          if (lastRecord.week !== undefined && lastRecord.week !== null) {
-            parsedWeek = Number(lastRecord.week);
-            if (isNaN(parsedWeek) || parsedWeek < 1 || parsedWeek > 53) parsedWeek = null;
-          }
-
-          if (parsedWeek === null && lastRecord.Week !== undefined && lastRecord.Week !== null) {
-            parsedWeek = Number(lastRecord.Week);
-            if (isNaN(parsedWeek) || parsedWeek < 1 || parsedWeek > 53) parsedWeek = null;
-          }
-
-          if (parsedWeek === null) {
-            const dateStr = lastRecord.date || lastRecord.ds || lastRecord.Week || lastRecord.week;
-            const isoWeek = getISOWeekNumber(dateStr);
-            if (isoWeek && !isNaN(isoWeek) && isoWeek >= 1 && isoWeek <= 53) {
-              parsedWeek = isoWeek;
-            } else {
-              parsedWeek = null;
-            }
-          }
-
-          if (parsedWeek !== null && !isNaN(parsedWeek)) {
-            parsedWeek = parsedWeek + 1;
-            if (parsedWeek > 53) parsedWeek = 1;
-          }
-          weekNum = parsedWeek;
-          setLastWeekNumber(weekNum);
-          const newKPIs = computeKPIs(weekNum);
-          setKpiData(newKPIs);
-        }
-      } catch (error) {
-        console.error("Error fetching KPI data:", error);
-      } finally {
-        setKpiLoading(false);
-      }
-    };
-
-    fetchKpiData();
-  }, [analysisData]);
-
-  // Initial forecast API call on mount
-  useEffect(() => {
-    const fetchInitialForecast = async () => {
-      const formData = new FormData();
-      formData.append("weeks", "4");
-      formData.append("model_type", modelType);
-
-      try {
-        const response = await tryApiUrls("forecast", formData);
-        if (response.data?.dz_df && response.data?.future_df) {
-          setAnalysisData(response.data.dz_df);
-          setFutureData(response.data.future_df);
-          if (!kpiInitialized) {
-            setKpiSourceData(response.data.dz_df);
-            setKpiInitialized(true);
-          }
-        } else if (response.data?.dz_df) {
-          setAnalysisData(response.data.dz_df);
-          setFutureData([]);
-          if (!kpiInitialized) {
-            setKpiSourceData(response.data.dz_df);
-            setKpiInitialized(true);
-          }
-        } else {
-          setAnalysisData(response.data);
-          setFutureData([]);
-        }
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch initial forecast data.",
-        });
-      }
-    };
-
-    fetchInitialForecast();
-  }, []);
-
-  useEffect(() => {
-    const fetchAnalyzeForecasts = async () => {
-      try {
-        const response = await tryApiUrls("analyze_forecasts", new FormData());
-        console.log("Insights API response:", response.data); // Add debug logging
-        setInsights(response.data.insights || {});
-        toast({
-          title: "Insights fetched",
-          description: "Insights data has been successfully loaded.",
-        });
-      } catch (error) {
-        console.error("Error fetching insights:", error); // Add error logging
-        toast({
-          title: "Error",
-          description: "Failed to fetch insights data.",
-        });
-      }
-    };
-
-    fetchAnalyzeForecasts(); // Don't forget to call the function
-  }, []);
-
-  const handleApplyChanges = async (forecastPeriod, modelType) => {
-    try {
-      setLoadingIcons(prev => ({ ...prev, forecast: true }));
-      if (!file && forecastType === "external") {
-        toast({
-          title: "No file uploaded",
-          description: "Please upload a file for external factors.",
-        });
-        setLoadingIcons(prev => ({ ...prev, forecast: false }));
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("weeks", tempForecastPeriod.toString());
-
-      let model_type = "";
-      if (forecastType === "single") {
-        model_type = selectedModel;
-      } else if (forecastType === "hybrid") {
-        model_type = "hybrid";
-        formData.append("hybrid_models", JSON.stringify(selectedHybridModels));
-      } else if (forecastType === "external") {
-        model_type = "external";
-        // Handle external factors if needed
-      }
-      formData.append("model_type", model_type);
-
-      setFormData(formData);
-
-      const response = await tryApiUrls("forecast", formData);
-      toast({
-        title: "Analysis complete",
-        description: "Your dashboard has been updated successfully.",
-      });
-
-      let processedData = response.data;
-
-      if (aggregationType === "Monthly" && Array.isArray(processedData)) {
-        const monthlyData: Record<string, any> = {};
-
-        processedData.forEach((item: any) => {
-          const dateStr = item.date || item.ds; // support 'date' or 'ds'
-          if (!dateStr) return;
-
-          const monthKey = dateStr.slice(0, 7); // 'YYYY-MM'
-
-          if (!monthlyData[monthKey]) {
-            monthlyData[monthKey] = { ...item, count: 1 };
-            monthlyData[monthKey].date = monthKey + "-01"; // set to first of month
-          } else {
-            Object.keys(item).forEach((key) => {
-              if (typeof item[key] === "number") {
-                monthlyData[monthKey][key] += item[key];
-              }
-            });
-            monthlyData[monthKey].count += 1;
-          }
-        });
-
-        // Average numeric fields
-        processedData = Object.values(monthlyData).map((item: any) => {
-          const count = item.count;
-          const newItem = { ...item };
-          Object.keys(newItem).forEach((key) => {
-            if (typeof newItem[key] === "number" && key !== "count") {
-              newItem[key] = newItem[key] / count;
-            }
-          });
-          delete newItem.count;
-          return newItem;
-        });
-      }
-
-      if (processedData?.dz_df && processedData?.future_df) {
-        setAnalysisData(processedData.dz_df);
-        setFutureData(processedData.future_df);
-        if (!kpiInitialized) {
-          setKpiSourceData(processedData.dz_df);
-          setKpiInitialized(true);
-        }
-      } else {
-        setAnalysisData(processedData);
-        setFutureData([]);
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred while updating the dashboard.",
-      });
-    } finally {
-      setLoadingIcons(prev => ({ ...prev, forecast: false }));
-    }
-  };
-
-  const tabs = [
-    { id: "actualData", name: "Historical Data" },
-    { id: "forecast", name: "Trends & Forecast" },
-    { id: "modelValidation", name: "Model Validation" },
-    { id: "insights", name: "Insights" },
-    { id: "planning", name: "Planning" },
-  ];
-
-  const handleRefresh = () => {
-    toast({
-      title: "Refreshing Dashboard",
-      description: "Updating with the latest data...",
-    });
-  };
-
-  // Draggable Forecast Settings widget state
-  const [showForecastSettings, setShowForecastSettings] = useState(true);
-
-  useEffect(() => {
-    if (activeTab === "forecast" || activeTab === "modelValidation") {
-      setShowForecastSettings(true);
+    if (selectedBu === 'All') {
+      setAvailableLobsForFilter([]);
+      setSelectedLob('All LOBs'); // Reset LOB selection
     } else {
-      setShowForecastSettings(false);
+      const buConf = BUSINESS_UNIT_CONFIG[selectedBu as BusinessUnitName];
+      if (buConf) {
+        // Make sure to spread lobs into a new array
+        setAvailableLobsForFilter([...buConf.lobs]);
+        setSelectedLob('All LOBs'); // Reset LOB selection to "All LOBs" for the new BU
+      } else {
+        setAvailableLobsForFilter([]); // Should not happen if ALL_BUSINESS_UNITS is derived from BUSINESS_UNIT_CONFIG
+        setSelectedLob('All LOBs');
+      }
     }
-  }, [activeTab]);
-
-  const [pos, setPos] = useState({ x: window.innerWidth - 380, y: 40 });
-  const [dragging, setDragging] = useState(false);
-  const [rel, setRel] = useState({ x: 0, y: 0 });
+  }, [selectedBu]);
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!dragging) return;
-      setPos({
-        x: e.clientX - rel.x,
-        y: e.clientY - rel.y,
+    const processData = () => {
+      const latestPeriod = ALL_WEEKS_HEADERS.length > 0 ? ALL_WEEKS_HEADERS[0] : null;
+      const standardWorkMinutesForPeriod = STANDARD_WEEKLY_WORK_MINUTES;
+
+      const busToProcess = selectedBu === 'All'
+        ? ALL_BUSINESS_UNITS
+        : [selectedBu as BusinessUnitName];
+
+      const data: ProcessedBuData[] = busToProcess.filter(buName => BUSINESS_UNIT_CONFIG[buName]).map((buName) => {
+        const buConfig = BUSINESS_UNIT_CONFIG[buName];
+        // buConfig is guaranteed to exist due to the filter above
+
+        let lobsToProcessForThisBu = [...buConfig.lobs]; // Get all LOBs for the current BU
+
+        // If a specific LOB is selected (and it's not "All LOBs"), filter down
+        if (selectedBu !== 'All' && selectedLob !== 'All LOBs') {
+          lobsToProcessForThisBu = lobsToProcessForThisBu.filter(lob => lob === selectedLob);
+        }
+
+        const lobsData = lobsToProcessForThisBu.map((lobName) => {
+          const lobEntry = initialMockRawCapacityData.find(
+            (entry) => entry.lob === lobName && entry.bu === buName
+          );
+
+          let totalCasesLOB = 0;
+          let lobActualHcSum = 0;
+          let lobRequiredHcSum = 0;
+          let lobOverUnderHC: number | null = null;
+          let lobIsAlert = false;
+
+          if (lobEntry) {
+            // Calculate total cases for the LOB by summing up lobVolumeForecast for all periods.
+            totalCasesLOB = Object.values(lobEntry.lobVolumeForecast || {}).reduce(
+              (sum, forecast) => sum + (forecast || 0),
+              0
+            );
+
+            const teamsData: ProcessedTeamData[] = ALL_TEAM_NAMES.map((teamName) => {
+              const teamRawEntry = lobEntry.teams.find(t => t.teamName === teamName);
+              let caseVolumeTeam = 0;
+              let teamActualHc: number | null = null;
+              let teamRequiredHc: number | null = null;
+              let teamOverUnderHC: number | null = null;
+              let teamIsAlert = false;
+
+              if (teamRawEntry) {
+                // Calculate caseVolume for the team
+                // Sum of (lobVolumeForecast for period * teamVolumeMixPercentage for period)
+                Object.entries(lobEntry.lobVolumeForecast || {}).forEach(([periodKey, lobVol]) => {
+                  const teamPeriodicInputForVol = teamRawEntry.periodicInputData[periodKey];
+                  if (lobVol && teamPeriodicInputForVol?.volumeMixPercentage) {
+                    caseVolumeTeam += lobVol * (teamPeriodicInputForVol.volumeMixPercentage / 100);
+                  }
+                });
+
+                // Calculate HC metrics for the latest period for this team
+                if (latestPeriod) {
+                  const lobVolumeLatestPeriod = lobEntry.lobVolumeForecast[latestPeriod] ?? null;
+                  const lobAhtLatestPeriod = lobEntry.lobAverageAHT?.[latestPeriod] ?? null;
+
+                  let lobTotalBaseRequiredMinutesForLatestPeriod: number | null = null;
+                  if (lobVolumeLatestPeriod !== null && lobAhtLatestPeriod !== null && lobAhtLatestPeriod > 0) {
+                      lobTotalBaseRequiredMinutesForLatestPeriod = lobVolumeLatestPeriod * lobAhtLatestPeriod;
+                  }
+
+                  const teamPeriodicInputLatest = teamRawEntry.periodicInputData[latestPeriod] || {};
+
+                  const completeTeamInputForCalc: Partial<TeamPeriodicMetrics> = {
+                    actualHC: teamPeriodicInputLatest.actualHC ?? 0,
+                    aht: teamPeriodicInputLatest.aht ?? lobAhtLatestPeriod ?? 0,
+                    shrinkagePercentage: teamPeriodicInputLatest.shrinkagePercentage ?? 0,
+                    occupancyPercentage: teamPeriodicInputLatest.occupancyPercentage ?? 100,
+                    backlogPercentage: teamPeriodicInputLatest.backlogPercentage ?? 0,
+                    volumeMixPercentage: teamPeriodicInputLatest.volumeMixPercentage ?? 0, // Already a percentage 0-100
+                    moveIn: teamPeriodicInputLatest.moveIn ?? 0,
+                    moveOut: teamPeriodicInputLatest.moveOut ?? 0,
+                    newHireBatch: teamPeriodicInputLatest.newHireBatch ?? 0,
+                    newHireProduction: teamPeriodicInputLatest.newHireProduction ?? 0,
+                    attritionPercentage: teamPeriodicInputLatest.attritionPercentage ?? 0,
+                  };
+
+                  const metrics = calculateTeamMetricsForPeriod(
+                    completeTeamInputForCalc,
+                    lobTotalBaseRequiredMinutesForLatestPeriod,
+                    standardWorkMinutesForPeriod
+                  );
+
+                  teamActualHc = metrics.actualHC;
+                  teamRequiredHc = metrics.requiredHC;
+                  teamOverUnderHC = metrics.overUnderHC;
+                  teamIsAlert = teamOverUnderHC !== null && teamOverUnderHC < 0;
+
+                  if (teamActualHc !== null) lobActualHcSum += teamActualHc;
+                  if (teamRequiredHc !== null) lobRequiredHcSum += teamRequiredHc;
+                }
+              }
+
+              return {
+                teamName,
+                caseVolume: Math.round(caseVolumeTeam),
+                overUnderHC: teamOverUnderHC !== null ? parseFloat(teamOverUnderHC.toFixed(0)) : null,
+                isAlert: teamIsAlert,
+              };
+            });
+
+            if (lobActualHcSum !== null && lobRequiredHcSum !== null && latestPeriod) { // Ensure calculations only if latestPeriod was valid
+              lobOverUnderHC = lobActualHcSum - lobRequiredHcSum;
+              lobIsAlert = lobOverUnderHC < 0;
+            }
+            return { // This is for lobsData.map
+              lobName,
+              totalCases: Math.round(totalCasesLOB),
+              overUnderHC: lobOverUnderHC !== null ? parseFloat(lobOverUnderHC.toFixed(0)) : null,
+              isAlert: lobIsAlert,
+              teams: teamsData,
+            };
+          } else { // lobEntry not found
+            return {
+              lobName,
+              totalCases: 0,
+              overUnderHC: null,
+              isAlert: false,
+              teams: ALL_TEAM_NAMES.map(teamName => ({
+                teamName,
+                caseVolume: 0,
+                overUnderHC: null,
+                isAlert: false,
+              })),
+            };
+          }
+        });
+
+        return {
+            lobName,
+            totalCases: Math.round(totalCasesLOB),
+            overUnderHC: lobOverUnderHC !== null ? parseFloat(lobOverUnderHC.toFixed(0)) : null,
+            isAlert: lobIsAlert,
+            teams: teamsData,
+          };
+        });
+
+        return {
+          buName,
+          lobs: lobsData,
+        };
       });
+      setProcessedData(data);
     };
 
-    const handleMouseUp = () => {
-      setDragging(false);
-    };
+    processData();
+  }, [selectedBu, selectedLob, initialMockRawCapacityData]); // Rerun when filters or base data change
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [dragging, rel]);
-
-  // Inside the renderTabContent function
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "actualData":
-        return apiResponse ? (
-          <ActualDataTab
-            data={apiResponse}
-            aggregationType={aggregationType}
-            setAggregationType={setAggregationType}
-            plotAggregationType={aggregationType}
-            setPlotAggregationType={setAggregationType}
-          />
-        ) : (
-          <div>No data available</div>
-        );
-      case "forecast":
-        return analysisData.length > 0 || futureData.length > 0 ? (
-          <ForecastTab
-            aggregationType={aggregationType}
-            modelType={modelType}
-            forecastPeriod={forecastPeriod}
-            data={{
-              dz_df: Array.isArray(analysisData) ? analysisData : [],
-              future_df: Array.isArray(futureData) ? futureData : [],
-            }}
-            insights={insights}
-            loading={loadingIcons.forecast || loadingIcons.insights}
-          />
-        ) : (
-          <div>No data available</div>
-        );
-      case "modelValidation":
-        return apiResponse ? (
-          <ModelValidationTab
-            aggregationType={aggregationType}
-            data={apiResponse}
-            modelType={modelType}
-          />
-        ) : (
-          <div>No data available</div>
-        );
-      case "insights":
-        return loadingIcons.insights ? (
-          <div className="space-y-4">
-            <LoadingSkeleton />
-            <div className="flex justify-center">
-              <CircularProgress />
-            </div>
-          </div>
-        ) : (
-          insights && Object.keys(insights).length > 0 ? (
-            <InsightsTab data={apiResponse} insights={insights} />
-          ) : (
-            <div className="text-center text-gray-500 py-10">No insights data available</div>
-          )
-        );
-      // case "planning":
-      //   return <PlanningTab />;
-      // default:
-      //   return apiResponse ? (
-      //     <ActualDataTab data={apiResponse} aggregationType={aggregationType} />
-      //   ) : (
-      //     <div>No data available</div>
-      //   );
-    }
+  const handleBuChange = (value: string) => {
+    setSelectedBu(value);
+    // LOB selection and available LOBs will be reset by the other useEffect triggered by selectedBu change
   };
 
-  // Current date for KPI reporting
-  const currentDate = new Date();
-  const kpiTimePeriod = `${currentDate.toLocaleString("default", {
-    month: "long",
-  })} ${currentDate.getFullYear()}`;
-
-  // New state variables for forecast settings
-  const [forecastType, setForecastType] = useState("single");
-  const [selectedModel, setSelectedModel] = useState("Prophet");
-  const [selectedModels, setSelectedModels] = useState([]);
-  const handleModelChange = (model) => {
-    setSelectedModels((prevSelectedModels) => {
-      if (prevSelectedModels.includes(model)) {
-        return prevSelectedModels.filter((m) => m !== model);
-      } else {
-        return [...prevSelectedModels, model];
-      }
-    });
+  const handleLobChange = (value: string) => {
+    setSelectedLob(value);
   };
-  const [selectedHybridModels, setSelectedHybridModels] = useState([]);
-  const [externalFactors, setExternalFactors] = useState({
-    majorEvents: false,
-    dynamicTarget: false,
-    dynamicTargetStartDate: "",
-    dynamicTargetEndDate: "",
-    dynamicTargetDecreasePercentage: "",
-  });
-
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    navigate("/");
-  };
-
-  const handleNavigateToPlanningPage = () => {
-    navigate("/planning");
-  };
-
-  const getHeaderTitle = (tabId: string) => {
-    switch (tabId) {
-      case "businessPerformance":
-        return "Walmart Fulfillment Services";
-      case "actualData":
-        return "Walmart Fulfillment Services";
-      case "forecast":
-        return "Walmart Fulfillment Services";
-      case "modelValidation":
-        return "Walmart Fulfillment Services";
-      case "insights":
-        return "Walmart Fulfillment Services";
-      case "planning":
-        return "Walmart Fulfillment Services";
-      default:
-        return "Walmart Fulfillment Services"; // Default title
-    }
-  };
-
-  const headerTitle = getHeaderTitle(activeTab);
 
   return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full overflow-hidden">
-        <CustomSidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          setOpenModal={setIsDrawerOpen}
-          handleLogout={handleLogout}
-        />
+    <div className="p-4 space-y-4">
+      <h1 className="text-2xl font-bold mb-4">Overview Dashboard</h1>
 
-
-        <div className="flex flex-col flex-1 h-screen overflow-hidden bg-background text-foreground transition-all duration-300"
- style={{ zIndex: 0, overflowY: 'auto' }} // Ensure content is behind the floating sidebar and enable vertical scrolling
->
-          {/* Dashboard Header (Sticky) */}
- <div className="sticky top-0 z-10 flex items-center justify-between px-2 md:px-4 py-2 bg-background  dark:border-gray-700">
-
-
-            {/* Removed sticky positioning from this wrapper div */}
-            <div className="flex items-center gap-0">
-              <DashboardHeader
-                title={headerTitle} // Pass the dynamic title
-                lastUpdated={new Date().toLocaleDateString("en-GB")}
-                //  forecastPeriod={activeTab === 'forecast' ? `${forecastPeriod} weeks forecast | ${forecastPeriod} weeks history` : undefined}
-
-              />
-            </div>
- 
-          </div>
-
-          {activeTab === "businessPerformance" && (
-            <div className="mx-2  ">
-              <KPIMetrics kpiData={kpiData} loading={kpiLoading} />
-            </div>
-          )}
-
-          {activeTab === "planning" && (
-            <div className="mb-4">
-              <PlanningTab />
-            </div>
-          )}
-
-          {activeTab !== "businessPerformance" && (
-            <div className="mb-4">
-              {activeTab === "forecast" && (
-                <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-                  <SheetTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="fixed right-4 top-40 mb-[-10px]"
-                    >
-                      <Settings className="h-4 w-4" />
-                      Forecast Settings
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent
-                    side="right"
-                    className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000]" // MODIFIED: Use theme card/border
-                  >
-                    <SheetHeader>
-                      <SheetTitle>Forecast Settings</SheetTitle>
-                    </SheetHeader>
-                    {loadingIcons.forecast ? (
-                      <div className="space-y-4 p-4">
-                        <LoadingSkeleton />
-                        <div className="flex justify-center">
-                          <CircularProgress />
-                        </div>
-                      </div>
-                    ) : (
-                      <TabContext value={forecastType}>
-                        <div className="space-y-4 =-2">
-                          {/* Forecast Period */}
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Forecast Period</label>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="number"
-                                min="1"
-                                value={tempForecastPeriod}
-                                onChange={(e) => setTempForecastPeriod(Number(e.target.value))}
-                                className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                              />
-                              <select
-                                value={tempAggregationType}
-                                onChange={(e) => setTempAggregationType(e.target.value)}
-                                className="border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                              >
-                                <option value="Weekly">Weeks</option>
-                                <option value="Monthly">Months</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          {/* Model Type Tabs */}
-                          <TabList
-                            onChange={(event, newValue) => setForecastType(newValue)}
-                            aria-label="model-type-tabs"
-                          >
-                            <Tab label="Modeling" value="single" />
-                            <Tab label="Hybrid" value="hybrid" />
-                          </TabList>
-
-                          {/* Model Selection Panels */}
-                          <TabPanel value="single">
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Select a Forecasting Model</label>
-                              <div className="space-y-2">
-                                {["Prophet", "ARIMA", "SARIMAX", "ETS", "Weighted Moving Average", "CatBoost", "XGBoost", "LightGBM"].map(
-                                  (model) => (
-                                    <label key={model} className="flex items-center space-x-2">
-                                      <input
-                                        type="radio"
-                                        value={model}
-                                        checked={selectedModel === model}
-                                        onChange={(e) => setSelectedModel(e.target.value)}
-                                        className="dark:bg-gray-700 dark:text-white"
-                                      />
-                                      <span>{model}</span>
-                                    </label>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          </TabPanel>
-                          <TabPanel value="hybrid">
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <label className="block text-sm font-medium">Select Hybrid Model</label>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                                        <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent
-                                      side="right"
-                                      className="w-[300px] bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-2 rounded-md"
-                                    >
-                                      <p className="font-bold mb-1">Hybrid Models:</p>
-                                      <p className="mb-1"><span className="font-bold">Prophet + XGBoost:</span> Prophet captures broad trends/seasonality while XGBoost models residual irregularities.</p>
-                                      <p className="mb-1"><span className="font-bold">ARIMA + LightGBM:</span> ARIMA handles linear autocorrelation, LightGBM captures nonlinear patterns.</p>
-                                      <p><span className="font-bold">SARIMAX + CatBoost:</span> SARIMAX fits seasonal/exogenous factors, CatBoost learns complex interactions.</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </div>
-                              <div className="space-y-2">
-                                {[
-                                  { label: "ARIMA + LightGBM", value: "ARIMA+LightGBM", description: "ARIMA provides a solid statistical backbone for linear autocorrelation, while LightGBM quickly captures any leftover nonlinear patterns at scale—great for large datasets." },
-                                  { label: "Prophet + XGBoost", value: "Prophet+XGBoost", description: "Prophet nails the broad trend/seasonality and holiday effects, then XGBoost aggressively models the residual irregularities, giving you both interpretability and strong anomaly handling." },
-                                  { label: "SARIMAX + CatBoost", value: "SARIMAX+CatBoost", description: "SARIMAX delivers fine‑grained seasonal and exogenous‑regressor fits; CatBoost then flexibly learns any complex interactions or nonlinear 'leftovers.'" },
-                                ].map((hybridModel) => (
-                                  <label key={hybridModel.value} className="flex items-center space-x-2">
-                                    <input
-                                      type="radio"
-                                      value={hybridModel.value}
-                                      checked={selectedHybridModels[0] === hybridModel.value}
-                                      onChange={(e) => setSelectedHybridModels([e.target.value])}
-                                      className="dark:bg-gray-700 dark:text-white"
-                                    />
-                                    <span>{hybridModel.label}</span>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                                            <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent
-                                          side="right"
-                                          className="w-[300px] bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-2 rounded-md"
-                                        >
-                                          <p>{hybridModel.description}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </label>
-                                ))}
-                              </div>
-                            </div>
-                          </TabPanel>
-
-                          {/* External Factors Section (Always Visible) */}
-                          <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                            <h3 className="text-sm font-medium">External Factors</h3>
-                            <label className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                checked={externalFactors.majorEvents}
-                                onChange={(e) =>
-                                  setExternalFactors({ ...externalFactors, majorEvents: e.target.checked })
-                                }
-                                className="dark:bg-gray-700 dark:text-white"
-                              />
-                              <span>Major Events</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                                      <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent
-                                    side="right"
-                                    className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-1 rounded-md"
-                                  >
-                                    <p>Includes holidays and major events like Christmas, New Year, etc.</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </label>
-                            <div>
-                              <label className="flex items-center space-x-2">
-                                <input
-                                  type="checkbox"
-                                  checked={externalFactors.dynamicTarget}
-                                  onChange={(e) =>
-                                    setExternalFactors({ ...externalFactors, dynamicTarget: e.target.checked })
-                                  }
-                                  className="dark:bg-gray-700 dark:text-white"
-                                />
-                                <span>Dynamic Target</span>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="ml-2 flex items-center justify-center w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                                        <Info className="h-3 w-3 text-gray-600 dark:text-gray-300" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent
-                                      side="right"
-                                      className="bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-xs p-1 rounded-md"
-                                    >
-                                      <p>
-                                        Specify a percentage amount for a specific date range to see its impact
-                                        on actual and predicted data.
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </label>
-                              {externalFactors.dynamicTarget && (
-                                <div className="ml-6 space-y-2 mt-2">
-                                  <input
-                                    type="date"
-                                    value={externalFactors.dynamicTargetStartDate}
-                                    onChange={(e) =>
-                                      setExternalFactors({
-                                        ...externalFactors,
-                                        dynamicTargetStartDate: e.target.value,
-                                      })
-                                    }
-                                    className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                                    placeholder="Start Date"
-                                  />
-                                  <input
-                                    type="date"
-                                    value={externalFactors.dynamicTargetEndDate}
-                                    onChange={(e) =>
-                                      setExternalFactors({
-                                        ...externalFactors,
-                                        dynamicTargetEndDate: e.target.value,
-                                      })
-                                    }
-                                    className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                                    placeholder="End Date"
-                                  />
-                                  <input
-                                    type="number"
-                                    value={externalFactors.dynamicTargetDecreasePercentage}
-                                    onChange={(e) =>
-                                      setExternalFactors({
-                                        ...externalFactors,
-                                        dynamicTargetDecreasePercentage: e.target.value,
-                                      })
-                                    }
-                                    className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-700 dark:text-white"
-                                    placeholder="Decrease Percentage"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Apply Changes Button */}
-                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={async () => {
-                                setIsDrawerOpen(false);
-                                await handleApplyChanges(tempForecastPeriod, modelType);
-                                toast({
-                                  title: "Settings Applied",
-                                  description: "Forecast settings have been updated successfully.",
-                                });
-                              }}
-                            >
-                              Apply Changes
-                            </Button>
-                          </div>
-                        </div>
-                      </TabContext>
-                    )}
-                  </SheetContent>
-                </Sheet>
-              )}
-
-              <div className="p-2">
-                {renderTabContent()}
-              </div>
-            </div>
-          )}
-
-
+      <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4 p-4 bg-card border rounded-lg items-start">
+        <div className="w-full sm:w-1/2 md:w-1/3">
+          <Label htmlFor="bu-filter" className="mb-2 block">Business Unit</Label>
+          <Select value={selectedBu} onValueChange={handleBuChange}>
+            <SelectTrigger id="bu-filter">
+              <SelectValue placeholder="Select Business Unit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Business Units</SelectItem>
+              {ALL_BUSINESS_UNITS.map(bu => (
+                <SelectItem key={bu} value={bu}>{bu}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
+        {selectedBu !== 'All' && (
+          <div className="w-full sm:w-1/2 md:w-1/3">
+            <Label htmlFor="lob-filter" className="mb-2 block">Line of Business</Label>
+            <Select value={selectedLob} onValueChange={handleLobChange} disabled={availableLobsForFilter.length === 0 && selectedBu !== 'All'}>
+              <SelectTrigger id="lob-filter">
+                <SelectValue placeholder="Select Line of Business" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All LOBs">All LOBs for {selectedBu}</SelectItem>
+                {availableLobsForFilter.map(lob => (
+                  <SelectItem key={lob} value={lob}>{lob}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
-                <footer className="fixed bottom-0 left-0 w-full py-4 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
-            <p>© 2025 Zentere. All rights reserved.</p>
-          </footer>
-    </SidebarProvider>
+
+      {processedData.length === 0 && (
+        <p className="text-muted-foreground">No data available for the current filter selection.</p>
+      )}
+
+      {processedData.map((buData) => (
+        <Card key={buData.buName}>
+          <CardHeader>
+            <CardTitle>{buData.buName}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {buData.lobs.map((lobData) => (
+              <Card key={lobData.lobName} className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle className={`text-lg flex items-center ${lobData.isAlert ? 'text-red-500' : ''}`}>
+                    {lobData.isAlert && <AlertCircle className="mr-2 h-5 w-5" />}
+                    {lobData.lobName}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Total Cases: {lobData.totalCases.toLocaleString()}
+                    {lobData.overUnderHC !== null && (
+                      <span className={`ml-2 ${lobData.isAlert ? 'text-red-500' : (lobData.overUnderHC >= 0 ? 'text-green-500' : 'text-orange-500') }` }>
+                        (HC: {lobData.overUnderHC > 0 ? '+' : ''}{lobData.overUnderHC.toFixed(0)})
+                      </span>
+                    )}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {lobData.teams.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Team</TableHead>
+                          <TableHead>Case Volume</TableHead>
+                          <TableHead className="text-right">Over/Under HC (Latest Period)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {lobData.teams.map((teamData) => (
+                          <TableRow key={teamData.teamName}>
+                            <TableCell className={`font-medium flex items-center ${teamData.isAlert ? 'text-red-500' : ''}`}>
+                              {teamData.isAlert && <AlertCircle className="mr-2 h-4 w-4" />}
+                              {teamData.teamName}
+                            </TableCell>
+                            <TableCell>{teamData.caseVolume.toLocaleString()}</TableCell>
+                            <TableCell className={`text-right ${teamData.isAlert ? 'text-red-500' : (teamData.overUnderHC !== null && teamData.overUnderHC >= 0 ? 'text-green-500' : (teamData.overUnderHC !== null ? 'text-orange-500' : ''))}`}>
+                              {teamData.overUnderHC !== null ? `${teamData.overUnderHC > 0 ? '+' : ''}${teamData.overUnderHC.toFixed(0)}` : 'N/A'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p>No team data available for this LOB.</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+             {buData.lobs.length === 0 && selectedBu !== 'All' && selectedLob !== 'All LOBs' && (
+              <p className="text-muted-foreground">No data available for the selected LOB ({selectedLob}) in {selectedBu}.</p>
+            )}
+            {buData.lobs.length === 0 && selectedBu !== 'All' && selectedLob === 'All LOBs' && (
+              <p className="text-muted-foreground">No LOBs found for {selectedBu} after filtering (this should not typically happen if LOBs are defined).</p>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 };
+
+export default Dashboard;
