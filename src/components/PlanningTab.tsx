@@ -221,6 +221,7 @@ export interface AggregatedPeriodicMetrics extends BaseHCValues {
   lobVolumeForecast?: number | null;
   lobAverageAHT?: number | null;
   lobTotalBaseRequiredMinutes?: number | null;
+  lobCalculatedAverageAHT?: number | null;
 }
 
 export interface MetricDefinition {
@@ -264,8 +265,8 @@ export const TEAM_METRIC_ROW_DEFINITIONS: TeamMetricDefinitions = [
 
 export const AGGREGATED_METRIC_ROW_DEFINITIONS: AggregatedMetricDefinitions = [
   { key: "lobVolumeForecast", label: "Volume Forecast", isEditableForLob: true, step: 1, isCount: true, description: "Total number of interactions forecasted for this LOB." },
-  // { key: "lobAverageAHT", label: "Average AHT", isEditableForLob: true, step: 0.1, isTime: true, description: "Average handle time assumed for LOB interactions." },
-  // { key: "lobTotalBaseRequiredMinutes", label: "Total Base Req Mins", isEditableForLob: true, isTime: true, step: 1, description: "Total agent minutes required for LOB volume, calculated as Volume * AHT or input directly." },
+  { key: "lobAverageAHT", label: "Average AHT", isEditableForLob: true, step: 0.1, isTime: true, description: "Average handle time assumed for LOB interactions." },
+  { key: "lobTotalBaseRequiredMinutes", label: "Total Base Req Mins", isEditableForLob: true, isTime: true, step: 1, description: "Total agent minutes required for LOB volume, calculated as Volume * AHT or input directly." },
   { key: "requiredHC", label: "Required HC", isHC: true, description: "Aggregated required headcount from child entities." },
   { key: "actualHC", label: "Actual/Starting HC", isHC: true, description: "Aggregated actual/starting headcount from child entities." },
   { key: "overUnderHC", label: "Over/Under HC", isHC: true, description: "Difference between aggregated Actual/Starting HC and Required HC." },
@@ -1007,7 +1008,7 @@ function HeaderSection({
               <TooltipContent><p>Export current view as CSV</p></TooltipContent>
             </Tooltip>
 
-            <div className="flex items-center gap-2 border rounded-md p-1 bg-muted">
+            <div className="flex items-center gap-2 border rounded-md p-1 ">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -1070,19 +1071,19 @@ function HeaderSection({
             <DropdownMenuContent className="w-full md:w-[240px]">
               <DropdownMenuLabel>Select Lines of Business</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem
-                checked={currentSelectedLineOfBusiness.length === actualLobsForCurrentBu.length && actualLobsForCurrentBu.length > 0}
-                onCheckedChange={(checkedValue) => {
-                  if (checkedValue) {
-                    handleSelectLineOfBusiness(actualLobsForCurrentBu);
-                  } else {
-                    handleSelectLineOfBusiness([]);
-                  }
-                }}
-                onSelect={(e) => e.preventDefault()}
-              >
-                Select All
-              </DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem
+                          checked={currentSelectedLineOfBusiness.length === actualLobsForCurrentBu.length && actualLobsForCurrentBu.length > 0}
+                          onCheckedChange={(checkedValue) => {
+                            if (checkedValue) {
+                              handleSelectLineOfBusiness(actualLobsForCurrentBu);
+                            } else {
+                              handleSelectLineOfBusiness([]);
+                            }
+                          }}
+                          onSelect={(e) => e.preventDefault()}
+                        >
+                          Select All
+                        </DropdownMenuCheckboxItem>
               <DropdownMenuSeparator />
               {actualLobsForCurrentBu.length > 0 ? (
                 actualLobsForCurrentBu.map((lob) => (
@@ -1101,7 +1102,7 @@ function HeaderSection({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="flex items-center gap-2 border rounded-md p-1 bg-muted">
+          <div className="flex items-center gap-2 border rounded-md p-1 ">
             <Button
               variant={currentSelectedTimeInterval === "Week" ? "default" : "ghost"}
               size="sm"
@@ -2356,6 +2357,18 @@ export default function CapacityInsightsPage() {
         });
         const overUnderHCSum = (actHcSum !== null && reqHcSum !== null) ? actHcSum - reqHcSum : null;
 
+        // Calculate average AHT from teams
+        let ahtSum = 0;
+        let teamCount = 0;
+        childrenTeamsDataRows.forEach(teamRow => {
+          const teamPeriodMetric = teamRow.periodicData[period] as TeamPeriodicMetrics;
+          if (teamPeriodMetric?.aht !== null && teamPeriodMetric?.aht !== undefined) {
+            ahtSum += teamPeriodMetric.aht;
+            teamCount++;
+          }
+        });
+        const calculatedAvgAHT = teamCount > 0 ? ahtSum / teamCount : null;
+
         lobPeriodicData[period] = {
           lobVolumeForecast: lobRawEntry.lobVolumeForecast?.[period] ?? null,
           lobAverageAHT: lobRawEntry.lobAverageAHT?.[period] ?? null,
@@ -2363,6 +2376,7 @@ export default function CapacityInsightsPage() {
           requiredHC: reqHcSum,
           actualHC: actHcSum,
           overUnderHC: overUnderHCSum,
+          lobCalculatedAverageAHT: calculatedAvgAHT,
         };
       });
 
