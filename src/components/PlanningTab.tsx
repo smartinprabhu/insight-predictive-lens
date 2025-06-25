@@ -97,6 +97,7 @@ import {
  from "date-fns";
 import type { DayPickerProps } from "react-day-picker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { MonthRangePicker } from "./MonthRangePicker";
 
 const throttle = (func: (...args: any[]) => void, wait: number) => {
   let timeout: NodeJS.Timeout | null = null;
@@ -152,7 +153,7 @@ export const ALL_MONTH_HEADERS = Array.from({ length: 24 }, (_, i) => {
   const year = 2024 + Math.floor(i / 12);
   const month = i % 12;
   const date = new Date(year, month, 1);
-  return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  return date.toLocaleString('default', { month: 'short', year: 'numeric' });
 });
 
 export const BUSINESS_UNIT_CONFIG = {
@@ -396,12 +397,60 @@ const generateTeamPeriodicInputData = (
 const generateLobInputs = (periods: string[]) => {
   const volume: Record<string, number | null> = {};
   const aht: Record<string, number | null> = {};
-  periods.forEach(period => {
-    const currentVolume = Math.floor(Math.random() * 10000) + 2000;
-    const currentAHT = Math.floor(Math.random() * 10) + 5;
-    volume[period] = currentVolume;
-    aht[period] = currentAHT;
-  });
+  
+  // Check if we're generating monthly data
+  const isMonthly = periods.some(p => p.includes('January') || p.includes('February'));
+
+  if (isMonthly) {
+    // First generate weekly data
+    const weeklyData = generateLobInputs(ALL_WEEKS_HEADERS);
+    
+    // Group weeks by month
+    const monthlyGroups: Record<string, string[]> = {};
+    ALL_WEEKS_HEADERS.forEach(week => {
+      const { startDate } = getHeaderDateRange(week, "Week");
+      if (startDate) {
+        const monthKey = format(startDate, 'MMMM yyyy');
+        if (!monthlyGroups[monthKey]) {
+          monthlyGroups[monthKey] = [];
+        }
+        monthlyGroups[monthKey].push(week);
+      }
+    });
+
+    // Calculate monthly values by aggregating weekly data
+    Object.entries(monthlyGroups).forEach(([month, weeks]) => {
+      // Sum volumes for the month
+      const monthlyVolume = weeks.reduce((sum, week) => sum + (weeklyData.volume[week] || 0), 0);
+      
+      // Calculate weighted average AHT
+      let ahtSum = 0;
+      let volumeSum = 0;
+      weeks.forEach(week => {
+        const weekVolume = weeklyData.volume[week] || 0;
+        const weekAHT = weeklyData.aht[week] || 0;
+        ahtSum += weekVolume * weekAHT;
+        volumeSum += weekVolume;
+      });
+      const monthlyAHT = volumeSum > 0 ? ahtSum / volumeSum : 0;
+
+      // Find matching period header
+      const monthPeriod = periods.find(p => p.includes(month));
+      if (monthPeriod) {
+        volume[monthPeriod] = monthlyVolume;
+        aht[monthPeriod] = monthlyAHT;
+      }
+    });
+  } else {
+    // Weekly data - generate normally
+    periods.forEach(period => {
+      const currentVolume = Math.floor(Math.random() * 10000) + 2000;
+      const currentAHT = Math.floor(Math.random() * 10) + 5;
+      volume[period] = currentVolume;
+      aht[period] = currentAHT;
+    });
+  }
+
   return { volume, aht };
 };
 
@@ -538,12 +587,15 @@ const getHeaderDateRange = (header: string, interval: TimeInterval): { startDate
     }
   } else if (interval === "Month") {
     try {
-      const date = dateParseFns(header, "MMMM Wallis", new Date());
+      // Example header: "January 2024"
+      const date = dateParseFns(header, "MMMM yyyy", new Date()); // Use "MMMM yyyy"
       if (!isNaN(date.getTime())) {
-        const yearVal = getYear(date);
-        const monthVal = getMonth(date);
-        const firstDay = startOfMonth(new Date(yearVal, monthVal));
-        const lastDay = endOfMonth(new Date(yearVal, monthVal));
+        const yearVal = date.getFullYear(); // getFullYear() is fine as date-fns parse would have handled it
+        const monthVal = date.getMonth();   // getMonth() is 0-indexed
+        
+        // Use UTC dates for consistency with fiscal week calculations
+        const firstDay = startOfMonth(new Date(Date.UTC(yearVal, monthVal, 1)));
+        const lastDay = endOfMonth(new Date(Date.UTC(yearVal, monthVal, 1))); // endOfMonth will find the correct last day
         return { startDate: firstDay, endDate: lastDay };
       }
     } catch (e) {
@@ -589,7 +641,7 @@ const findFiscalWeekHeaderForDate = (targetDate: Date, allFiscalHeaders: string[
 };
 // --- END HELPER FUNCTIONS ---
 
-// --- BEGIN AiGroupingDialog COMPONENT ---
+// --- BEGIN AiGroupingDialog part ---
 const aiGroupingDialogFormSchema = z.object({
   historicalCapacityData: z.string().min(1, "Historical data (CSV format) is required."),
   currentBusinessUnits: z.string().min(1, "Current business units (comma-separated) are required."),
@@ -723,7 +775,7 @@ function AiGroupingDialog({ open, onOpenChange }: AiGroupingDialogProps) {
   );
 }
 
-// --- END AiGroupingDialog COMPONENT ---
+// --- END AiGroupingDialog part ---
 
 // Custom Caption Component for Calendar Header
 interface CustomCaptionProps {
@@ -1120,7 +1172,11 @@ function HeaderSection({
               Month
             </Button>
           </div>
-          <DateRangePicker date={currentSelectedDateRange} onDateChange={handleSelectDateRange} />
+          {currentSelectedTimeInterval === "Month" ? (
+            <MonthRangePicker date={currentSelectedDateRange} onDateChange={handleSelectDateRange} />
+          ) : (
+            <DateRangePicker date={currentSelectedDateRange} onDateChange={handleSelectDateRange} />
+          )}
         </div>
 
         {/* Integrated Table Header Row */}
@@ -1947,7 +2003,7 @@ export default function CapacityInsightsPage() {
 
   const [planFilterOptions, setPlanFilterOptions] = useState<FilterOptions>(() => ({
     businessUnits: [...ALL_BUSINESS_UNITS],
-    linesOfBusiness: [...BUSINESS_UNIT_CONFIG["WFS"].lonsOfBusiness],
+    linesOfBusiness: [...BUSINESS_UNIT_CONFIG["WFS"].lonsOfBusiness] as string[],
   }));
 
   const [chartFilterOptions, setChartFilterOptions] = useState<FilterOptions>(() => ({
@@ -2074,7 +2130,7 @@ export default function CapacityInsightsPage() {
     rawValue: string
   ) => {
     const newValueParsed = rawValue === "" || rawValue === "-" ? null : parseFloat(rawValue);
-    if (rawValue !== "" && rawValue !== "-" && isNaN(newValueParsed as number) && newValueParsed !== null && metricKey !== 'someStringFieldIfAny') {
+    if (rawValue !== "" && rawValue !== "-" && isNaN(newValueParsed as number) && newValueParsed !== null) {
       return;
     }
     const newValue = newValueParsed;
@@ -2206,7 +2262,7 @@ export default function CapacityInsightsPage() {
         (lobEntry[metricKey] as any)[periodHeader] = newValue;
 
         const volume = lobEntry.lobVolumeForecast?.[periodHeader];
-        const aht = lobEntry.lobAverageAHT?.[period];
+        const aht = lobEntry.lobAverageAHT?.[periodHeader];
         if (typeof volume === 'number' && volume > 0 && typeof aht === 'number' && aht > 0) {
           if (!lobEntry.lobTotalBaseRequiredMinutes) lobEntry.lobTotalBaseRequiredMinutes = {};
           lobEntry.lobTotalBaseRequiredMinutes[periodHeader] = volume * aht;
@@ -2295,8 +2351,7 @@ export default function CapacityInsightsPage() {
         return isAfter(periodEndDate, addDays(userRangeStart, -1)) && isBefore(periodStartDate, addDays(userRangeEnd, 1));
       });
     } else {
-      // Default for plan view: first 51 weeks, for chart view: first 10 weeks
-      const numPeriodsToDefault = viewMode === 'plan' ? 51 : 10;
+      const numPeriodsToDefault = viewMode === 'plan' ? 51 : (currentSelectedTimeInterval === "Month" ? 12 : 10);
       periodsToDisplayCurrently = sourcePeriods.slice(0, numPeriodsToDefault);
     }
 
@@ -2317,37 +2372,179 @@ export default function CapacityInsightsPage() {
     }
 
     const childrenLobsDataRows: CapacityDataRow[] = [];
-
-    // MODIFIED: Corrected logic for "Select All" / "Unselect All"
     const lobsToProcessForThisBu = currentSelectedLineOfBusiness.length === 0
-      ? [] // If nothing is selected, process an empty array of LOBs
+      ? []
       : relevantRawLobEntriesForSelectedBu.filter(lobEntry => currentSelectedLineOfBusiness.includes(lobEntry.lob));
-
 
     lobsToProcessForThisBu.forEach(lobRawEntry => {
       const childrenTeamsDataRows: CapacityDataRow[] = [];
       const teamsToProcess = lobRawEntry.teams || [];
+      const lobCalculatedBaseRequiredMinutes: Record<string, number | null> = {}; // For LOB display
 
-      const lobCalculatedBaseRequiredMinutes: Record<string, number | null> = {};
-      periodsToDisplayCurrently.forEach(period => {
-        const volume = lobRawEntry.lobVolumeForecast?.[period];
-        const avgAHT = lobRawEntry.lobAverageAHT?.[period];
-        if (volume !== null && volume !== undefined && avgAHT !== null && avgAHT !== undefined && avgAHT > 0) {
-          lobCalculatedBaseRequiredMinutes[period] = volume * avgAHT;
-        } else {
-          lobCalculatedBaseRequiredMinutes[period] = lobRawEntry.lobTotalBaseRequiredMinutes?.[period] ?? 0;
-        }
-      });
+      // Aggregate LOB inputs first if it's Month view
+      const monthlyAggregatedLobInputs: {
+        lobVolumeForecast: Record<string, number | null>;
+        lobAverageAHT: Record<string, number | null>;
+        lobTotalBaseRequiredMinutes?: Record<string, number | null>;
+      } = { lobVolumeForecast: {}, lobAverageAHT: {}, lobTotalBaseRequiredMinutes: {} };
+
+      if (currentSelectedTimeInterval === "Month") {
+        periodsToDisplayCurrently.forEach(monthPeriod => {
+          const { startDate: monthStartDate, endDate: monthEndDate } = getHeaderDateRange(monthPeriod, "Month");
+          if (!monthStartDate || !monthEndDate) return;
+
+          let totalVolumeForMonth = 0;
+          let weightedAhtSum = 0;
+          let totalMinutesForMonth = 0;
+          let weeksInMonthCount = 0;
+          let hasAnyWeeklyData = false;
+
+          ALL_WEEKS_HEADERS.forEach(weekHeader => {
+            const { startDate: weekStartDate, endDate: weekEndDate } = getHeaderDateRange(weekHeader, "Week");
+            if (weekStartDate && weekEndDate && isWithinIntervalFns(weekStartDate, { start: monthStartDate, end: monthEndDate })) {
+              const weeklyVolume = lobRawEntry.lobVolumeForecast?.[weekHeader];
+              const weeklyAHT = lobRawEntry.lobAverageAHT?.[weekHeader];
+              const weeklyTotalMinutes = lobRawEntry.lobTotalBaseRequiredMinutes?.[weekHeader];
+
+              if (weeklyVolume !== null && weeklyVolume !== undefined) {
+                totalVolumeForMonth += weeklyVolume;
+                if (weeklyAHT !== null && weeklyAHT !== undefined) {
+                  weightedAhtSum += weeklyVolume * weeklyAHT;
+                }
+                hasAnyWeeklyData = true;
+              }
+              if (weeklyTotalMinutes !== null && weeklyTotalMinutes !== undefined) {
+                totalMinutesForMonth += weeklyTotalMinutes;
+                hasAnyWeeklyData = true;
+              }
+              weeksInMonthCount++;
+            }
+          });
+
+          if (hasAnyWeeklyData) {
+            monthlyAggregatedLobInputs.lobVolumeForecast[monthPeriod] = totalVolumeForMonth > 0 ? totalVolumeForMonth : null;
+            monthlyAggregatedLobInputs.lobAverageAHT[monthPeriod] = totalVolumeForMonth > 0 && weightedAhtSum > 0 ? weightedAhtSum / totalVolumeForMonth : (lobRawEntry.lobAverageAHT?.[monthPeriod] ?? null) ; // Fallback to potentially directly set monthly AHT if no volume
+            if (totalMinutesForMonth > 0) {
+                 if (!monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes) monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes = {};
+                 monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes[monthPeriod] = totalMinutesForMonth;
+            } else if (monthlyAggregatedLobInputs.lobVolumeForecast[monthPeriod] !== null && monthlyAggregatedLobInputs.lobAverageAHT[monthPeriod] !== null) {
+                 if (!monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes) monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes = {};
+                 monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes[monthPeriod] = (monthlyAggregatedLobInputs.lobVolumeForecast[monthPeriod] as number) * (monthlyAggregatedLobInputs.lobAverageAHT[monthPeriod] as number);
+            } else {
+                 if (!monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes) monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes = {};
+                 monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes[monthPeriod] = null;
+            }
+          } else { // If no weekly data, try to use existing monthly data if any
+            monthlyAggregatedLobInputs.lobVolumeForecast[monthPeriod] = lobRawEntry.lobVolumeForecast?.[monthPeriod] ?? null;
+            monthlyAggregatedLobInputs.lobAverageAHT[monthPeriod] = lobRawEntry.lobAverageAHT?.[monthPeriod] ?? null;
+            if (!monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes) monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes = {};
+            monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes[monthPeriod] = lobRawEntry.lobTotalBaseRequiredMinutes?.[monthPeriod] ?? null;
+          }
+          // This is for the LOB display, not for team calculation input yet
+          lobCalculatedBaseRequiredMinutes[monthPeriod] = monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes?.[monthPeriod] ?? null;
+        });
+      } else { // Week interval
+        periodsToDisplayCurrently.forEach(period => {
+          const volume = lobRawEntry.lobVolumeForecast?.[period];
+          const avgAHT = lobRawEntry.lobAverageAHT?.[period];
+          if (volume !== null && volume !== undefined && avgAHT !== null && avgAHT !== undefined && avgAHT > 0) {
+            lobCalculatedBaseRequiredMinutes[period] = volume * avgAHT;
+          } else {
+            lobCalculatedBaseRequiredMinutes[period] = lobRawEntry.lobTotalBaseRequiredMinutes?.[period] ?? 0;
+          }
+        });
+      }
+
 
       teamsToProcess.forEach(teamRawEntry => {
         const periodicTeamMetrics: Record<string, TeamPeriodicMetrics> = {};
-        periodsToDisplayCurrently.forEach(period => {
-          periodicTeamMetrics[period] = calculateTeamMetricsForPeriod(
-            teamRawEntry.periodicInputData[period] || {},
-            lobCalculatedBaseRequiredMinutes[period],
+        periodsToDisplayCurrently.forEach(monthPeriodOrWeekPeriod => {
+          let teamInputForPeriod: Partial<TeamPeriodicMetrics> = {};
+          let lobTotalBaseRequiredMinutesForCalcContext: number | null = null;
+
+          if (currentSelectedTimeInterval === "Month") {
+            const monthPeriod = monthPeriodOrWeekPeriod;
+            const { startDate: monthStartDate, endDate: monthEndDate } = getHeaderDateRange(monthPeriod, "Month");
+            if (!monthStartDate || !monthEndDate) {
+              periodicTeamMetrics[monthPeriod] = calculateTeamMetricsForPeriod({}, null, standardWorkMinutes);
+              return;
+            }
+
+            const weeklyInputs: Partial<TeamPeriodicMetrics>[] = [];
+            const relevantWeekHeaders: string[] = [];
+            ALL_WEEKS_HEADERS.forEach(weekHeader => {
+              const { startDate: weekStartDate, endDate: weekEndDate } = getHeaderDateRange(weekHeader, "Week");
+              if (weekStartDate && weekEndDate && isWithinIntervalFns(weekStartDate, { start: monthStartDate, end: monthEndDate })) {
+                if (teamRawEntry.periodicInputData[weekHeader]) {
+                  weeklyInputs.push(teamRawEntry.periodicInputData[weekHeader]!);
+                  relevantWeekHeaders.push(weekHeader);
+                }
+              }
+            });
+
+            if (weeklyInputs.length > 0) {
+              const summedInputs: Partial<TeamPeriodicMetrics> & { count: Record<keyof TeamPeriodicMetrics, number> } = { count: {} as any };
+              const avgMetricsKeys: (keyof TeamPeriodicMetrics)[] = ["aht", "shrinkagePercentage", "occupancyPercentage", "backlogPercentage", "attritionPercentage"];
+              const sumMetricsKeys: (keyof TeamPeriodicMetrics)[] = ["moveIn", "moveOut", "newHireBatch", "newHireProduction"];
+              const lastValMetricsKeys: (keyof TeamPeriodicMetrics)[] = ["actualHC", "volumeMixPercentage"];
+
+              weeklyInputs.forEach(input => {
+                avgMetricsKeys.forEach(key => {
+                  if (input[key] !== null && input[key] !== undefined) {
+                    summedInputs[key] = (summedInputs[key] || 0) + (input[key] as number);
+                    summedInputs.count[key] = (summedInputs.count[key] || 0) + 1;
+                  }
+                });
+                sumMetricsKeys.forEach(key => {
+                  if (input[key] !== null && input[key] !== undefined) {
+                    summedInputs[key] = (summedInputs[key] || 0) + (input[key] as number);
+                  }
+                });
+              });
+
+              avgMetricsKeys.forEach(key => {
+                if (summedInputs.count[key] > 0) teamInputForPeriod[key] = (summedInputs[key] as number) / summedInputs.count[key];
+              });
+              sumMetricsKeys.forEach(key => {
+                teamInputForPeriod[key] = summedInputs[key];
+              });
+
+              const lastWeekInput = weeklyInputs[weeklyInputs.length - 1];
+              lastValMetricsKeys.forEach(key => {
+                 if (lastWeekInput && lastWeekInput[key] !== null && lastWeekInput[key] !== undefined) {
+                    teamInputForPeriod[key] = lastWeekInput[key];
+                 } else { // Fallback: average if last week is missing
+                    let sum = 0; let count = 0;
+                    weeklyInputs.forEach(wi => { if (wi[key] !== null && wi[key] !== undefined) { sum += (wi[key] as number); count++; } });
+                    if (count > 0) teamInputForPeriod[key] = sum / count;
+                 }
+              });
+            } else { // No weekly data for this team in this month, use any direct monthly input if available
+                teamInputForPeriod = teamRawEntry.periodicInputData[monthPeriod] || {};
+            }
+            // Use the LOB's monthly aggregated total base required minutes for team calculations
+            lobTotalBaseRequiredMinutesForCalcContext = monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes?.[monthPeriod] ?? null;
+
+          } else { // Week Interval
+            const weekPeriod = monthPeriodOrWeekPeriod;
+            teamInputForPeriod = teamRawEntry.periodicInputData[weekPeriod] || {};
+            // Determine LOB total base required minutes for this specific week for team calculation
+            const weeklyVolume = lobRawEntry.lobVolumeForecast?.[weekPeriod];
+            const weeklyAHT = lobRawEntry.lobAverageAHT?.[weekPeriod];
+            if (weeklyVolume !== null && weeklyVolume !== undefined && weeklyAHT !== null && weeklyAHT !== undefined && weeklyAHT > 0) {
+                lobTotalBaseRequiredMinutesForCalcContext = weeklyVolume * weeklyAHT;
+            } else {
+                lobTotalBaseRequiredMinutesForCalcContext = lobRawEntry.lobTotalBaseRequiredMinutes?.[weekPeriod] ?? null;
+            }
+          }
+
+          periodicTeamMetrics[monthPeriodOrWeekPeriod] = calculateTeamMetricsForPeriod(
+            teamInputForPeriod,
+            lobTotalBaseRequiredMinutesForCalcContext,
             standardWorkMinutes
           );
         });
+
         childrenTeamsDataRows.push({
           id: `${lobRawEntry.id}_${teamRawEntry.teamName.replace(/\s+/g, '-')}`,
           name: teamRawEntry.teamName,
@@ -2362,7 +2559,6 @@ export default function CapacityInsightsPage() {
       periodsToDisplayCurrently.forEach(period => {
         let reqHcSum = 0;
         let actHcSum = 0;
-
         childrenTeamsDataRows.forEach(teamRow => {
           const teamPeriodMetric = teamRow.periodicData[period] as TeamPeriodicMetrics;
           if (teamPeriodMetric) {
@@ -2372,26 +2568,27 @@ export default function CapacityInsightsPage() {
         });
         const overUnderHCSum = (actHcSum !== null && reqHcSum !== null) ? actHcSum - reqHcSum : null;
 
-        // Calculate average AHT from teams
-        let ahtSum = 0;
-        let teamCount = 0;
+        // Calculate weighted average AHT based on volume mix
+        let weightedAhtSum = 0;
+        let totalVolumeMix = 0;
         childrenTeamsDataRows.forEach(teamRow => {
           const teamPeriodMetric = teamRow.periodicData[period] as TeamPeriodicMetrics;
-          if (teamPeriodMetric?.aht !== null && teamPeriodMetric?.aht !== undefined) {
-            ahtSum += teamPeriodMetric.aht;
-            teamCount++;
+          if (teamPeriodMetric?.aht !== null && teamPeriodMetric?.aht !== undefined && 
+              teamPeriodMetric?.volumeMixPercentage !== null && teamPeriodMetric?.volumeMixPercentage !== undefined) {
+            weightedAhtSum += teamPeriodMetric.aht * (teamPeriodMetric.volumeMixPercentage / 100);
+            totalVolumeMix += teamPeriodMetric.volumeMixPercentage;
           }
         });
-        const calculatedAvgAHT = teamCount > 0 ? ahtSum / teamCount : null;
+        const calculatedAvgAHTFromTeams = totalVolumeMix > 0 ? weightedAhtSum / (totalVolumeMix / 100) : null;
 
         lobPeriodicData[period] = {
-          lobVolumeForecast: lobRawEntry.lobVolumeForecast?.[period] ?? null,
-          lobAverageAHT: lobRawEntry.lobAverageAHT?.[period] ?? null,
+          lobVolumeForecast: currentSelectedTimeInterval === "Month" ? monthlyAggregatedLobInputs.lobVolumeForecast?.[period] : lobRawEntry.lobVolumeForecast?.[period] ?? null,
+          lobAverageAHT: calculatedAvgAHTFromTeams || (currentSelectedTimeInterval === "Month" ? monthlyAggregatedLobInputs.lobAverageAHT?.[period] : lobRawEntry.lobAverageAHT?.[period] ?? null),
           lobTotalBaseRequiredMinutes: lobCalculatedBaseRequiredMinutes[period] ?? null,
           requiredHC: reqHcSum,
           actualHC: actHcSum,
           overUnderHC: overUnderHCSum,
-          lobCalculatedAverageAHT: calculatedAvgAHT,
+          lobCalculatedAverageAHT: calculatedAvgAHTFromTeams,
         };
       });
 
@@ -2411,7 +2608,7 @@ export default function CapacityInsightsPage() {
         let reqHcSum = 0;
         let actHcSum = 0;
         let lobTotalBaseReqMinsForBu = 0;
-        let buVolumeForecastSum = 0; // Initialize for BU volume
+        let buVolumeForecastSum = 0;
 
         childrenLobsDataRows.forEach(lobRow => {
           const lobPeriodMetric = lobRow.periodicData[period] as AggregatedPeriodicMetrics;
@@ -2419,7 +2616,7 @@ export default function CapacityInsightsPage() {
             reqHcSum += lobPeriodMetric.requiredHC ?? 0;
             actHcSum += lobPeriodMetric.actualHC ?? 0;
             lobTotalBaseReqMinsForBu += lobPeriodMetric.lobTotalBaseRequiredMinutes ?? 0;
-            buVolumeForecastSum += lobPeriodMetric.lobVolumeForecast ?? 0; // Aggregate LOB volume for BU
+            buVolumeForecastSum += lobPeriodMetric.lobVolumeForecast ?? 0;
           }
         });
         const overUnderHCSum = (actHcSum !== null && reqHcSum !== null) ? actHcSum - reqHcSum : null;
@@ -2429,7 +2626,7 @@ export default function CapacityInsightsPage() {
           actualHC: actHcSum,
           overUnderHC: overUnderHCSum,
           lobTotalBaseRequiredMinutes: lobTotalBaseReqMinsForBu,
-          lobVolumeForecast: buVolumeForecastSum, // Add aggregated volume to BU
+          lobVolumeForecast: buVolumeForecastSum,
         };
       });
       newDisplayData.push({
@@ -2441,7 +2638,6 @@ export default function CapacityInsightsPage() {
         children: childrenLobsDataRows,
       });
     }
-
     setDisplayableCapacityData(newDisplayData);
   }, [viewMode, selectedPlanBusinessUnit, selectedPlanLineOfBusiness, selectedPlanTimeInterval, selectedPlanDateRange,
       selectedChartBusinessUnit, selectedChartLineOfBusiness, selectedChartTimeInterval, selectedChartDateRange,
