@@ -2860,3 +2860,4 @@ export default function CapacityInsightsPageV2() { // Renamed component
     </div>
   );
 }
+
