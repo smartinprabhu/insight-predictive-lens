@@ -2099,7 +2099,22 @@ export default function CapacityInsightsPage() {
 
       (teamEntry.periodicInputData[periodHeader] as any)[metricKey] = newValue;
 
-      if (metricKey === 'volumeMixPercentage') {
+      if (metricKey === 'aht') {
+        // Recalculate average AHT for the LOB when team AHT changes
+        let ahtSum = 0;
+        let teamCount = 0;
+        lobEntry.teams.forEach(team => {
+          const teamPeriodData = team.periodicInputData[periodHeader];
+          if (teamPeriodData?.aht !== null && teamPeriodData?.aht !== undefined) {
+            ahtSum += teamPeriodData.aht;
+            teamCount++;
+          }
+        });
+        const calculatedAvgAHT = teamCount > 0 ? ahtSum / teamCount : null;
+        
+        if (!lobEntry.lobAverageAHT) lobEntry.lobAverageAHT = {};
+        lobEntry.lobAverageAHT[periodHeader] = calculatedAvgAHT;
+      } else if (metricKey === 'volumeMixPercentage') {
         const updatedTeamMix = Math.max(0, Math.min(100, newValue === null ? 0 : newValue as number));
         (teamEntry.periodicInputData[periodHeader] as any)[metricKey] = updatedTeamMix;
 
