@@ -151,9 +151,10 @@ export const ALL_WEEKS_HEADERS = generateFiscalWeekHeaders(2024, 104);
 
 export const ALL_MONTH_HEADERS = Array.from({ length: 24 }, (_, i) => {
   const year = 2024 + Math.floor(i / 12);
-  const month = i % 12;
-  const date = new Date(year, month, 1);
-  return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+  const month = i % 12; // 0-indexed
+  // Use UTC to avoid timezone issues and format consistently
+  const date = new Date(Date.UTC(year, month, 1));
+  return formatDateFn(date, "yyyy-MM-dd"); // e.g., "2024-01-01", "2024-09-01"
 });
 
 export const BUSINESS_UNIT_CONFIG = {
@@ -587,19 +588,23 @@ const getHeaderDateRange = (header: string, interval: TimeInterval): { startDate
     }
   } else if (interval === "Month") {
     try {
-      // Example header: "January 2024"
-      const date = dateParseFns(header, "MMMM yyyy", new Date()); // Use "MMMM yyyy"
+      // Now expects header like "2024-01-01", "2024-09-01"
+      const date = dateParseFns(header, "yyyy-MM-dd", new Date());
+
       if (!isNaN(date.getTime())) {
-        const yearVal = date.getFullYear(); // getFullYear() is fine as date-fns parse would have handled it
-        const monthVal = date.getMonth();   // getMonth() is 0-indexed
-        
-        // Use UTC dates for consistency with fiscal week calculations
-        const firstDay = startOfMonth(new Date(Date.UTC(yearVal, monthVal, 1)));
-        const lastDay = endOfMonth(new Date(Date.UTC(yearVal, monthVal, 1))); // endOfMonth will find the correct last day
+        // Since the header IS the first day of the month in UTC,
+        // and date-fns parse with "yyyy-MM-dd" will interpret it as local time zone midnight.
+        // To maintain consistency with UTC calculations elsewhere for month boundaries.
+        const parsedUtcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+
+        const firstDay = startOfMonth(parsedUtcDate);
+        const lastDay = endOfMonth(parsedUtcDate);
         return { startDate: firstDay, endDate: lastDay };
+      } else {
+        // console.warn(`PlanningTab: Parsed date is NaN for header: "${header}" with format "yyyy-MM-dd"`);
       }
     } catch (e) {
-      console.warn(`Could not parse month header: ${header}`, e);
+      // console.warn(`PlanningTab: Error parsing month header: "${header}" with format "yyyy-MM-dd"`, e);
     }
   }
   return { startDate: null, endDate: null };
@@ -1186,27 +1191,42 @@ function HeaderSection({
               {activeHierarchyContext}
             </div>
             <div ref={headerPeriodScrollerRef} className="flex-grow overflow-x-auto scrollbar-hide whitespace-nowrap h-full">
-              <div className="flex h-full">
+              <div className="flex h-full min-w-max"> {/* Ensured min-w-max for horizontal scroll content */}
                 {displayedPeriodHeaders.map((period) => {
-                  const parts = period.split(': ');
-                  const weekLabelPart = parts.length > 0 ? parts[0].replace("FWk", "WK") : period;
-                  let dateRangePart = "";
-                  if (parts.length > 1) {
-                    const dateAndYearPart = parts[1];
-                    const dateMatch = dateAndYearPart.match(/^(\d{2}\/\d{2}-\d{2}\/\d{2})/);
-                    if (dateMatch) {
-                      dateRangePart = dateMatch[1];
+                  let displayLabel = period;
+                  let displaySubLabel = "";
+
+                  // currentSelectedTimeInterval is available in the scope of HeaderSection via props
+                  if (currentSelectedTimeInterval === "Month" && period.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    try {
+                      const monthDate = dateParseFns(period, "yyyy-MM-dd", new Date());
+                      if (!isNaN(monthDate.getTime())) {
+                        displayLabel = formatDateFn(monthDate, "MMM yyyy");
+                      }
+                    } catch (e) { /* displayLabel remains period */ }
+                  } else if (currentSelectedTimeInterval === "Week") {
+                    const parts = period.split(': ');
+                    displayLabel = parts.length > 0 ? parts[0].replace("FWk", "WK") : period;
+                    if (parts.length > 1) {
+                      const dateAndYearPart = parts[1];
+                      const dateMatch = dateAndYearPart.match(/^(\d{2}\/\d{2}-\d{2}\/\d{2})/);
+                      if (dateMatch) {
+                        displaySubLabel = `(${dateMatch[1]})`;
+                      }
                     }
                   }
+                  // Fallback for any other case
+                  // else { displayLabel = period; } // already default
+
                   return (
                     <div
                       key={period}
-                      className="text-right min-w-[100px] px-2 py-2 border-l border-border/50 h-full flex flex-col justify-center items-end"
+                      className="text-right px-2 py-2 border-l border-border/50 h-full flex flex-col justify-center items-end min-w-[100px] max-w-[120px] flex-shrink-0"
                     >
-                      <span className="text-sm font-medium text-foreground">{weekLabelPart}</span>
-                      {dateRangePart && (
-                        <span className="text-xs text-muted-foreground">
-                          ({dateRangePart})
+                      <span className="text-sm font-medium text-foreground truncate w-full">{displayLabel}</span>
+                      {displaySubLabel && (
+                        <span className="text-xs text-muted-foreground truncate w-full">
+                          {displaySubLabel}
                         </span>
                       )}
                     </div>
@@ -1280,10 +1300,13 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
   const rawValue = metricData ? metricData[metricDef.key as keyof typeof metricData] : null;
 
   let canEditCell = false;
-  if (item.itemType === 'Team' && metricDef.isEditableForTeam && !metricDef.isDisplayOnly) {
-    canEditCell = true;
-  } else if (item.itemType === 'LOB' && metricDef.isEditableForLob && !metricDef.isDisplayOnly) {
-    canEditCell = true;
+  // Disable editing for all cells if the selected time interval is "Month"
+  if (selectedTimeInterval === "Week") {
+    if (item.itemType === 'Team' && metricDef.isEditableForTeam && !metricDef.isDisplayOnly) {
+      canEditCell = true;
+    } else if (item.itemType === 'LOB' && metricDef.isEditableForLob && !metricDef.isDisplayOnly) {
+      canEditCell = true;
+    }
   }
 
   useEffect(() => {
@@ -2483,44 +2506,60 @@ export default function CapacityInsightsPage() {
             });
 
             if (weeklyInputs.length > 0) {
-              const summedInputs: Partial<TeamPeriodicMetrics> & { count: Record<keyof TeamPeriodicMetrics, number> } = { count: {} as any };
-              const avgMetricsKeys: (keyof TeamPeriodicMetrics)[] = ["aht", "shrinkagePercentage", "occupancyPercentage", "backlogPercentage", "attritionPercentage"];
+              const summedInputs: Partial<TeamPeriodicMetrics> & {
+                counts: Partial<Record<keyof TeamPeriodicMetrics, number>>,
+                // volumeMixWeightedSum: Partial<Record<keyof TeamPeriodicMetrics, number>>, // No longer using weighted for volMix
+                // volumeMixTotalWeight: number // No longer using weighted for volMix
+              } = {
+                counts: {},
+                // volumeMixWeightedSum: {},
+                // volumeMixTotalWeight: 0
+              };
+
+              const firstOfWeekMetricsKeys: (keyof TeamPeriodicMetrics)[] = ["actualHC"];
+              const avgMetricsKeys: (keyof TeamPeriodicMetrics)[] = ["aht", "shrinkagePercentage", "occupancyPercentage", "backlogPercentage", "attritionPercentage", "volumeMixPercentage"];
               const sumMetricsKeys: (keyof TeamPeriodicMetrics)[] = ["moveIn", "moveOut", "newHireBatch", "newHireProduction"];
-              const lastValMetricsKeys: (keyof TeamPeriodicMetrics)[] = ["actualHC", "volumeMixPercentage"];
 
               weeklyInputs.forEach(input => {
-                avgMetricsKeys.forEach(key => {
+                // Summing for avgMetricsKeys (to be divided by count later) and for sumMetricsKeys
+                [...avgMetricsKeys, ...sumMetricsKeys].forEach(key => {
                   if (input[key] !== null && input[key] !== undefined) {
                     summedInputs[key] = (summedInputs[key] || 0) + (input[key] as number);
-                    summedInputs.count[key] = (summedInputs.count[key] || 0) + 1;
-                  }
-                });
-                sumMetricsKeys.forEach(key => {
-                  if (input[key] !== null && input[key] !== undefined) {
-                    summedInputs[key] = (summedInputs[key] || 0) + (input[key] as number);
+                    if (avgMetricsKeys.includes(key as keyof TeamPeriodicMetrics)) {
+                      summedInputs.counts[key] = (summedInputs.counts[key] || 0) + 1;
+                    }
                   }
                 });
               });
 
+              // Assign metrics from the first week
+              const firstWeekInput = weeklyInputs[0]; // weeklyInputs.length is > 0 here
+              firstOfWeekMetricsKeys.forEach(key => {
+                if (firstWeekInput && firstWeekInput[key] !== null && firstWeekInput[key] !== undefined) {
+                  teamInputForPeriod[key] = firstWeekInput[key];
+                } else {
+                  teamInputForPeriod[key] = null;
+                  // console.warn(`PlanningTab: Monthly aggregation: Missing ${key} in first week's data for ${teamRawEntry.teamName} in ${monthPeriod}`);
+                }
+              });
+
+              // Calculate simple averages for avgMetricsKeys
               avgMetricsKeys.forEach(key => {
-                if (summedInputs.count[key] > 0) teamInputForPeriod[key] = (summedInputs[key] as number) / summedInputs.count[key];
-              });
-              sumMetricsKeys.forEach(key => {
-                teamInputForPeriod[key] = summedInputs[key];
+                if (summedInputs.counts[key] && summedInputs.counts[key]! > 0) {
+                  teamInputForPeriod[key] = (summedInputs[key] as number) / summedInputs.counts[key]!;
+                } else {
+                  teamInputForPeriod[key] = null;
+                  // console.warn(`PlanningTab: Monthly aggregation: No data to average ${key} for ${teamRawEntry.teamName} in ${monthPeriod}`);
+                }
               });
 
-              const lastWeekInput = weeklyInputs[weeklyInputs.length - 1];
-              lastValMetricsKeys.forEach(key => {
-                 if (lastWeekInput && lastWeekInput[key] !== null && lastWeekInput[key] !== undefined) {
-                    teamInputForPeriod[key] = lastWeekInput[key];
-                 } else { // Fallback: average if last week is missing
-                    let sum = 0; let count = 0;
-                    weeklyInputs.forEach(wi => { if (wi[key] !== null && wi[key] !== undefined) { sum += (wi[key] as number); count++; } });
-                    if (count > 0) teamInputForPeriod[key] = sum / count;
-                 }
+              // Assign sums for sumMetricsKeys
+              sumMetricsKeys.forEach(key => {
+                teamInputForPeriod[key] = summedInputs[key] ?? null;
               });
-            } else { // No weekly data for this team in this month, use any direct monthly input if available
-                teamInputForPeriod = teamRawEntry.periodicInputData[monthPeriod] || {};
+
+            } else { // No weekly data for this team in this month
+                teamInputForPeriod = {}; // Start with an empty object, defaults will be applied in calculateTeamMetricsForPeriod
             }
             // Use the LOB's monthly aggregated total base required minutes for team calculations
             lobTotalBaseRequiredMinutesForCalcContext = monthlyAggregatedLobInputs.lobTotalBaseRequiredMinutes?.[monthPeriod] ?? null;
@@ -2582,8 +2621,12 @@ export default function CapacityInsightsPage() {
         const calculatedAvgAHTFromTeams = totalVolumeMix > 0 ? weightedAhtSum / (totalVolumeMix / 100) : null;
 
         lobPeriodicData[period] = {
-          lobVolumeForecast: currentSelectedTimeInterval === "Month" ? monthlyAggregatedLobInputs.lobVolumeForecast?.[period] : lobRawEntry.lobVolumeForecast?.[period] ?? null,
-          lobAverageAHT: calculatedAvgAHTFromTeams || (currentSelectedTimeInterval === "Month" ? monthlyAggregatedLobInputs.lobAverageAHT?.[period] : lobRawEntry.lobAverageAHT?.[period] ?? null),
+          lobVolumeForecast: currentSelectedTimeInterval === "Month"
+              ? monthlyAggregatedLobInputs.lobVolumeForecast?.[period]
+              : lobRawEntry.lobVolumeForecast?.[period] ?? null,
+          lobAverageAHT: currentSelectedTimeInterval === "Month"
+              ? monthlyAggregatedLobInputs.lobAverageAHT?.[period]  // Directly use LOB's own aggregated/raw AHT
+              : lobRawEntry.lobAverageAHT?.[period] ?? null,
           lobTotalBaseRequiredMinutes: lobCalculatedBaseRequiredMinutes[period] ?? null,
           requiredHC: reqHcSum,
           actualHC: actHcSum,
