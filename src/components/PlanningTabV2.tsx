@@ -21,6 +21,7 @@ import {
   differenceInCalendarWeeks,
   addWeeks,
   isSameDay,
+  isSameMonth,
 } from 'date-fns';
 import "./globals.css";
 import {
@@ -2298,15 +2299,16 @@ export default function CapacityInsightsPageV2() { // Renamed component
     let periodsToDisplayCurrently: string[] = [];
 
     if (currentSelectedDateRange?.from) {
-      const userRangeStart = currentSelectedDateRange.from;
-      const userRangeEnd = currentSelectedDateRange.to || userRangeStart;
-
-      periodsToDisplayCurrently = sourcePeriods.filter(periodHeaderStr => {
-        const { startDate: periodStartDate, endDate: periodEndDate } = getHeaderDateRange(periodHeaderStr, currentSelectedTimeInterval);
-        if (!periodStartDate || !periodEndDate) return false;
-
-        return isAfter(periodEndDate, addDays(userRangeStart, -1)) && isBefore(periodStartDate, addDays(userRangeEnd, 1));
-      });
+      const userRangeStart = startOfMonth(currentSelectedDateRange.from);
+      const userRangeEnd = currentSelectedDateRange.to ? endOfMonth(currentSelectedDateRange.to) : endOfMonth(userRangeStart);
+        periodsToDisplayCurrently = sourcePeriods.filter(periodHeaderStr => {
+          const { startDate: periodStartDate, endDate: periodEndDate } = getHeaderDateRange(periodHeaderStr, currentSelectedTimeInterval);
+          if (!periodStartDate || !periodEndDate) return false;
+          return (
+            (isAfter(periodEndDate, userRangeStart) || isSameMonth(periodEndDate, userRangeStart)) &&
+            (isBefore(periodStartDate, userRangeEnd) || isSameMonth(periodStartDate, userRangeEnd))
+          );
+        });
     } else {
       const numPeriodsToDefault = viewMode === 'plan' ? 51 : (currentSelectedTimeInterval === "Month" ? 12 : 10);
       periodsToDisplayCurrently = sourcePeriods.slice(0, numPeriodsToDefault);
@@ -2860,4 +2862,3 @@ export default function CapacityInsightsPageV2() { // Renamed component
     </div>
   );
 }
-
