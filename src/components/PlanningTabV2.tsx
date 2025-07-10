@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import axios from 'axios';
 import {
   format as formatDateFn,
   getWeek,
@@ -79,7 +80,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui2/table";
-import { Loader2, Zap, Download, Building2, Briefcase, ChevronDown, Edit3, ArrowDown, ArrowUp, Minus, Calendar as CalendarIcon, Users, ChevronsUpDown, ArrowLeft, ArrowRight, BarChart2, Table as TableIcon } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Loader2, Zap, Download, Plus, Building2, Briefcase, ChevronDown, Edit3, ArrowDown, ArrowUp, Minus, Calendar as CalendarIcon, Users, ChevronsUpDown, ArrowLeft, ArrowRight, BarChart2, Table as TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { suggestLoBGroupings, SuggestLoBGroupingsOutput } from "@/ai/flows/suggest-lob-groupings";
@@ -99,6 +106,9 @@ import {
 import type { DayPickerProps } from "react-day-picker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { MonthRangePicker } from "./MonthRangePicker"; // Import the new picker
+import AuthService from "@/auth/utils/authService";
+
+import AppConfig from '../auth/config.js';
 
 const throttle = (func: (...args: any[]) => void, wait: number) => {
   let timeout: NodeJS.Timeout | null = null;
@@ -197,35 +207,36 @@ export interface BaseHCValues {
   actualHC: number | null;
   overUnderHC: number | null;
 }
-
 export interface TeamPeriodicMetrics extends BaseHCValues {
   aht: number | null;
-  shrinkagePercentage: number | null;
+  inOfficeShrinkagePercentage: number | null;
+  outOfOfficeShrinkagePercentage: number | null;
   occupancyPercentage: number | null;
   backlogPercentage: number | null;
   attritionPercentage: number | null;
   volumeMixPercentage: number | null;
-
+  actualHC: number | null;
   moveIn: number | null;
   moveOut: number | null;
   newHireBatch: number | null;
   newHireProduction: number | null;
-
+  handlingCapacity: number | null;
   _productivity: number | null;
-
   _calculatedRequiredAgentMinutes?: number | null;
   _calculatedActualProductiveAgentMinutes?: number | null;
   attritionLossHC?: number | null;
   hcAfterAttrition?: number | null;
   endingHC?: number | null;
-  _lobTotalBaseReqMinutesForCalc?: number | null; // Added for tooltip calculation
+  _lobTotalBaseReqMinutesForCalc?: number | null;
 }
+
 
 export interface AggregatedPeriodicMetrics extends BaseHCValues {
   lobVolumeForecast?: number | null;
   lobAverageAHT?: number | null;
   lobTotalBaseRequiredMinutes?: number | null;
   lobCalculatedAverageAHT?: number | null;
+  handlingCapacity?: number | null;
 }
 
 export interface MetricDefinition {
@@ -251,7 +262,7 @@ export const TEAM_METRIC_ROW_DEFINITIONS: TeamMetricDefinitions = [
   { key: "actualHC", label: "Actual/Starting HC", isHC: true, isEditableForTeam: true, step: 0.01, category: 'PrimaryHC', description: "The actual or starting headcount for the period before adjustments." },
   { key: "overUnderHC", label: "Over/Under HC", isHC: true, isDisplayOnly: true, category: 'PrimaryHC', description: "Difference between Actual/Starting HC and Required HC." },
   { key: "aht", label: "AHT", isTime: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Average Handle Time: The average time taken to handle one interaction." },
-  { key: "shrinkagePercentage", label: "Shrinkage %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Shrinkage: Percentage of paid time that agents are not available for handling interactions (e.g., breaks, training, meetings)." },
+  // { key: "shrinkagePercentage", label: "Shrinkage %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Shrinkage: Percentage of paid time that agents are not available for handling interactions (e.g., breaks, training, meetings)." },
   { key: "occupancyPercentage", label: "Occupancy %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Occupancy: Percentage of time agents are busy with interaction-related work during their available time." },
   { key: "backlogPercentage", label: "Backlog %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Backlog: Percentage of additional work (e.g., deferred tasks) that needs to be handled on top of forecasted volume." },
   { key: "attritionPercentage", label: "Attrition %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Attrition: Percentage of agents expected to leave during the period." },
@@ -265,12 +276,18 @@ export const TEAM_METRIC_ROW_DEFINITIONS: TeamMetricDefinitions = [
   { key: "endingHC", label: "Ending HC", isHC: true, isDisplayOnly: true, category: 'HCAdjustment', description: "Projected headcount at the end of the period after all adjustments." },
   { key: "_calculatedRequiredAgentMinutes", label: "Eff. Req. Mins (Team)", isDisplayOnly: true, isTime: true, category: 'HCAdjustment', description: "Team's share of LOB demand minutes, adjusted for the team's backlog percentage." },
   { key: "_calculatedActualProductiveAgentMinutes", label: "Actual Prod. Mins (Team)", isDisplayOnly: true, isTime: true, category: 'Internal', description: "Total productive agent minutes available from the team's actual headcount, considering shrinkage and occupancy." },
+  { key: "inOfficeShrinkagePercentage", label: "In Office Shrinkage %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "In Office Shrinkage: Percentage of paid time that agents are not available for handling interactions while in office." },
+  { key: "outOfOfficeShrinkagePercentage", label: "Out of Office Shrinkage %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Out of Office Shrinkage: Percentage of paid time that agents are not available for handling interactions while out of office." },
+
+
 ];
+
 
 export const AGGREGATED_METRIC_ROW_DEFINITIONS: AggregatedMetricDefinitions = [
   { key: "lobVolumeForecast", label: "Volume Forecast", isEditableForLob: true, step: 1, isCount: true, description: "Total number of interactions forecasted for this LOB." },
   { key: "lobAverageAHT", label: "Average AHT", isEditableForLob: true, step: 0.1, isTime: true, description: "Average handle time assumed for LOB interactions." },
   { key: "lobTotalBaseRequiredMinutes", label: "Total Base Req Mins", isEditableForLob: true, isTime: true, step: 1, description: "Total agent minutes required for LOB volume, calculated as Volume * AHT or input directly." },
+  { key: "handlingCapacity", label: "Handling Capacity", isEditableForLob: false, isCount: true, description: "Handling Capacity: The capacity to handle interactions, calculated as Volume Forecast divided by Average AHT.\nFormula: Volume Forecast / Average AHT" },
   { key: "requiredHC", label: "Required HC", isHC: true, description: "Aggregated required headcount from child entities." },
   { key: "actualHC", label: "Actual/Starting HC", isHC: true, description: "Aggregated actual/starting headcount from child entities." },
   { key: "overUnderHC", label: "Over/Under HC", isHC: true, description: "Difference between aggregated Actual/Starting HC and Required HC." },
@@ -291,6 +308,10 @@ export interface HeaderSectionProps {
   onSelectPlanTimeInterval: (value: TimeInterval) => void;
   selectedPlanDateRange: DateRange | undefined;
   onSelectPlanDateRange: (value: DateRange | undefined) => void;
+
+  
+  businessId: number;
+  navigateSimulator: (value: number) => void;
 
   chartFilterOptions: FilterOptions;
   selectedChartBusinessUnit: BusinessUnitName;
@@ -341,13 +362,27 @@ export interface CapacityDataRow {
 // --- BEGIN CONSOLIDATED DATA ---
 const MOCK_DATA_PERIODS = ALL_WEEKS_HEADERS;
 
-const generateTeamPeriodicInputData = (
+  // const finalSumCheck = mixes.reduce((acc, curr) => acc + curr, 0);
+  // if (Math.abs(finalSumCheck - 100) > 0.01 && totalTeams > 0 && mixes.length > 0) {
+  //   const diff = 100 - finalSumCheck;
+  //   mixes[mixes.length - 1] = parseFloat((mixes[mixes.length - 1] + diff).toFixed(1));
+  //   if (mixes[mixes.length - 1] < 0 && mixes.length > 1) {
+  //     let diffToRedistribute = mixes[mixes.length - 1];
+  //     mixes[mixes.length - 1] = 0;
+  //     for (let k = 0; k < mixes.length - 1; k++) {
+  //       if (diffToRedistribute >= 0) break;
+  //       let take = Math.min(mixes[k], Math.abs(diffToRedistribute));
+  //       mixes[k] = parseFloat((mixes[k] - take).toFixed(1));
+  //       diffToRedistribute += take;
+  //     }
+  //   }
+  // }
+  const generateTeamPeriodicInputData = (
   periods: string[],
   teamIndex: number,
   totalTeams: number
-): Record<string, Partial<Omit<TeamPeriodicMetrics, 'requiredHC' | 'overUnderHC' | '_calculatedRequiredAgentMinutes' | '_calculatedActualProductiveAgentMinutes' | 'attritionLossHC' | 'hcAfterAttrition' | 'endingHC'>>> => {
-  const metrics: Record<string, Partial<Omit<TeamPeriodicMetrics, 'requiredHC' | 'overUnderHC' | '_calculatedRequiredAgentMinutes' | '_calculatedActualProductiveAgentMinutes' | 'attritionLossHC' | 'hcAfterAttrition' | 'endingHC'>>> = {};
-
+): Record<string, Partial<TeamPeriodicMetrics>> => {
+  const metrics: Record<string, Partial<TeamPeriodicMetrics>> = {};
   let initialMix = totalTeams > 0 ? parseFloat((100 / totalTeams).toFixed(1)) : 0;
   if (totalTeams === 3) {
     initialMix = 33.3;
@@ -362,6 +397,7 @@ const generateTeamPeriodicInputData = (
     return currentMix;
   });
 
+  // Adjust the final sum of the mixes
   const finalSumCheck = mixes.reduce((acc, curr) => acc + curr, 0);
   if (Math.abs(finalSumCheck - 100) > 0.01 && totalTeams > 0 && mixes.length > 0) {
     const diff = 100 - finalSumCheck;
@@ -379,34 +415,47 @@ const generateTeamPeriodicInputData = (
   }
 
   periods.forEach(period => {
+    const volumeForecast = Math.floor(Math.random() * 10000) + 2000;
+    const averageAHT = Math.floor(Math.random() * 10) + 5;
+    const handlingCapacity = volumeForecast / averageAHT; // Calculate handling capacity
+
     metrics[period] = {
-      aht: Math.floor(Math.random() * 10) + 5,
-      shrinkagePercentage: Math.floor(Math.random() * 15) + 5,
+      aht: averageAHT,
+      inOfficeShrinkagePercentage: Math.floor(Math.random() * 10) + 5,
+      outOfOfficeShrinkagePercentage: Math.floor(Math.random() * 10) + 5,
       occupancyPercentage: Math.floor(Math.random() * 20) + 70,
       backlogPercentage: Math.floor(Math.random() * 10),
       attritionPercentage: parseFloat((Math.random() * 2).toFixed(1)),
-      volumeMixPercentage: mixes[teamIndex] !== undefined ? mixes[teamIndex] : (totalTeams > 0 ? parseFloat((100 / totalTeams).toFixed(1)) : 0),
+      volumeMixPercentage: mixes[teamIndex] || 0,
       actualHC: Math.floor(Math.random() * 50) + 10,
       moveIn: Math.floor(Math.random() * 5),
       moveOut: Math.floor(Math.random() * 3),
       newHireBatch: Math.random() > 0.7 ? Math.floor(Math.random() * 10) + 5 : 0,
       newHireProduction: Math.random() > 0.5 ? Math.floor(Math.random() * 8) : 0,
+      handlingCapacity: handlingCapacity, // Use calculated handling capacity
       _productivity: 1.0,
     };
   });
+
   return metrics;
 };
-
 const generateLobInputs = (periods: string[], isMonthly: boolean = false) => {
   const volume: Record<string, number | null> = {};
   const aht: Record<string, number | null> = {};
+  const handlingCapacity: Record<string, number | null> = {}; // Handling capacity at LOB level
+
   periods.forEach(period => {
-    // Always set monthly data to 0
-    volume[period] = isMonthly ? 0 : Math.floor(Math.random() * 10000) + 2000;
-    aht[period] = isMonthly ? 0 : Math.floor(Math.random() * 10) + 5;
+    const volumeForecast = Math.floor(Math.random() * 10000) + 2000;
+    const averageAHT = Math.floor(Math.random() * 10) + 5;
+
+    volume[period] = isMonthly ? 0 : volumeForecast;
+    aht[period] = isMonthly ? 0 : averageAHT;
+    handlingCapacity[period] = isMonthly ? 0 : volumeForecast / averageAHT; // Calculate handling capacity
   });
-  return { volume, aht };
+
+  return { volume, aht, handlingCapacity };
 };
+
 
 const initialMockRawCapacityData: RawLoBCapacityEntry[] = [];
 ALL_BUSINESS_UNITS.forEach(bu => {
@@ -448,7 +497,8 @@ const calculateTeamMetricsForPeriod = (
 ): TeamPeriodicMetrics => {
   const defaults: TeamPeriodicMetrics = {
     aht: null,
-    shrinkagePercentage: null,
+    inOfficeShrinkagePercentage: null,
+    outOfOfficeShrinkagePercentage: null,
     occupancyPercentage: null,
     backlogPercentage: null,
     attritionPercentage: null,
@@ -458,6 +508,7 @@ const calculateTeamMetricsForPeriod = (
     moveOut: null,
     newHireBatch: null,
     newHireProduction: null,
+    handlingCapacity: null,
     _productivity: null,
     _calculatedRequiredAgentMinutes: null,
     _calculatedActualProductiveAgentMinutes: null,
@@ -466,7 +517,7 @@ const calculateTeamMetricsForPeriod = (
     attritionLossHC: null,
     hcAfterAttrition: null,
     endingHC: null,
-    _lobTotalBaseReqMinutesForCalc: null, // Initialize
+    _lobTotalBaseReqMinutesForCalc: null,
     ...teamInputDataCurrentPeriod,
   };
 
@@ -475,37 +526,36 @@ const calculateTeamMetricsForPeriod = (
   defaults._calculatedRequiredAgentMinutes = effectiveTeamRequiredMinutes;
 
   let requiredHC = null;
-  if (effectiveTeamRequiredMinutes > 0 && standardWorkMinutesForPeriod > 0 && defaults.shrinkagePercentage !== null && defaults.shrinkagePercentage !== undefined && defaults.occupancyPercentage !== null && defaults.occupancyPercentage !== undefined && defaults.occupancyPercentage > 0) {
-    const effectiveMinutesPerHC = standardWorkMinutesForPeriod *
-      (1 - (defaults.shrinkagePercentage / 100)) *
-      (defaults.occupancyPercentage / 100);
-    if (effectiveMinutesPerHC > 0) {
-      requiredHC = effectiveTeamRequiredMinutes / effectiveMinutesPerHC;
-    }
+  const effectiveMinutesPerHC = standardWorkMinutesForPeriod *
+    (1 - ((defaults.inOfficeShrinkagePercentage ?? 0) / 100)) *
+    (1 - ((defaults.outOfOfficeShrinkagePercentage ?? 0) / 100)) *
+    ((defaults.occupancyPercentage ?? 0) / 100);
+
+  if (effectiveTeamRequiredMinutes > 0 && effectiveMinutesPerHC > 0) {
+    requiredHC = effectiveTeamRequiredMinutes / effectiveMinutesPerHC;
   } else if (effectiveTeamRequiredMinutes === 0) {
     requiredHC = 0;
   }
-  defaults.requiredHC = requiredHC;
 
+  defaults.requiredHC = requiredHC;
   const currentActualHC = defaults.actualHC ?? 0;
   defaults.overUnderHC = (currentActualHC !== null && requiredHC !== null) ? currentActualHC - requiredHC : null;
 
-  if (currentActualHC !== null && standardWorkMinutesForPeriod > 0 && defaults.shrinkagePercentage !== null && defaults.shrinkagePercentage !== undefined && defaults.occupancyPercentage !== null && defaults.occupancyPercentage !== undefined) {
+  if (currentActualHC !== null && standardWorkMinutesForPeriod > 0) {
     defaults._calculatedActualProductiveAgentMinutes = currentActualHC * standardWorkMinutesForPeriod *
-      (1 - (defaults.shrinkagePercentage / 100)) *
-      (defaults.occupancyPercentage / 100);
+      (1 - ((defaults.inOfficeShrinkagePercentage ?? 0) / 100)) *
+      (1 - ((defaults.outOfOfficeShrinkagePercentage ?? 0) / 100)) *
+      ((defaults.occupancyPercentage ?? 0) / 100);
   } else {
     defaults._calculatedActualProductiveAgentMinutes = 0;
   }
 
   const attritionLossHC = currentActualHC * ((defaults.attritionPercentage ?? 0) / 100);
   defaults.attritionLossHC = attritionLossHC;
-
   const hcAfterAttrition = currentActualHC - attritionLossHC;
   defaults.hcAfterAttrition = hcAfterAttrition;
-
   defaults.endingHC = hcAfterAttrition + (defaults.newHireProduction ?? 0) + (defaults.moveIn ?? 0) - (defaults.moveOut ?? 0);
-  defaults._lobTotalBaseReqMinutesForCalc = lobTotalBaseRequiredMinutesForPeriod; // Populate for tooltip
+  defaults._lobTotalBaseReqMinutesForCalc = lobTotalBaseRequiredMinutesForPeriod;
 
   return defaults;
 };
@@ -950,6 +1000,9 @@ function HeaderSection({
   selectedPlanDateRange,
   onSelectPlanDateRange,
 
+    businessId,
+    navigateSimulator,
+
   chartFilterOptions,
   selectedChartBusinessUnit,
   onSelectChartBusinessUnit,
@@ -969,12 +1022,39 @@ function HeaderSection({
   onSetViewMode,
 }: HeaderSectionProps) {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [isAddOpen, setAddOpen] = useState(false);
+    const [formLoading, setFormLoading] = useState(false);
+    const [isWhatIfNavigate, setWhatIfNavigate] = useState(false);
+
+      const { toast } = useToast();
+    
+      const WEBAPPAPIURL =  `${AppConfig.API_URL}/api/v2/`;
+    
+
+    const [formData, setFormData] = useState<Record<string, any>>({ name: "", description: "", end_date: "", start_date: "" });
 
   const currentSelectedBusinessUnit = viewMode === 'plan' ? selectedPlanBusinessUnit : selectedChartBusinessUnit;
   const currentSelectedLineOfBusiness = viewMode === 'plan' ? selectedPlanLineOfBusiness : selectedChartLineOfBusiness;
   const currentSelectedTimeInterval = viewMode === 'plan' ? selectedPlanTimeInterval : selectedChartTimeInterval;
   const currentSelectedDateRange = viewMode === 'plan' ? selectedPlanDateRange : selectedChartDateRange;
   const currentFilterOptions = viewMode === 'plan' ? planFilterOptions : chartFilterOptions;
+
+    useEffect(() => {
+          const runFetch = async () => {
+            if (currentSelectedDateRange?.from && currentSelectedDateRange?.to) {
+              try {
+                const formattedFrom = currentSelectedDateRange.from ? format(currentSelectedDateRange.from, 'yyyy-MM-dd') : '';
+                const formattedTo = currentSelectedDateRange.to ? format(currentSelectedDateRange.to, 'yyyy-MM-dd') : '';
+                setFormData(prev => ({ ...prev, start_date: formattedFrom, end_date: formattedTo }));
+              } catch (err) {
+             
+                console.error("Failed to fetch:", err);
+              }
+            }
+          };
+    
+          runFetch();
+        }, [currentSelectedDateRange]);
 
   const handleSelectBusinessUnit = viewMode === 'plan' ? onSelectPlanBusinessUnit : onSelectChartBusinessUnit;
   const handleSelectLineOfBusiness = viewMode === 'plan' ? onSelectPlanLineOfBusiness : onSelectChartLineOfBusiness;
@@ -1001,11 +1081,83 @@ function HeaderSection({
     lobDropdownLabel = "No LOBs";
   }
 
+   const handleFormInputChange = (name: string, value: any) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const fields = [
+        { name: "name", label: "Name", placeholder: "Name your what-if scenario..", type: "text", required: true },
+        { name: "start_date", label: "Start Date", type: "date", required: true },
+        { name: "end_date", label: "End Date", type: "date", required: false },
+        { name: "description", placeholder: "Enter the description", label: "Description", type: "textarea", required: false },
+      ];
+
+      
+ type ForecastFormData = {
+  name: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  business_unit: number;
+  client_id: number;
+};
+
+
+      async function submitForecastForm(model: string, values: ForecastFormData) {
+        const formData = new FormData();
+      
+        formData.append("model", model);
+        formData.append("values", JSON.stringify(values)); // nested object as JSON string
+      
+        const url = `${WEBAPPAPIURL}create`;
+      
+        const response = await axios.post(url, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${AuthService.getAccessToken()}`
+          },
+        });
+      
+        return response.data;
+      }
+
+      const handleSubmit = async (e: React.FormEvent) => {
+          e.preventDefault();
+          setFormLoading(true);
+          console.log('isWhatIfNavigate', isWhatIfNavigate)
+          try {
+            const response = await submitForecastForm("what_if_simulator",{
+              name: formData.name,
+              description: formData.description,
+              start_date: formData.start_date,
+              end_date: formData.end_date,
+              business_unit: businessId,
+              client_id: AuthService.getCompanyId()
+            });
+            toast({
+              title: "Record Created",
+              description: `What-if Simulator has been created successfully.`,
+            });
+            setFormLoading(false);
+            setAddOpen(false);
+            if(isWhatIfNavigate && navigateSimulator){
+               setTimeout(() => {
+                navigateSimulator(response?.[0] || '');
+              }, 2000); 
+            }
+          } catch (err) {
+            setFormLoading(false);
+            console.error("API Error:", err);
+          }
+          
+        };
+		
+
   return (
     <TooltipProvider>
       <header className="sticky top-0 z-50 bg-background p-4 border-b border-border rounded-tl-lg rounded-tr-lg">
         <div className="flex flex-col md:flex-row justify-between mt-[-15px] ml-[-5px] md:items-center gap-4">
-          <h1 className="text-xl font-semibold text-foreground">Capacity Insights</h1>
+          <h1 className="text-xl font-semibold text-foreground">Tactical Capacity Insights</h1>
           <div className="flex flex-wrap items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -1015,7 +1167,9 @@ function HeaderSection({
               </TooltipTrigger>
               <TooltipContent><p>Export current view as CSV</p></TooltipContent>
             </Tooltip>
-
+              <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
+                  <Plus className="mr-2" /> What-If Simulate
+                </Button>
             <div className="flex items-center gap-2 border rounded-md p-1 ">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -1050,6 +1204,104 @@ function HeaderSection({
             </Button>
           </div>
         </div>
+
+         <Sheet open={isAddOpen} onOpenChange={setAddOpen}>
+                            <SheetContent
+                              side="right"
+                              className="w-[1000px] h-screen bg-card text-card-foreground shadow-lg border border-border overflow-y-auto fixed top-0 right-0 z-[1000]"
+                            >
+                              <SheetHeader>
+                                <SheetTitle>Create What-if Simulator</SheetTitle>
+                              </SheetHeader>
+                              <form onSubmit={handleSubmit} className="space-y-4">
+                              <div className="space-y-4 mt-3">
+                                {/* Forecast Period */}
+                                 <div className="p-2">
+                                          
+                                              <div className="">
+                                                {fields.map((field) => (
+                                                  <div key={field.name} className={field.type === 'textarea' ? 'md:col-span-2 mb-2' : 'mb-3'}>
+                                                    <Label
+                                                      htmlFor={field.name}
+                                                      className="text-gray-800 dark:text-slate-300"
+                                                    >
+                                                      {field.label}
+                                                    </Label>
+
+                                                    {field.type === 'select' ? (
+                                                      <Select
+                                                        value={formData[field.name] || ''}
+                                                        onValueChange={(value) => handleFormInputChange(field.name, value)}
+                                                      >
+                                                        <SelectTrigger className="bg-white border-gray-300 text-black placeholder:text-gray-500
+                                                                                  dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder:text-slate-400">
+                                                          <SelectValue placeholder={`Select ${field.label}`} />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="bg-white border-gray-300 text-black
+                                                                                dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                                                          {field.options?.map((option) => (
+                                                            <SelectItem
+                                                              key={option}
+                                                              value={option}
+                                                              className="text-black hover:bg-gray-100
+                                                                        dark:text-white dark:hover:bg-slate-600"
+                                                            >
+                                                              {option}
+                                                            </SelectItem>
+                                                          ))}
+                                                        </SelectContent>
+                                                      </Select>
+                                                    ) : field.type === 'textarea' ? (
+                                                      <Textarea
+                                                        id={field.name}
+                                                        value={formData[field.name] || ''}
+                                                        onChange={(e) => handleFormInputChange(field.name, e.target.value)}
+                                                        className="w-full bg-white border-gray-300 text-black placeholder:text-gray-500
+                                                                  dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder:text-slate-400"
+                                                        rows={3}
+                                                        placeholder={field.placeholder}
+                                                      />
+                                                    ) : (
+                                                      <Input
+                                                        id={field.name}
+                                                        type={field.type}
+                                                        value={formData[field.name] || ''}
+                                                        required={field.required}
+                                                        placeholder={field.placeholder}
+                                                        onChange={(e) => handleFormInputChange(field.name, e.target.value)}
+                                                        className="w-full bg-white border-gray-300 text-black placeholder:text-gray-500
+                                                                  dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder:text-slate-400"
+                                                      />
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div> 
+                                         </div>
+                                {/* Apply Changes Button */}
+                                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                  <Button
+                                    size="sm"
+                                    className="w-full mb-2"
+                                    type="submit"
+                                    disabled={formLoading}
+                                  >
+                                    {formLoading ? 'Saving' : 'Save'}
+                                  </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="w-full"
+                                      type="submit"
+                                      onClick={() => setWhatIfNavigate(true)}
+                                      disabled={formLoading}
+                                    >
+                                      {formLoading ? 'Saving' : 'Save and show Simulator'}
+                                    </Button>
+                                </div>
+                              </div>
+                              </form>  
+                            </SheetContent>
+                          </Sheet>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-x-4 gap-y-2">
           <Select value={currentSelectedBusinessUnit} onValueChange={handleSelectBusinessUnit}>
@@ -1929,7 +2181,7 @@ const getShade = (hsl: string, lightnessOffset: number) => {
   return `hsl(${h} ${s}% ${newL}%)`;
 };
 
-export default function CapacityInsightsPageV2() { // Renamed component
+export default function CapacityInsightsPageV2({ navigateSimulator, businessId }) { // Renamed component
   const [localRawCapacityDataSource, setLocalRawCapacityDataSource] = useState<RawLoBCapacityEntry[]>(() => {
     // Adjust initialMockRawCapacityData if its generation depends on specific BU names not present in V2
     // For now, assuming initialMockRawCapacityData generation logic is compatible or will be reviewed in the next step
@@ -2608,6 +2860,9 @@ export default function CapacityInsightsPageV2() { // Renamed component
           actualHC: actHcSum,
           overUnderHC: overUnderHCSum,
           lobCalculatedAverageAHT: calculatedAvgAHTFromTeams,
+          handlingCapacity: lobRawEntry.lobVolumeForecast?.[period] && lobRawEntry.lobAverageAHT?.[period] 
+            ? lobRawEntry.lobVolumeForecast[period] / lobRawEntry.lobAverageAHT[period] 
+            : null,
         };
       });
 
@@ -2774,7 +3029,8 @@ export default function CapacityInsightsPageV2() { // Renamed component
         onSelectPlanTimeInterval={handlePlanTimeIntervalChange}
         selectedPlanDateRange={selectedPlanDateRange}
         onSelectPlanDateRange={setSelectedPlanDateRange}
-
+        businessId={businessId}
+        navigateSimulator={navigateSimulator}
         chartFilterOptions={chartFilterOptions}
         selectedChartBusinessUnit={selectedChartBusinessUnit}
         onSelectChartBusinessUnit={handleChartBusinessUnitChange}
