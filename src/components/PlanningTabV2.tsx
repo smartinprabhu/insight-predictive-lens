@@ -258,7 +258,7 @@ export type TeamMetricDefinitions = MetricDefinition[];
 export type AggregatedMetricDefinitions = MetricDefinition[];
 
 export const TEAM_METRIC_ROW_DEFINITIONS: TeamMetricDefinitions = [
-  { key: "requiredHC", label: "Required HC", isHC: true, isDisplayOnly: true, category: 'PrimaryHC', description: "Calculated number of headcount required based on demand and productivity assumptions.\nFormula: (Eff. Req. Mins) / (Std Mins * (1 - In Office Shrink%) * (1 - Out of Office Shrink%) * Occupancy%)" },
+  { key: "requiredHC", label: "Required HC", isHC: true, isDisplayOnly: true, category: 'PrimaryHC', description: "Calculated number of headcount required based on demand and productivity assumptions." },
   { key: "actualHC", label: "Actual/Starting HC", isHC: true, isEditableForTeam: true, step: 0.01, category: 'PrimaryHC', description: "The actual or starting headcount for the period before adjustments." },
   { key: "overUnderHC", label: "Over/Under HC", isHC: true, isDisplayOnly: true, category: 'PrimaryHC', description: "Difference between Actual/Starting HC and Required HC.\nFormula: Actual HC - Required HC" },
   { key: "aht", label: "AHT", isTime: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Average Handle Time: The average time taken to handle one interaction." },
@@ -1574,7 +1574,7 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
     shouldDisplayMetric = true;
   } else if ((item.itemType === 'BU' || item.itemType === 'LOB') && AGGREGATED_METRIC_ROW_DEFINITIONS.some(def => def.key === metricDef.key)) {
     // Explicitly hide LOB-specific metrics for BU level
-    if (item.itemType === 'BU' && (metricDef.key === 'lobTotalBaseRequiredMinutes' || metricDef.key === 'lobVolumeForecast' || metricDef.key === 'lobAverageAHT')) {
+    if (item.itemType === 'BU' && (metricDef.key === 'lobTotalBaseRequiredMinutes' || metricDef.key === 'lobVolumeForecast' || metricDef.key === 'lobAverageAHT' || metricDef.key === 'handlingCapacity')) {
       shouldDisplayMetric = false;
     } else {
       shouldDisplayMetric = true;
@@ -1648,7 +1648,7 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
   // Replace "FWk" with "Wk" in the periodName for the tooltip
   const formattedPeriodNameForTooltip = periodName.replace("FWk", "Wk");
   let baseTooltipText = `${item.name} - ${formattedPeriodNameForTooltip}\n${metricDef.label}: ${displayValue}`;
-  if (metricDef.description && item.itemType === 'Team') {
+  if (metricDef.description) { // Show description for all item types if available
     baseTooltipText += `\n${metricDef.description}`;
   }
 
@@ -1657,24 +1657,26 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
     switch (metricDef.key) {
       case 'requiredHC':
         if (teamMetrics && typeof teamMetrics._calculatedRequiredAgentMinutes === 'number' &&
-            typeof teamMetrics.shrinkagePercentage === 'number' &&
+            typeof teamMetrics.inOfficeShrinkagePercentage === 'number' &&
+            typeof teamMetrics.outOfOfficeShrinkagePercentage === 'number' &&
             typeof teamMetrics.occupancyPercentage === 'number' &&
             standardWorkMinutesForPeriod > 0 &&
             teamMetrics.occupancyPercentage > 0) {
             const effectiveMinutesPerHC = standardWorkMinutesForPeriod *
-                                          (1 - (teamMetrics.shrinkagePercentage / 100)) *
+                                          (1 - (teamMetrics.inOfficeShrinkagePercentage / 100)) *
+                                          (1 - (teamMetrics.outOfOfficeShrinkagePercentage / 100)) *
                                           (teamMetrics.occupancyPercentage / 100);
             if (effectiveMinutesPerHC > 0) {
-              formulaText = `Formula: Eff. Req. Mins / (Std Mins * (1-Shrink%) * Occupancy%)\n` +
-                            `Calc: ${teamMetrics._calculatedRequiredAgentMinutes.toFixed(0)} / (${standardWorkMinutesForPeriod.toFixed(0)} * (1 - ${(teamMetrics.shrinkagePercentage / 100).toFixed(2)}) * ${(teamMetrics.occupancyPercentage / 100).toFixed(2)}) = ${numValue.toFixed(2)}\n` +
+              formulaText = `Formula: (Eff. Req. Mins) / (Std Mins * (1 - In Office Shrink%) * (1 - Out of Office Shrink%) * Occupancy%)\n` +
+                            `Calc: ${teamMetrics._calculatedRequiredAgentMinutes.toFixed(0)} / (${standardWorkMinutesForPeriod.toFixed(0)} * (1 - ${(teamMetrics.inOfficeShrinkagePercentage / 100).toFixed(2)}) * (1 - ${(teamMetrics.outOfOfficeShrinkagePercentage / 100).toFixed(2)}) * ${(teamMetrics.occupancyPercentage / 100).toFixed(2)}) = ${numValue.toFixed(2)}\n` +
                             `(Effective Mins per HC: ${effectiveMinutesPerHC.toFixed(0)})`;
             } else {
-              formulaText = `Formula: Eff. Req. Mins / (Std Mins * (1-Shrink%) * Occupancy%)\n` +
-                            `Calculation inputs result in division by zero or invalid effective minutes per HC.`;
+              formulaText = `Formula: (Eff. Req. Mins) / (Std Mins * (1 - In Office Shrink%) * (1 - Out of Office Shrink%) * Occupancy%)\n` +
+                            `Calculation inputs result in division by zero or invalid effective minutes per HC (check shrinkage & occupancy).`;
             }
         } else {
-            formulaText = `Formula: Eff. Req. Mins / (Std Mins * (1-Shrink%) * Occupancy%)\n` +
-                          `Calculation inputs missing or invalid.`;
+            formulaText = `Formula: (Eff. Req. Mins) / (Std Mins * (1 - In Office Shrink%) * (1 - Out of Office Shrink%) * Occupancy%)\n` +
+                          `Calculation inputs missing or invalid (check inputs for Eff. Req. Mins, Shrinkages, Occupancy).`;
         }
         break;
       case '_calculatedRequiredAgentMinutes':
@@ -1721,10 +1723,19 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
         break;
       case '_calculatedActualProductiveAgentMinutes':
         if (teamMetrics?.actualHC !== null && teamMetrics?.actualHC !== undefined &&
-          teamMetrics?.shrinkagePercentage !== null && teamMetrics?.occupancyPercentage !== null && standardWorkMinutesForPeriod > 0) {
-          const prodMins = teamMetrics.actualHC * standardWorkMinutesForPeriod * (1 - (teamMetrics.shrinkagePercentage / 100)) * (teamMetrics.occupancyPercentage / 100);
-          formulaText = `Formula: Actual HC * Std Mins * (1-Shrink%) * Occupancy%\n` +
-            `Calc: ${teamMetrics.actualHC.toFixed(0)} * ${standardWorkMinutesForPeriod.toFixed(0)} * (1 - ${(teamMetrics.shrinkagePercentage / 100).toFixed(2)}) * ${(teamMetrics.occupancyPercentage / 100).toFixed(2)}) = ${prodMins.toFixed(0)}`;
+          teamMetrics?.inOfficeShrinkagePercentage !== null && teamMetrics.outOfOfficeShrinkagePercentage !== null &&
+          teamMetrics?.occupancyPercentage !== null && standardWorkMinutesForPeriod > 0) {
+          const prodMins = teamMetrics.actualHC * standardWorkMinutesForPeriod *
+            (1 - (teamMetrics.inOfficeShrinkagePercentage / 100)) *
+            (1 - (teamMetrics.outOfOfficeShrinkagePercentage / 100)) *
+            (teamMetrics.occupancyPercentage / 100);
+          // The formula is in the description, so formulaText should just be the calculation.
+          formulaText = `Calc: ${teamMetrics.actualHC.toFixed(0)} * ${standardWorkMinutesForPeriod.toFixed(0)} * ` +
+                        `(1 - ${(teamMetrics.inOfficeShrinkagePercentage / 100).toFixed(2)}) * ` +
+                        `(1 - ${(teamMetrics.outOfOfficeShrinkagePercentage / 100).toFixed(2)}) * ` +
+                        `${(teamMetrics.occupancyPercentage / 100).toFixed(2)} = ${prodMins.toFixed(0)}`;
+        } else {
+          formulaText = `Calculation inputs missing or invalid (Actual HC, Shrinkages, Occupancy).`;
         }
         break;
     }
@@ -1737,11 +1748,29 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
         }
         break;
       case 'requiredHC':
-      case 'actualHC':
+      case 'actualHC': {
         const childType = item.itemType === 'BU' ? 'LOBs' : 'Teams';
-        const childNames = item.children?.map(child => child.name).join(', ') || 'N/A';
-        formulaText = `Formula: SUM(${metricDef.label} from child ${childType})\nContributing: ${childNames}`;
+        let formulaStr = `Formula: SUM(${metricDef.label} from child ${childType})`;
+        let calcStr = "\nCalculation:\n";
+        let sum = 0;
+        let childrenAvailable = false;
+
+        if (item.children && item.children.length > 0) {
+          childrenAvailable = true;
+          item.children.forEach((child, index) => {
+            const childMetricValue = child.periodicData[periodName]?.[metricDef.key as keyof (TeamPeriodicMetrics | AggregatedPeriodicMetrics)];
+            const value = typeof childMetricValue === 'number' ? childMetricValue : 0;
+            sum += value;
+            calcStr += `  ${child.name}: ${value.toFixed(metricDef.isHC ? 0 : 2)}${index < item.children!.length - 1 ? ' +' : ''}\n`;
+          });
+          calcStr += `  --------------------\n`;
+          calcStr += `  Total = ${sum.toFixed(metricDef.isHC ? 0 : 2)}`;
+        } else {
+          calcStr += "  No child data available for detailed sum.";
+        }
+        formulaText = `${formulaStr}\n${calcStr}`;
         break;
+      }
       case 'lobTotalBaseRequiredMinutes':
         if (item.itemType === 'LOB' && aggMetrics && 'lobVolumeForecast' in aggMetrics && 'lobAverageAHT' in aggMetrics) {
           const volume = aggMetrics.lobVolumeForecast;
@@ -1750,6 +1779,62 @@ const MetricCellContent: React.FC<MetricCellContentProps> = React.memo(({
           formulaText = `Formula: Volume Forecast * Avg AHT\n` +
             `Calc: ${volume?.toFixed(0) ?? 'N/A'} * ${aht?.toFixed(1) ?? 'N/A'} = ${calculatedMins.toFixed(0)}\n` +
             `(Current value may be a direct input or calculated)`;
+        } else if (item.itemType === 'BU') {
+          let formulaStr = `Formula: SUM(${metricDef.label} from child LOBs)`;
+          let calcStr = "\nCalculation:\n";
+          let sum = 0;
+          if (item.children && item.children.length > 0) {
+            item.children.forEach((child, index) => {
+              const childMetricValue = child.periodicData[periodName]?.[metricDef.key as keyof AggregatedPeriodicMetrics];
+              const value = typeof childMetricValue === 'number' ? childMetricValue : 0;
+              sum += value;
+              calcStr += `  ${child.name}: ${value.toFixed(0)}${index < item.children!.length - 1 ? ' +' : ''}\n`;
+            });
+            calcStr += `  --------------------\n`;
+            calcStr += `  Total = ${sum.toFixed(0)}`;
+          } else {
+            calcStr += "  No child LOB data available for detailed sum.";
+          }
+          formulaText = `${formulaStr}\n${calcStr}`;
+        }
+        break;
+      case 'lobVolumeForecast': // Add similar BU level sum for lobVolumeForecast
+        if (item.itemType === 'BU') {
+          let formulaStr = `Formula: SUM(${metricDef.label} from child LOBs)`;
+          let calcStr = "\nCalculation:\n";
+          let sum = 0;
+          if (item.children && item.children.length > 0) {
+            item.children.forEach((child, index) => {
+              const childMetricValue = child.periodicData[periodName]?.[metricDef.key as keyof AggregatedPeriodicMetrics];
+              const value = typeof childMetricValue === 'number' ? childMetricValue : 0;
+              sum += value;
+              calcStr += `  ${child.name}: ${value.toFixed(0)}${index < item.children!.length - 1 ? ' +' : ''}\n`;
+            });
+            calcStr += `  --------------------\n`;
+            calcStr += `  Total = ${sum.toFixed(0)}`;
+          } else {
+            calcStr += "  No child LOB data available for detailed sum.";
+          }
+          formulaText = `${formulaStr}\n${calcStr}`;
+        }
+        // Note: LOB level lobVolumeForecast doesn't need specific formulaText here,
+        // as it's an input or covered by description.
+        break;
+      case 'handlingCapacity':
+        if (item.itemType === 'LOB' && aggMetrics &&
+            aggMetrics.lobVolumeForecast !== null && aggMetrics.lobVolumeForecast !== undefined &&
+            aggMetrics.lobAverageAHT !== null && aggMetrics.lobAverageAHT !== undefined) {
+          if (aggMetrics.lobAverageAHT > 0) {
+            const calculatedCapacity = aggMetrics.lobVolumeForecast / aggMetrics.lobAverageAHT;
+            // Description already contains "Formula: ...", so formulaText should just be the calculation.
+            formulaText = `Calc: ${aggMetrics.lobVolumeForecast.toFixed(0)} / ${aggMetrics.lobAverageAHT.toFixed(1)} = ${calculatedCapacity.toFixed(0)}`;
+          } else {
+            // Description contains "Formula: ...", so note why calc is not possible.
+            formulaText = `LOB Average AHT is zero or not available, cannot calculate.`;
+          }
+        } else {
+          // Description contains "Formula: ...", so note why calc is not possible.
+          formulaText = `LOB Volume Forecast or LOB Average AHT not available for calculation.`;
         }
         break;
     }
