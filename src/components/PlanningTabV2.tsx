@@ -258,11 +258,10 @@ export type TeamMetricDefinitions = MetricDefinition[];
 export type AggregatedMetricDefinitions = MetricDefinition[];
 
 export const TEAM_METRIC_ROW_DEFINITIONS: TeamMetricDefinitions = [
-  { key: "requiredHC", label: "Required HC", isHC: true, isDisplayOnly: true, category: 'PrimaryHC', description: "Calculated number of headcount required based on demand and productivity assumptions." },
+  { key: "requiredHC", label: "Required HC", isHC: true, isDisplayOnly: true, category: 'PrimaryHC', description: "Calculated number of headcount required based on demand and productivity assumptions.\nFormula: (Eff. Req. Mins) / (Std Mins * (1 - In Office Shrink%) * (1 - Out of Office Shrink%) * Occupancy%)" },
   { key: "actualHC", label: "Actual/Starting HC", isHC: true, isEditableForTeam: true, step: 0.01, category: 'PrimaryHC', description: "The actual or starting headcount for the period before adjustments." },
-  { key: "overUnderHC", label: "Over/Under HC", isHC: true, isDisplayOnly: true, category: 'PrimaryHC', description: "Difference between Actual/Starting HC and Required HC." },
+  { key: "overUnderHC", label: "Over/Under HC", isHC: true, isDisplayOnly: true, category: 'PrimaryHC', description: "Difference between Actual/Starting HC and Required HC.\nFormula: Actual HC - Required HC" },
   { key: "aht", label: "AHT", isTime: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Average Handle Time: The average time taken to handle one interaction." },
-  // { key: "shrinkagePercentage", label: "Shrinkage %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Shrinkage: Percentage of paid time that agents are not available for handling interactions (e.g., breaks, training, meetings)." },
   { key: "occupancyPercentage", label: "Occupancy %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Occupancy: Percentage of time agents are busy with interaction-related work during their available time." },
   { key: "backlogPercentage", label: "Backlog %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Backlog: Percentage of additional work (e.g., deferred tasks) that needs to be handled on top of forecasted volume." },
   { key: "attritionPercentage", label: "Attrition %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Attrition: Percentage of agents expected to leave during the period." },
@@ -271,11 +270,11 @@ export const TEAM_METRIC_ROW_DEFINITIONS: TeamMetricDefinitions = [
   { key: "moveOut", label: "Move Out (-)", isEditableForTeam: true, step: 1, isHC: true, category: 'HCAdjustment', description: "Headcount moving out of this team to other teams or roles." },
   { key: "newHireBatch", label: "New Hire Batch", isEditableForTeam: true, step: 1, isHC: true, category: 'HCAdjustment', description: "Number of new hires starting in a batch during this period (typically in training)." },
   { key: "newHireProduction", label: "New Hire Production", isEditableForTeam: true, step: 1, isHC: true, category: 'HCAdjustment', description: "Number of new hires becoming productive and joining the floor during this period." },
-  { key: "attritionLossHC", label: "Attrition Loss HC", isHC: true, isDisplayOnly: true, category: 'HCAdjustment', description: "Calculated headcount lost due to attrition." },
-  { key: "hcAfterAttrition", label: "HC After Attrition", isHC: true, isDisplayOnly: true, category: 'HCAdjustment', description: "Headcount remaining after attrition loss." },
-  { key: "endingHC", label: "Ending HC", isHC: true, isDisplayOnly: true, category: 'HCAdjustment', description: "Projected headcount at the end of the period after all adjustments." },
-  { key: "_calculatedRequiredAgentMinutes", label: "Eff. Req. Mins (Team)", isDisplayOnly: true, isTime: true, category: 'HCAdjustment', description: "Team's share of LOB demand minutes, adjusted for the team's backlog percentage." },
-  { key: "_calculatedActualProductiveAgentMinutes", label: "Actual Prod. Mins (Team)", isDisplayOnly: true, isTime: true, category: 'Internal', description: "Total productive agent minutes available from the team's actual headcount, considering shrinkage and occupancy." },
+  { key: "attritionLossHC", label: "Attrition Loss HC", isHC: true, isDisplayOnly: true, category: 'HCAdjustment', description: "Calculated headcount lost due to attrition.\nFormula: Actual HC * Attrition %" },
+  { key: "hcAfterAttrition", label: "HC After Attrition", isHC: true, isDisplayOnly: true, category: 'HCAdjustment', description: "Headcount remaining after attrition loss.\nFormula: Actual HC - Attrition Loss HC" },
+  { key: "endingHC", label: "Ending HC", isHC: true, isDisplayOnly: true, category: 'HCAdjustment', description: "Projected headcount at the end of the period after all adjustments.\nFormula: HC After Attrition + New Hire Prod. + Move In - Move Out" },
+  { key: "_calculatedRequiredAgentMinutes", label: "Eff. Req. Mins (Team)", isDisplayOnly: true, isTime: true, category: 'HCAdjustment', description: "Team's share of LOB demand minutes, adjusted for the team's backlog percentage.\nFormula: (Total Base Req Mins * Team Vol Mix %) * (1 + Team Backlog %)" },
+  { key: "_calculatedActualProductiveAgentMinutes", label: "Actual Prod. Mins (Team)", isDisplayOnly: true, isTime: true, category: 'Internal', description: "Total productive agent minutes available from the team's actual headcount, considering shrinkage and occupancy.\nFormula: Actual HC * Std Mins * (1 - In Office Shrink%) * (1 - Out of Office Shrink%) * Occupancy%" },
   { key: "inOfficeShrinkagePercentage", label: "In Office Shrinkage %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "In Office Shrinkage: Percentage of paid time that agents are not available for handling interactions while in office." },
   { key: "outOfOfficeShrinkagePercentage", label: "Out of Office Shrinkage %", isPercentage: true, isEditableForTeam: true, step: 0.1, category: 'Assumption', description: "Out of Office Shrinkage: Percentage of paid time that agents are not available for handling interactions while out of office." },
 
@@ -490,7 +489,7 @@ ALL_BUSINESS_UNITS.forEach(bu => {
 export const STANDARD_WEEKLY_WORK_MINUTES = 40 * 60;
 export const STANDARD_MONTHLY_WORK_MINUTES = (40 * 52 / 12) * 60;
 
-const calculateTeamMetricsForPeriod = (
+  const calculateTeamMetricsForPeriod = (
   teamInputDataCurrentPeriod: Partial<TeamPeriodicMetrics>,
   lobTotalBaseRequiredMinutesForPeriod: number | null,
   standardWorkMinutesForPeriod: number
